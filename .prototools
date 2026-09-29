@@ -1,0 +1,23 @@
+moon = "2.4.2"
+
+"npm:czg" = "1"
+node = "24"
+npm = "bundled"
+pnpm = "10.33"
+go = "1.26.4"
+
+"cargo:cocogitto" = "6"
+rust = "stable"
+
+gitleaks = "8"
+golangci-lint = "2"
+infisical = "0.43"
+
+[plugins]
+gitleaks = "file://./prototools/plugins/gitleaks.toml"
+golangci-lint = "https://raw.githubusercontent.com/b4nst/proto-plugins/refs/heads/main/toml/golangci-lint.toml"
+infisical = "file://./prototools/plugins/infisical.toml"
+
+[settings]
+detect-strategy = "prefer-prototools"
+auto-install = true

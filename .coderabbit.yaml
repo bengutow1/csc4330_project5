@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: en-US
+
+reviews:
+  profile: chill            # less nitpicky; switch to "assertive" for stricter reviews
+  high_level_summary: true  # post a summary of what the PR does
+  poem: false               # skip the signature poem
+  auto_review:
+    enabled: true
+    drafts: false           # don't review draft PRs
+  path_filters:
+    - "!**/*.lock"          # skip lockfiles
+    - "!**/dist/**"         # skip build output
+    - "!**/out/**"          # skip build output
+    - "!**/.moon/cache/**"  # skip moon's cache

@@ -1,0 +1,5 @@
+# The JS half of the monorepo, mirroring the Go layout: apps under apps/ (only
+# dirs with a package.json count), shared TypeScript packages under packages/ts/.
+packages:
+  - 'apps/*'
+  - 'packages/ts/*'

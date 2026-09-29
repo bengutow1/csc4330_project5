@@ -1,0 +1,28 @@
+$schema: 'https://moonrepo.dev/schemas/tasks.json'
+
+# Scope these tasks to Go-toolchain projects only. Without inheritedBy, moon
+# inherits this file into EVERY project (the filename alone does nothing), which
+# is why db (system toolchain, no go.mod) was wrongly running golangci-lint /
+# go build. This makes the "go only" intent actually enforced.
+inheritedBy:
+  toolchains:
+    or: ['go']
+
+tasks:
+  format:
+    command: 'gofmt -w .'
+  # Sync go.mod/go.sum. Mutating + network, so don't cache or run in CI.
+  tidy:
+    command: 'go mod tidy'
+    options:
+      cache: false
+      runInCI: false
+  # --allow-parallel-runners: moon lints affected Go projects concurrently, but
+  # golangci-lint refuses to run multiple instances at once unless told to wait
+  # on its lock instead of erroring.
+  lint:
+    command: 'golangci-lint run --allow-parallel-runners'
+  test:
+    command: 'go test ./...'
+  build:
+    command: 'go build ./...'

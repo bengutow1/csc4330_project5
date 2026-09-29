@@ -1,0 +1,36 @@
+# A TOML plugin for proto: https://moonrepo.dev/docs/proto/plugins#toml-plugin
+#
+# Installs the native Infisical CLI (a Go binary) straight from the Infisical/cli
+# GitHub releases. We can't use proto's `npm:@infisical/cli` backend: that package
+# ships the compiled binary, and proto's npm shim launches it through Node, which
+# fails — Node tries to parse the Mach-O/ELF binary as JavaScript. This fetches the
+# real binary instead, same as the gitleaks / golangci-lint plugins.
+#
+# Checksums are intentionally omitted: the darwin artifacts are re-signed after the
+# main checksum file is generated (note the separate checksums-darwin.txt asset),
+# so verifying against cli_<ver>_checksums.txt would fail on macOS.
+
+name = "Infisical"
+type = "cli"
+
+[platform.macos]
+download-file = "cli_{version}_darwin_{arch}.tar.gz"
+exe-path = "infisical"
+
+[platform.linux]
+download-file = "cli_{version}_linux_{arch}.tar.gz"
+exe-path = "infisical"
+
+[platform.windows]
+download-file = "cli_{version}_windows_{arch}.zip"
+exe-path = "infisical.exe"
+
+[install]
+download-url = "https://github.com/Infisical/cli/releases/download/v{version}/{download_file}"
+
+[install.arch]
+aarch64 = "arm64"
+x86_64 = "amd64"
+
+[resolve]
+git-url = "https://github.com/Infisical/cli"

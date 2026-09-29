@@ -1,0 +1,24 @@
+$schema: 'https://moonrepo.dev/schemas/tasks.json'
+
+# Shared tasks for every JS/TS project (apps/web, packages/ts/*) — the
+# TypeScript twin of go.yml. Scoped via inheritedBy so system/go projects
+# never inherit these; the javascript toolchain attaches to any project with a
+# package.json. Biome is the one lint+format tool (config at the repo root,
+# generated code excluded there); typecheck is tsc against each project's own
+# tsconfig.
+inheritedBy:
+  toolchains:
+    or: ['javascript']
+
+tasks:
+  format:
+    command: 'pnpm exec biome format --write .'
+  lint:
+    command: 'pnpm exec biome check .'
+  typecheck:
+    command: 'pnpm exec tsc --noEmit'
+  # Vitest, tolerant of packages with no tests yet — so `moon ci` runs every
+  # TS package's tests with zero per-package config. A package that wants a
+  # different runner overrides `test` in its own moon.yml.
+  test:
+    command: 'pnpm exec vitest run --passWithNoTests'

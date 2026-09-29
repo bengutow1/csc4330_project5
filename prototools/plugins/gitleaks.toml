@@ -1,0 +1,48 @@
+# A TOML plugin for proto: https://moonrepo.dev/docs/proto/plugins#toml-plugin
+#
+# Installs gitleaks straight from the gitleaks/gitleaks GitHub releases, the same
+# way the infisical plugin beside this file does.
+#
+# Replaces `github://muuvmuuv/proto-plugins/gitleaks_tool`, which broke: proto
+# resolves that plugin by downloading an asset from the plugin repo's OWN release
+# (gitleaks_tool-v0.3.0), and that release has no asset proto can use, so every
+# `proto install gitleaks` and every pre-commit hook died with
+# `plugin::loader::github::asset_missing`. The failure is in fetching the plugin
+# metadata, not the tool — which means it takes the whole commit-msg/pre-commit
+# path down with it, including the secret scan. A third-party repo that can break
+# every commit in this one is not a dependency worth keeping for a file this small.
+#
+# Note the version shapes differ: the git tag is `v8.30.1` while the asset name
+# carries a bare `8.30.1`.
+#
+# Checksums ARE verified here (unlike infisical, whose darwin artifacts are
+# re-signed after its checksum file is generated). gitleaks publishes one
+# checksums.txt covering every platform artifact, and a secret scanner is the
+# last tool that should be installed unverified.
+
+name = "gitleaks"
+type = "cli"
+
+[platform.macos]
+download-file = "gitleaks_{version}_darwin_{arch}.tar.gz"
+exe-path = "gitleaks"
+
+[platform.linux]
+download-file = "gitleaks_{version}_linux_{arch}.tar.gz"
+exe-path = "gitleaks"
+
+[platform.windows]
+download-file = "gitleaks_{version}_windows_{arch}.zip"
+exe-path = "gitleaks.exe"
+
+[install]
+download-url = "https://github.com/gitleaks/gitleaks/releases/download/v{version}/{download_file}"
+checksum-url = "https://github.com/gitleaks/gitleaks/releases/download/v{version}/gitleaks_{version}_checksums.txt"
+
+# gitleaks names its artifacts x64/arm64, not amd64.
+[install.arch]
+aarch64 = "arm64"
+x86_64 = "x64"
+
+[resolve]
+git-url = "https://github.com/gitleaks/gitleaks"

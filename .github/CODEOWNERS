@@ -1,0 +1,15 @@
+# CODEOWNERS — auto-requests review from the listed owners when matching files change.
+# Uncomment a line and swap in real @users or @org/teams (they must have write access).
+# The LAST matching pattern for a file wins, so put specific paths after the global one.
+
+# Fallback owner for everything:
+# *                @cadenlund/maintainers
+
+# By area:
+# /apps/           @cadenlund/app-team
+# /packages/       @cadenlund/platform-team
+# /.github/        @cadenlund/maintainers
+# /.moon/          @cadenlund/platform-team
+
+# A single person can own a path or file:
+# /CLAUDE.md       @caden

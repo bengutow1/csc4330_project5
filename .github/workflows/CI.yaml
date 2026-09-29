@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      # proto resolves plugins AND their releases through the GitHub API.
+      # Unauthenticated that is 60 requests an hour PER IP, shared by every
+      # GitHub-hosted runner. The built-in token raises the ceiling to 1000/hr and
+      # grants nothing beyond this job's own read-only permissions.
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0                    # moon ci + cog check need full history
+      - uses: moonrepo/setup-toolchain@v0   # proto + moon, auto-cached
+        with:
+          # PROTO IS PINNED, and it is the one thing .prototools cannot pin —
+          # it is the installer that reads that file. Left blank the action
+          # takes whatever proto shipped today, so CI drifts from every dev
+          # machine on its own schedule (0.60.1 changed the plugin ABI and broke
+          # a plugin overnight in the sibling repos).
+          #
+          # Raise this deliberately, after `proto install` succeeds locally on
+          # the new version.
+          proto-version: ${{ vars.PROTO_VERSION || '0.57.4' }}
+          auto-install: true                # install every tool pinned in .prototools
+      - run: gitleaks git . --redact --no-banner   # secret scan
+      - run: cog check                             # conventional commit enforcement
+      - run: moon ci                               # build / test / lint affected projects

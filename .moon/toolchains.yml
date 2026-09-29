@@ -1,0 +1,32 @@
+$schema: 'https://moonrepo.dev/schemas/toolchains.json'
+
+# `go list` relationship inference stays OFF, deliberately. The moon 2.3.4
+# perf bug that forced this (uncached `go list -deps` in every project dir,
+# ~40s per command) is fixed upstream in the 2.4.2 we pin — but with it off
+# the plugin already derives the SAME project edges from each go.mod's direct
+# `require` entries (verified in the source repos: identical graph topology),
+# so inference would buy nothing and cost subprocess time. The only edge this
+# can miss is a sibling import not yet in go.mod (go.work tolerates that until
+# `go mod tidy`). Flip it on only if that edge ever bites `--affected`.
+go:
+  inferRelationships: false
+  workspaces: true
+
+# The JS side: pnpm workspaces (apps/* + packages/ts/*). Tasks stay explicit
+# in moon files — package.json scripts are not inferred as tasks. Versions come
+# from .prototools (proto installs node + pnpm), not from here.
+node: {}
+
+javascript:
+  packageManager: 'pnpm'
+  inferTasksFromScripts: false
+  syncProjectWorkspaceDependencies: true
+
+pnpm: {}
+
+# TS project references stay OFF: our packages are source-only/noEmit
+# (bundler resolution follows package.json exports straight to .ts), and
+# references demand composite+emit. The javascript toolchain still syncs
+# workspace deps for the graph.
+typescript:
+  syncProjectReferences: false
