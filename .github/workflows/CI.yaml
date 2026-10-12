@@ -15,7 +15,7 @@ jobs:
       # grants nothing beyond this job's own read-only permissions.
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0                    # moon ci + cog check need full history
       - uses: moonrepo/setup-toolchain@v0   # proto + moon, auto-cached
