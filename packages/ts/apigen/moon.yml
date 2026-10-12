@@ -1,0 +1,16 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+# `ts-` prefix mirrors the `go-` one: folder names collide across languages, ids don't.
+id: 'ts-apigen'
+layer: 'library'
+language: 'typescript'
+
+project:
+  name: 'ts-apigen'
+  description: 'Generated protobuf-es types and service descriptors from proto/. Never hand-edited; only @fries-in-the-bag/api imports it.'
+
+# Generated from proto/ and committed here, so a schema change marks this package, and everything
+# downstream of it, as affected.
+dependsOn:
+  - id: 'proto'
+    scope: 'development'

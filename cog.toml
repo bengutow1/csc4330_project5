@@ -1,4 +1,4 @@
-# cocogitto config — enforced by the commit-msg hook (`cog verify`) and CI (`cog check`).
+# cocogitto config, enforced by the commit-msg hook (`cog verify`) and CI (`cog check`).
 
 # On pull_request events, CI checks out GitHub's ephemeral merge ref
 # (refs/pull/N/merge), whose "Merge X into Y" commit isn't conventional.

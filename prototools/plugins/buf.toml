@@ -1,0 +1,35 @@
+# A TOML plugin for proto: https://moonrepo.dev/docs/proto/plugins#toml-plugin
+#
+# Installs buf (protobuf lint, format, breaking checks and codegen) from the bufbuild/buf GitHub
+# releases. The tarballs unpack to buf/bin/buf. Note the arch spelling differs per OS: Darwin
+# assets say "arm64", Linux assets say "aarch64", so Linux gets its own arch map below.
+
+name = "buf"
+type = "cli"
+
+[platform.macos]
+download-file = "buf-Darwin-{arch}.tar.gz"
+archive-prefix = "buf"
+exe-path = "bin/buf"
+
+[platform.linux]
+download-file = "buf-Linux-{arch}.tar.gz"
+archive-prefix = "buf"
+exe-path = "bin/buf"
+
+[platform.linux.arch]
+aarch64 = "aarch64"
+
+[platform.windows]
+download-file = "buf-Windows-{arch}.exe"
+exe-path = "buf.exe"
+
+[install]
+download-url = "https://github.com/bufbuild/buf/releases/download/v{version}/{download_file}"
+checksum-url = "https://github.com/bufbuild/buf/releases/download/v{version}/sha256.txt"
+
+[install.arch]
+aarch64 = "arm64"
+
+[resolve]
+git-url = "https://github.com/bufbuild/buf"

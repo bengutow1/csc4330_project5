@@ -1,0 +1,10 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+# `ts-` prefix mirrors the `go-` one: apps/api is the Go binary, this is the client data layer.
+id: 'ts-api'
+layer: 'library'
+language: 'typescript'
+
+project:
+  name: 'ts-api'
+  description: 'The client data layer: transport, query client, hooks and error decoding. The only package that imports @fries-in-the-bag/apigen.'

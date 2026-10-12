@@ -1,0 +1,17 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+# Go packages carry a `go-` id prefix so the project graph stays unambiguous once TypeScript
+# packages with the same folder names (apigen, api) join it.
+id: 'go-apigen'
+layer: 'library'
+language: 'go'
+
+project:
+  name: 'go-apigen'
+  description: 'Generated protobuf and Connect Go from proto/: wire DTOs and service interfaces. Never hand-edited.'
+
+# Generated from proto/ and committed here, so a schema change marks this project, and everything
+# importing it, as affected.
+dependsOn:
+  - id: 'proto'
+    scope: 'development'

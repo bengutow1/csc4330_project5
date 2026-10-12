@@ -1,0 +1,9 @@
+# The prototype opens as the home screen and its snap flow still runs to a verdict.
+appId: com.cadenlund.friesinthebag
+---
+- launchApp:
+    clearState: true
+- assertVisible: ".*Fries in the Bag"
+- tapOn: ".*Snap my fridge"
+- assertVisible: "(?i)spotted in your fridge"
+- assertVisible: ".*Post to leaderboard"

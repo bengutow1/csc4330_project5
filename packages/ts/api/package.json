@@ -1,0 +1,24 @@
+{
+  "name": "@fries-in-the-bag/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "2.16.0",
+    "@connectrpc/connect": "^2.2.0",
+    "@connectrpc/connect-query": "^2.3.1",
+    "@connectrpc/connect-web": "^2.2.0",
+    "@fries-in-the-bag/apigen": "workspace:*",
+    "@tanstack/react-query": "^5.104.1"
+  },
+  "peerDependencies": {
+    "react": ">=19"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.2",
+    "react": "19.2.3"
+  }
+}

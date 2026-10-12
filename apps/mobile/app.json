@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "Fries in the Bag",
+    "slug": "fries-in-the-bag",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.cadenlund.friesinthebag"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.cadenlund.friesinthebag"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "backgroundColor": "#140F0A",
+    "plugins": ["expo-router", "expo-status-bar"],
+    "scheme": "friesinthebag",
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

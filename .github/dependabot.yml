@@ -26,6 +26,19 @@ updates:
     commit-message:
       prefix: "chore"
       include: "scope"
+    # The Expo SDK pins React, React Native and every native module to versions built together, and
+    # CI never compiles the native app, so a bump past the SDK passes CI and breaks the build on a
+    # phone. These move as one, on purpose, with `pnpm exec expo install --fix` in apps/mobile.
+    ignore:
+      - dependency-name: "expo"
+      - dependency-name: "expo-*"
+      - dependency-name: "@expo/*"
+      - dependency-name: "react"
+      - dependency-name: "react-dom"
+      - dependency-name: "react-native"
+      - dependency-name: "react-native-*"
+      - dependency-name: "@react-native/*"
+      - dependency-name: "@types/react"
     groups:
       dependencies:
         update-types: ["major", "minor", "patch"]

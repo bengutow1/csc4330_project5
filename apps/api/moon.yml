@@ -1,0 +1,35 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+layer: 'application'
+language: 'go'
+
+project:
+  name: 'api'
+  description: 'The API binary: wiring only, every Connect service mounted on one server.'
+
+tasks:
+  # Run the server locally. `deps` brings Postgres up and migrates it first (db:migrate depends on
+  # docker:up), so this works from a cold checkout.
+  dev:
+    command: 'go run .'
+    preset: 'server'
+    deps: ['db:migrate']
+    # Local-only values that mirror docker/compose.yml, not secrets. .env.example lists every
+    # variable the server reads.
+    env:
+      DATABASE_URL: 'postgres://fries:fries@localhost:5432/fries?sslmode=disable'
+      LOG_FORMAT: 'text'
+
+  # Compile the binary into bin/, replacing the inherited `go build ./...`, which drops an `api`
+  # binary in this folder.
+  build:
+    command: 'go build -o bin/api .'
+    options:
+      mergeArgs: 'replace'
+    outputs:
+      - 'bin/api'
+
+  # Build the deployable image from the repo root, stamped with the current commit.
+  image:
+    script: 'docker build -f apps/api/Dockerfile --build-arg GIT_SHA=$(git rev-parse --short HEAD) -t fries-in-the-bag-api .'
+    options: { cache: false, runInCI: false, runFromWorkspaceRoot: true }

@@ -1,15 +1,175 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+#
+# Conventions are NOT restated here. CodeRabbit reads CLAUDE.md and AGENTS.md by
+# default, and knowledge_base below points it at .claude/rules/**, the same files
+# every coding agent writes against. One source of truth: a rule changed in
+# .claude/rules/ changes the review too.
+#
+# path_instructions are checks for the risky areas, phrased to ADD to the rules.
 language: en-US
 
+tone_instructions: |
+  Be direct. One sentence of reasoning per comment, then the specific change.
+  No preamble, no praise, no summary of what the code does. Skip formatting;
+  gofmt and biome own it.
+
 reviews:
-  profile: chill            # less nitpicky; switch to "assertive" for stricter reviews
-  high_level_summary: true  # post a summary of what the PR does
-  poem: false               # skip the signature poem
+  profile: chill                    # bugs, security and logic; linters own formatting
+  request_changes_workflow: false   # advisory, not a merge blocker
+  high_level_summary: true
+  poem: false
+  collapse_walkthrough: true
   auto_review:
     enabled: true
-    drafts: false           # don't review draft PRs
+    drafts: false
+
   path_filters:
-    - "!**/*.lock"          # skip lockfiles
-    - "!**/dist/**"         # skip build output
-    - "!**/out/**"          # skip build output
-    - "!**/.moon/cache/**"  # skip moon's cache
+    - "!**/*.lock"
+    - "!pnpm-lock.yaml"
+    - "!go.work.sum"
+    - "!**/dist/**"
+    - "!**/bin/**"
+    - "!**/out/**"
+    - "!**/.moon/cache/**"
+    - "!**/apigen/**"               # generated proto output: review the .proto
+    - "!**/*_pb.ts"
+    - "!**/*.gen.ts"
+
+  path_instructions:
+    - path: "**/*.go"
+      instructions: |
+        House rules that no linter enforces. Report each violation, even under the chill profile:
+        1. Error checks are two statements (`x, err := f()` then `if err != nil`). Flag every
+           inline `if err := f(); err != nil` and every `if v := f(); v != nil` guard, and any err
+           variable not named `err`.
+        2. No error is dropped silently: a discard is `_ =` with a reason, and a swallowed error
+           that matters is logged. Flag `//nolint` without a reason.
+        3. A switch over an enum names every value; flag a default arm that silently picks a
+           behaviour for an unexpected value.
+        4. New files start with an `// Author: <name>` line.
+        5. No em dashes in comments, error messages or string literals.
+        6. Flag `time.Now()` inside logic (it takes `now` or a clock), a bare `go func()` started
+           from a request, `init()`, mutable package-level state, and a log line that records a
+           token, a combo code, a vendor key, a photo or a player's location.
+
+    - path: "packages/go/handlers/**/*.go"
+      instructions: |
+        Check each RPC against the order it must follow: const op, gate, normalize and validate,
+        load, write (InTx when multi-statement), re-read, best-effort side effects, toProtoX.
+        1. Errors reach the wire only through handlers.ConnectErr (via h.fail). Flag a Connect
+           code chosen at the call site, and a raw or wrapped error returned to a caller.
+        2. A new sentinel needs an arm in ConnectErr and a test pinning it. Flag a sentinel with
+           no arm: it reaches the client as a redacted internal error.
+        3. The server is the authority on the score, the tier, points, streaks, badges, plate
+           checks and combo state, and on who the caller is. Flag a request field that asserts the
+           caller's own score, points, tier or account, and an RPC with no gate that does not say
+           it is public.
+        4. Validation runs through handlers.Validate before any repository call and accumulates
+           every violation. Flag hand-rolled checks that stop at the first failure.
+        5. Flag anything that looks like a service or orchestration layer between handlers and
+           the repository, and a handler that builds SQL or holds a pool or a pgx.Tx.
+        6. Flag an unbounded list endpoint, a malformed cursor treated as "start over", and a
+           collection returned whole so the client can filter or sort it.
+        7. Flag a vision or places call inside InTx, a score or points taken from model output
+           instead of packages/go/scoring, and an RPC that spends vendor money with no per-account
+           rate limit.
+
+    - path: "packages/go/repository/**/*.go"
+      instructions: |
+        1. Every query on a player's rows takes the account id, and every query on a combo's rows
+           takes the combo id, as an explicit argument in the where clause. A query that can read
+           or change someone else's rows is a defect, not a nit.
+        2. Driver internals (pgx.ErrNoRows, pgconn errors) never escape; they fold into sentinels
+           via known(). Update and Delete return (bool, error), true when a row changed.
+        3. Filtering belongs in SQL. Flag N+1 access (a query inside a loop), OFFSET pagination,
+           non-sargable predicates, SELECTed columns the caller never uses, and a shared column
+           constant or scan helper.
+        4. Flag a check-then-write that can race (the last seat in a combo, two plates claiming
+           one meal window) without a transaction and the right lock, or one guarded statement.
+        5. A write that changes something a client reads calls r.notify with the right topic and
+           scope. Flag a write with none: the screen silently never updates.
+
+    - path: "packages/go/auth/**/*.go"
+      instructions: |
+        1. RenewToken runs before any privilege change, including creating the device account.
+           Identity comes from the session, never from the request.
+        2. The session cookie is the device account's only credential. Flag a second credential
+           (a token the client stores, a device id it sends) that was not agreed first.
+        3. Combo and crew codes come from crypto/rand, and expiry is enforced in the SQL that
+           joins. Limits and cooldowns are enforced inside one SQL statement, never
+           read-then-write.
+        4. Creating an account and joining with a code are rate limited per client IP.
+
+    - path: "packages/go/{vision,places}/**/*.go"
+      instructions: |
+        1. Model output is untrusted input: decoded into a strict shape, validated, and never the
+           source of a score, tier or points we store.
+        2. A recipe is checked against the ingredient list, the staples and the allergies before
+           it is stored.
+        3. Every call has a named timeout and no retry loop. The client takes no logger and no
+           proto types.
+        4. Flag a photo, a key or a player's location in a log line, and a handle or location
+           sent to the vision vendor.
+        5. Flag a roast prompt that does not keep the joke on the fridge, never the person.
+
+    - path: "db/migrations/**/*.sql"
+      instructions: |
+        Flag an edit to an already-applied migration that does not call it out: goose tracks
+        versions, not content. Flag a fact stored in two places, a foreign key without an
+        explicit on delete, a Postgres enum type (use text plus a check), a soft-delete column,
+        and a mutable table without updated_at and the set_updated_at trigger.
+
+    - path: "proto/**/*.proto"
+      instructions: |
+        Flag a list rpc without a cursor and limit (unless provably tiny and bounded), a renumbered
+        or reused field number, a request field that carries the caller's own identity or a
+        verdict the server should decide (a score, tier, points or plate result), and a new
+        live.v1.Topic value. A new topic needs an arm in the client's topic switch and emits from
+        the repository writes it describes.
+
+    - path: "**/*_test.go"
+      instructions: |
+        For each RPC or repository method touched, check the tests cover the success path
+        asserting the response body AND every error code the handler can return, plus the owner
+        fence (another player's scan, or a combo the caller is not in, refused as not_found, the
+        victim re-read untouched). Flag testify, mocks of our own layers, a missing t.Parallel(),
+        time.Now() in code under test, a sleep used to wait, a test that calls a real vendor, and
+        a test changed alongside its code in a way that weakens the assertion.
+
+    - path: "packages/ts/**"
+      instructions: |
+        1. packages/ts/api must not import react-native, react-dom or a DOM global, and it is the
+           only package that imports apigen.
+        2. A mutation invalidates through its family's shared useInvalidateX(); flag a second
+           hand-kept list of query keys. Flag a hand-built or indexed query key.
+        3. An optimistic patch in onMutate pairs suppressNextPoke with settleTopic in onSettled.
+           Every live topic has an arm in the topic switch, ending in a never check.
+        4. Sign in and sign out use resetQueries, not invalidateQueries.
+
+    - path: "apps/mobile/**"
+      instructions: |
+        1. Every API call goes through a hook from packages/ts/api. Flag a hand-rolled fetch
+           against the API.
+        2. Flag server data copied into useState or a client store instead of read from the
+           query cache, and a server collection filtered or sorted on the client where the user
+           controls the narrowing: it belongs in the request and the SQL.
+        3. Flag the app computing a score, tier or points it then trusts or sends to the server,
+           and any call to an outside service (an AI model, a places API) or a vendor key in an
+           EXPO_PUBLIC_ variable: those go through the API.
+        4. Flag hex colours in components, react-native's Image instead of expo-image, and an
+           icon-only control with no accessibilityLabel.
+        5. Flag a route file in src/app that does more than read params and render a screen, a
+           useEffect plus router.replace auth gate (use Stack.Protected), and Alert.alert.
+        6. Flag a permission requested at launch instead of at first use, and copy that jokes
+           about the person instead of the fridge.
+        7. Flag a new screen with no Maestro flow.
+
+knowledge_base:
+  code_guidelines:
+    enabled: true
+    # CLAUDE.md and AGENTS.md are read by default; .claude/rules/** is not.
+    filePatterns:
+      - ".claude/rules/**/*.md"
+
+chat:
+  auto_reply: true

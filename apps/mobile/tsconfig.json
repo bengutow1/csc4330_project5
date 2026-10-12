@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    // Expo's globals (process.env.EXPO_OS and friends) and the typed-routes manifest that
+    // expo-router writes to .expo/types while the dev server runs.
+    "types": ["expo/types"],
+    "paths": { "@/*": ["./src/*"] }
+  },
+  "include": ["src", ".expo/types/**/*.ts", "expo-env.d.ts"]
+}

@@ -1,0 +1,20 @@
+// error.v1: typed details a Connect error carries beside its code and message. Ours rather than
+// google.rpc.BadRequest: the only client is ours, and the shape matches it one to one.
+syntax = "proto3";
+
+package error.v1;
+
+// BadRequest carries every invalid field of a request, so a form shows all its problems in one
+// round trip. Only handlers.ConnectErr builds it, on an InvalidArgument error.
+message BadRequest {
+  repeated FieldViolation field_violations = 1;
+}
+
+// FieldViolation is one invalid field.
+message FieldViolation {
+  // The proto field name in the request message, which is also the name the client gives its
+  // input.
+  string field = 1;
+  // Written for the person on screen: the client shows it verbatim.
+  string description = 2;
+}

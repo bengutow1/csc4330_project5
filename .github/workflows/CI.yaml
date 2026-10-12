@@ -20,7 +20,7 @@ jobs:
           fetch-depth: 0                    # moon ci + cog check need full history
       - uses: moonrepo/setup-toolchain@v0   # proto + moon, auto-cached
         with:
-          # PROTO IS PINNED, and it is the one thing .prototools cannot pin —
+          # PROTO IS PINNED, and it is the one thing .prototools cannot pin:
           # it is the installer that reads that file. Left blank the action
           # takes whatever proto shipped today, so CI drifts from every dev
           # machine on its own schedule (0.60.1 changed the plugin ABI and broke

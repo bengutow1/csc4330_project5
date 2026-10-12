@@ -1,0 +1,23 @@
+# Codegen. Remote plugins keep the local toolchain to buf alone, and each is pinned to the runtime
+# version that reads its output (google.golang.org/protobuf and connectrpc.com/connect in
+# packages/go/apigen/go.mod, @bufbuild/protobuf in packages/ts/apigen/package.json), so every
+# machine generates the same bytes. The output is committed: builds and CI never run buf. Run
+# `moon run proto:generate` after editing a schema.
+version: v2
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: github.com/cadenlund/fries-in-the-bag/packages/go/apigen
+plugins:
+  - remote: buf.build/protocolbuffers/go:v1.36.12
+    out: ../packages/go/apigen
+    opt: paths=source_relative
+  - remote: buf.build/connectrpc/go:v1.21.0
+    out: ../packages/go/apigen
+    opt: paths=source_relative
+  # protoc-gen-es v2 emits the messages AND the service descriptors in one pass; connect-es v2
+  # builds clients from those, so there is no separate connect plugin for TypeScript.
+  - remote: buf.build/bufbuild/es:v2.16.0
+    out: ../packages/ts/apigen/src/gen
+    opt: target=ts

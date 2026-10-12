@@ -1,0 +1,42 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+# Owns the schema for the whole repo: one linear goose stream in migrations/. The Postgres it
+# targets belongs to the `docker` project. `language: bash` keeps the Go and TypeScript tasks
+# from being inherited here.
+layer: 'tool'
+language: 'bash'
+
+project:
+  name: 'db'
+  description: 'The schema: one linear goose migration stream that every environment and every test runs.'
+
+# goose reads these. The DSN opens the local database from docker/compose.yml, whose credentials
+# are local-only defaults, not secrets; apps/api/moon.yml uses the same ones.
+env:
+  GOOSE_DRIVER: 'postgres'
+  GOOSE_DBSTRING: 'postgres://fries:fries@localhost:5432/fries?sslmode=disable'
+  GOOSE_MIGRATION_DIR: 'migrations'
+
+tasks:
+  # Apply every pending migration, starting Postgres first.
+  migrate:
+    command: 'goose up'
+    deps: ['docker:up']
+    options: { cache: false, runInCI: false }
+  # Wipe the local database and migrate it from nothing. Goose tracks versions, not content, so
+  # this is how an edited migration that already ran gets applied. DESTRUCTIVE, local only.
+  fresh:
+    command: 'goose up'
+    deps: ['docker:reset']
+    options: { cache: false, runInCI: false }
+  # Roll back the most recent migration.
+  rollback:
+    command: 'goose down'
+    options: { cache: false, runInCI: false }
+  status:
+    command: 'goose status'
+    options: { cache: false, runInCI: false }
+  # Scaffold the next migration in sequence:  moon run db:create -- add_scans sql
+  create:
+    command: 'goose -s create'
+    options: { cache: false, runInCI: false }

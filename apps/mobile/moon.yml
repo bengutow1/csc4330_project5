@@ -1,0 +1,43 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+id: 'mobile'
+layer: 'application'
+language: 'typescript'
+
+project:
+  name: 'mobile'
+  description: 'The Expo app. Routes mount screens; every server call goes through @fries-in-the-bag/api.'
+
+tasks:
+  # The fast loop: Metro serves the JavaScript, and an app already installed by `ios` or `android`
+  # below picks up every save without a native rebuild.
+  dev:
+    command: 'pnpm exec expo start'
+    options: { cache: false, runInCI: false, persistent: true }
+
+  # Compile the app and install it on the simulator. Slow the first time, and only needed again
+  # when something native changes: app.json, the icon, a package with native code. ios/ is
+  # generated (continuous native generation), so --clean regenerates it from app.json every run
+  # rather than building a project that has drifted from it. This starts Metro too, so stop `dev`
+  # first.
+  ios:
+    script: 'pnpm exec expo prebuild --clean --platform ios && pnpm exec expo run:ios'
+    options: { cache: false, runInCI: false, persistent: true }
+
+  # The same for the Android emulator, which works on any OS.
+  android:
+    script: 'pnpm exec expo prebuild --clean --platform android && pnpm exec expo run:android'
+    options: { cache: false, runInCI: false, persistent: true }
+
+  # The bundle check: bundles the JavaScript exactly as a release would, which catches what tsc
+  # cannot, such as an import Metro cannot resolve in a workspace package.
+  build:
+    command: 'pnpm exec expo export --platform ios --output-dir dist'
+    inputs:
+      - 'src/**/*'
+      - 'assets/**/*'
+      - 'app.json'
+      - 'package.json'
+      - '/packages/ts/*/src/**/*'
+    outputs:
+      - 'dist'

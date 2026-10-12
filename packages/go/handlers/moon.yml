@@ -1,0 +1,21 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+id: 'go-handlers'
+layer: 'library'
+language: 'go'
+
+project:
+  name: 'go-handlers'
+  description: 'The Connect services, and what they share: the one error boundary, field violations and validation.'
+
+# The handler tests run on a real Postgres migrated with db/migrations, like the repository's.
+dependsOn:
+  - id: 'db'
+    scope: 'development'
+
+tasks:
+  # Editing a migration must re-run these tests instead of replaying a cached pass.
+  test:
+    inputs:
+      - '**/*'
+      - '/db/migrations/**/*'

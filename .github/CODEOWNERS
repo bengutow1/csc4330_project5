@@ -1,15 +1,9 @@
-# CODEOWNERS — auto-requests review from the listed owners when matching files change.
-# Uncomment a line and swap in real @users or @org/teams (they must have write access).
-# The LAST matching pattern for a file wins, so put specific paths after the global one.
-
-# Fallback owner for everything:
-# *                @cadenlund/maintainers
-
-# By area:
-# /apps/           @cadenlund/app-team
-# /packages/       @cadenlund/platform-team
-# /.github/        @cadenlund/maintainers
-# /.moon/          @cadenlund/platform-team
-
-# A single person can own a path or file:
-# /CLAUDE.md       @caden
+# CODEOWNERS: GitHub requests a review from the owners of the files a pull request touches.
+# Owners are GitHub usernames with write access to this repo (it is a personal repo, so there are
+# no @org/team handles). The LAST matching pattern wins, so specific paths go after the catch-all.
+# Uncomment once the team agrees who reviews what, for example:
+#
+# *                 @owner-handle
+# /apps/mobile/     @app-handle
+# /packages/go/     @api-handle
+# /proto/           @api-handle @app-handle

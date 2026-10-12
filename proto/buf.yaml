@@ -1,0 +1,11 @@
+# The API contract. The generated types are wire DTOs only: repository and domain types stay
+# hand-written Go, and the handlers map between them.
+version: v2
+modules:
+  - path: .
+lint:
+  use:
+    - STANDARD
+breaking:
+  use:
+    - FILE

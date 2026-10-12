@@ -1,9 +1,11 @@
 # Configures all projects within the workspace to create a project graph.
 # Accepts a list of globs, a mapping of projects to relative file paths,
 # or both values.
-projects: ["packages/*/*", "apps/*"]
+projects: ["packages/*/*", "apps/*", "db", "docker", "proto"]
 
-# Solo monorepo — don't police cross-layer project dependencies.
+# Solo monorepo: don't police cross-layer project dependencies. This also lets
+# the `db` project be depended on by libraries and apps alike, so a migration
+# change marks every consumer as affected.
 constraints:
   enforceLayerRelationships: false
 

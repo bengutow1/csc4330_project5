@@ -1,17 +1,25 @@
 # golangci-lint v2. Defaults (govet, staticcheck, errcheck, ineffassign,
-# unused) plus two cheap linters that enforce doctrines the code comments
-# promise: sloglint (structured logging stays structured) and noctx (no
-# context-free HTTP/SQL calls — everything cancels when the request does).
+# unused) plus three cheap linters that enforce rules in .claude/rules/go.md:
+# sloglint (structured logging stays structured), noctx (no context-free
+# HTTP/SQL calls, so everything cancels when the request does) and errorlint
+# (%w wrapping, errors.Is / errors.As instead of == and type assertions).
 version: "2"
 
 linters:
   enable:
     - sloglint
     - noctx
+    - errorlint
+
+  settings:
+    errorlint:
+      errorf: true
+      asserts: true
+      comparison: true
 
   exclusions:
     rules:
-      # httptest.NewRequest in tests is idiomatic — noctx is about production
+      # httptest.NewRequest in tests is idiomatic. noctx is about production
       # HTTP/SQL calls that must cancel with their request, not fixtures.
       - path: _test\.go
         linters: [noctx]

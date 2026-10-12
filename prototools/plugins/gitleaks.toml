@@ -8,7 +8,7 @@
 # (gitleaks_tool-v0.3.0), and that release has no asset proto can use, so every
 # `proto install gitleaks` and every pre-commit hook died with
 # `plugin::loader::github::asset_missing`. The failure is in fetching the plugin
-# metadata, not the tool — which means it takes the whole commit-msg/pre-commit
+# metadata, not the tool, which means it takes the whole commit-msg/pre-commit
 # path down with it, including the secret scan. A third-party repo that can break
 # every commit in this one is not a dependency worth keeping for a file this small.
 #

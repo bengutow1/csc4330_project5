@@ -1,0 +1,23 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+id: 'go-repository'
+layer: 'library'
+language: 'go'
+
+project:
+  name: 'go-repository'
+  description: 'Hand-written pgx data access: every SQL statement in the system lives here.'
+
+# The repository runs on the schema in db/, so a migration change marks it, and everything that
+# imports it, as affected. Development scope: no migration ships inside a Go binary.
+dependsOn:
+  - id: 'db'
+    scope: 'development'
+
+tasks:
+  # The tests migrate a real Postgres with db/migrations, so editing a migration must re-run them
+  # instead of replaying a cached pass.
+  test:
+    inputs:
+      - '**/*'
+      - '/db/migrations/**/*'

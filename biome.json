@@ -1,7 +1,18 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.5.14/schema.json",
   "files": {
-    "includes": ["**", "!**/node_modules", "!**/dist", "!**/out", "!.moon/cache"]
+    "includes": [
+      "**",
+      "!**/node_modules",
+      "!**/dist",
+      "!**/out",
+      "!.moon/cache",
+      "!**/src/gen",
+      "!**/ios",
+      "!**/android",
+      "!**/.expo",
+      "!**/expo-env.d.ts"
+    ]
   },
   "formatter": {
     "enabled": true,

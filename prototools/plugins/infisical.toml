@@ -3,7 +3,7 @@
 # Installs the native Infisical CLI (a Go binary) straight from the Infisical/cli
 # GitHub releases. We can't use proto's `npm:@infisical/cli` backend: that package
 # ships the compiled binary, and proto's npm shim launches it through Node, which
-# fails — Node tries to parse the Mach-O/ELF binary as JavaScript. This fetches the
+# fails: Node tries to parse the Mach-O/ELF binary as JavaScript. This fetches the
 # real binary instead, same as the gitleaks / golangci-lint plugins.
 #
 # Checksums are intentionally omitted: the darwin artifacts are re-signed after the

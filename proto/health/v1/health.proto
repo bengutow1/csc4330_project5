@@ -1,0 +1,31 @@
+// health.v1: the probes every binary serves. Both rpcs are NO_SIDE_EFFECTS, so connect-go also
+// answers them over a plain HTTP GET, which is what an orchestrator's probe sends:
+//
+//   GET /health.v1.HealthService/Live?encoding=json&message=%7B%7D
+//   GET /health.v1.HealthService/Ready?encoding=json&message=%7B%7D
+//
+// A failing Ready answers Unavailable, which is HTTP 503.
+syntax = "proto3";
+
+package health.v1;
+
+// HealthService says whether the process is up and whether it can serve.
+service HealthService {
+  // Live answers while the process can serve a request. It checks no dependency on purpose: an
+  // outage must not get the process restarted, which would only deepen it.
+  rpc Live(LiveRequest) returns (LiveResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // Ready answers only when every dependency check passes, and Unavailable otherwise.
+  rpc Ready(ReadyRequest) returns (ReadyResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+}
+
+message LiveRequest {}
+
+message LiveResponse {}
+
+message ReadyRequest {}
+
+message ReadyResponse {}

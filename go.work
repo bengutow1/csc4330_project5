@@ -1,1 +1,9 @@
 go 1.26.4
+
+use (
+	./apps/api
+	./packages/go/apigen
+	./packages/go/handlers
+	./packages/go/logging
+	./packages/go/repository
+)

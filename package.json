@@ -1,9 +1,10 @@
 {
-  "name": "live-poll",
+  "name": "fries-in-the-bag",
   "private": true,
   "packageManager": "pnpm@10.33.4",
   "devDependencies": {
     "@biomejs/biome": "^2.3.0",
-    "typescript": "^5.9.0"
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.3"
   }
 }

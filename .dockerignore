@@ -1,0 +1,12 @@
+# The build context is the repo root. Keep it to what an image could need: the Expo app alone is
+# hundreds of megabytes once node_modules and a native build exist.
+.git
+**/node_modules
+.moon/cache
+.moon/docker
+**/bin
+**/dist
+**/*.log
+.env
+.env.*
+apps/mobile

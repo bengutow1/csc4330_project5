@@ -1,0 +1,28 @@
+name: fries-in-the-bag
+
+# The local service stack. `moon run docker:up` starts it and waits until it is healthy.
+#
+# The credentials are local-only defaults, not secrets. db/moon.yml and apps/api/moon.yml carry
+# the same ones; change all three together.
+services:
+  postgres:
+    # The same tag the testcontainers start, so the tests run on the Postgres you develop on.
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: fries
+      POSTGRES_PASSWORD: fries
+      POSTGRES_DB: fries
+    ports:
+      - "5432:5432"
+    volumes:
+      # Postgres 18 images keep their data in a versioned folder under /var/lib/postgresql, and
+      # that parent is the volume to mount.
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fries -d fries"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:

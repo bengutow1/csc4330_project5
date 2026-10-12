@@ -1,0 +1,9 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+id: 'go-logging'
+layer: 'library'
+language: 'go'
+
+project:
+  name: 'go-logging'
+  description: 'The structured slog logger every binary builds, and the HTTP middleware that logs through it.'

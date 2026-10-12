@@ -1,0 +1,12 @@
+{
+  "name": "@fries-in-the-bag/apigen",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": "./src/gen/*.ts"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "2.16.0"
+  }
+}

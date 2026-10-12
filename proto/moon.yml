@@ -1,0 +1,23 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+# buf comes from .prototools like every other tool. format and lint share the inherited task
+# names, so the pre-commit hook (`moon run :format :lint`) and CI cover schema changes too.
+layer: 'library'
+language: 'bash'
+
+project:
+  name: 'proto'
+  description: 'The API contract: protobuf schemas that generate the wire types for Go and TypeScript.'
+
+tasks:
+  format:
+    command: 'buf format -w'
+    options: { cache: false }
+  lint:
+    command: 'buf lint'
+    options: { cache: false }
+  # Writes packages/go/apigen and packages/ts/apigen, committed with the .proto change that caused
+  # them. CI never generates; it builds what was committed.
+  generate:
+    command: 'buf generate'
+    options: { cache: false, runInCI: false }

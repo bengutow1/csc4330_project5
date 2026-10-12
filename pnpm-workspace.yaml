@@ -3,3 +3,17 @@
 packages:
   - 'apps/*'
   - 'packages/ts/*'
+
+# HOISTED, not pnpm's default isolated layout. React Native's tooling resolves
+# native modules by walking node_modules directly, and pnpm's symlinked layout is
+# the most common cause of "module not found" in an Expo monorepo. It is a
+# workspace-wide setting, so every TypeScript package installs this way too.
+nodeLinker: hoisted
+
+# Peers pnpm would otherwise auto-install at their newest version, which belongs to the NEXT
+# React and React Native: react-dom (for Expo's CLI and connect-query) and React Native's metro
+# config (for react-native-worklets). Each is pinned to the react / react-native version in
+# apps/mobile/package.json; bump them with the Expo SDK.
+overrides:
+  react-dom: 19.2.3
+  '@react-native/metro-config': 0.86.3

@@ -1,0 +1,26 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+# Owns the local service stack (Postgres) through docker compose. `language: bash` keeps the Go and
+# TypeScript tasks from being inherited here.
+layer: 'tool'
+language: 'bash'
+
+project:
+  name: 'docker'
+  description: 'The local service stack: Postgres on the same image tag the tests run against.'
+
+tasks:
+  # Start the stack and block until it is healthy.
+  up:
+    command: 'docker compose up -d --wait'
+    options: { cache: false, runInCI: false }
+  down:
+    command: 'docker compose down'
+    options: { cache: false, runInCI: false }
+  # Drop the volumes and start empty. DESTRUCTIVE: every local row is gone.
+  reset:
+    script: 'docker compose down -v && docker compose up -d --wait'
+    options: { cache: false, runInCI: false }
+  logs:
+    command: 'docker compose logs -f'
+    options: { cache: false, runInCI: false, persistent: true }
