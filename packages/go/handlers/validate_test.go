@@ -5,7 +5,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/cadenlund/fries-in-the-bag/packages/go/handlers"
+	"github.com/bengutow1/csc4330_project5/packages/go/handlers"
 )
 
 // TestValidateReportsEveryViolationInDeclarationOrder: one round trip shows the whole form's

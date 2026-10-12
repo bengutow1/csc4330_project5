@@ -4,7 +4,7 @@ package handlers_test
 import (
 	"testing"
 
-	"github.com/cadenlund/fries-in-the-bag/packages/go/handlers"
+	"github.com/bengutow1/csc4330_project5/packages/go/handlers"
 )
 
 // TestFieldErrorsReadAsTheirFirstProblem: the error's text is what a client without field

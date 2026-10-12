@@ -12,7 +12,7 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/cadenlund/fries-in-the-bag/packages/go/repository"
+	"github.com/bengutow1/csc4330_project5/packages/go/repository"
 )
 
 var (

@@ -16,7 +16,7 @@ import (
 	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	v1 "github.com/cadenlund/fries-in-the-bag/packages/go/apigen/health/v1"
+	v1 "github.com/bengutow1/csc4330_project5/packages/go/apigen/health/v1"
 	http "net/http"
 	strings "strings"
 )

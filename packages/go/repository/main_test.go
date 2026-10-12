@@ -14,7 +14,7 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	tcpostgres "github.com/testcontainers/testcontainers-go/modules/postgres"
 
-	"github.com/cadenlund/fries-in-the-bag/packages/go/repository"
+	"github.com/bengutow1/csc4330_project5/packages/go/repository"
 )
 
 // The tag docker/compose.yml runs: a suite that passes on a different Postgres than the one we

@@ -4,7 +4,7 @@ package handlers
 import (
 	"fmt"
 
-	errorv1 "github.com/cadenlund/fries-in-the-bag/packages/go/apigen/error/v1"
+	errorv1 "github.com/bengutow1/csc4330_project5/packages/go/apigen/error/v1"
 )
 
 // FieldError is one invalid request field. Field is the proto field name, which is what the

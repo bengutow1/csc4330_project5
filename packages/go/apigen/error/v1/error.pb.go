@@ -138,7 +138,7 @@ const file_error_v1_error_proto_rawDesc = "" +
 	"\x05field\x18\x01 \x01(\tR\x05field\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescriptionB\xa8\x01\n" +
 	"\fcom.error.v1B\n" +
-	"ErrorProtoP\x01ZIgithub.com/cadenlund/fries-in-the-bag/packages/go/apigen/error/v1;errorv1\xa2\x02\x03EXX\xaa\x02\bError.V1\xca\x02\tError_\\V1\xe2\x02\x15Error_\\V1\\GPBMetadata\xea\x02\tError::V1b\x06proto3"
+	"ErrorProtoP\x01ZIgithub.com/bengutow1/csc4330_project5/packages/go/apigen/error/v1;errorv1\xa2\x02\x03EXX\xaa\x02\bError.V1\xca\x02\tError_\\V1\xe2\x02\x15Error_\\V1\\GPBMetadata\xea\x02\tError::V1b\x06proto3"
 
 var (
 	file_error_v1_error_proto_rawDescOnce sync.Once

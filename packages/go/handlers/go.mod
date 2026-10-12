@@ -1,11 +1,11 @@
-module github.com/cadenlund/fries-in-the-bag/packages/go/handlers
+module github.com/bengutow1/csc4330_project5/packages/go/handlers
 
 go 1.26.4
 
 require (
 	connectrpc.com/connect v1.21.0
-	github.com/cadenlund/fries-in-the-bag/packages/go/apigen v0.0.0
-	github.com/cadenlund/fries-in-the-bag/packages/go/repository v0.0.0
+	github.com/bengutow1/csc4330_project5/packages/go/apigen v0.0.0
+	github.com/bengutow1/csc4330_project5/packages/go/repository v0.0.0
 	github.com/go-playground/validator/v10 v10.30.5
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/peterldowns/pgtestdb v0.1.1
@@ -82,6 +82,6 @@ require (
 )
 
 replace (
-	github.com/cadenlund/fries-in-the-bag/packages/go/apigen => ../apigen
-	github.com/cadenlund/fries-in-the-bag/packages/go/repository => ../repository
+	github.com/bengutow1/csc4330_project5/packages/go/apigen => ../apigen
+	github.com/bengutow1/csc4330_project5/packages/go/repository => ../repository
 )

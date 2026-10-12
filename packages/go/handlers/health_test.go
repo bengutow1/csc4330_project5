@@ -12,10 +12,10 @@ import (
 
 	"connectrpc.com/connect"
 
-	healthv1 "github.com/cadenlund/fries-in-the-bag/packages/go/apigen/health/v1"
-	"github.com/cadenlund/fries-in-the-bag/packages/go/apigen/health/v1/healthv1connect"
-	"github.com/cadenlund/fries-in-the-bag/packages/go/handlers/healthz"
-	"github.com/cadenlund/fries-in-the-bag/packages/go/repository"
+	healthv1 "github.com/bengutow1/csc4330_project5/packages/go/apigen/health/v1"
+	"github.com/bengutow1/csc4330_project5/packages/go/apigen/health/v1/healthv1connect"
+	"github.com/bengutow1/csc4330_project5/packages/go/handlers/healthz"
+	"github.com/bengutow1/csc4330_project5/packages/go/repository"
 )
 
 // TestReadyAnswersWhenTheDatabaseDoes: the probe passes over a real, migrated Postgres.

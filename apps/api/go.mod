@@ -1,13 +1,13 @@
-module github.com/cadenlund/fries-in-the-bag/apps/api
+module github.com/bengutow1/csc4330_project5/apps/api
 
 go 1.26.4
 
 require (
 	connectrpc.com/connect v1.21.0
-	github.com/cadenlund/fries-in-the-bag/packages/go/apigen v0.0.0
-	github.com/cadenlund/fries-in-the-bag/packages/go/handlers v0.0.0
-	github.com/cadenlund/fries-in-the-bag/packages/go/logging v0.0.0
-	github.com/cadenlund/fries-in-the-bag/packages/go/repository v0.0.0
+	github.com/bengutow1/csc4330_project5/packages/go/apigen v0.0.0
+	github.com/bengutow1/csc4330_project5/packages/go/handlers v0.0.0
+	github.com/bengutow1/csc4330_project5/packages/go/logging v0.0.0
+	github.com/bengutow1/csc4330_project5/packages/go/repository v0.0.0
 	github.com/go-chi/chi/v5 v5.3.2
 	github.com/jackc/pgx/v5 v5.11.0
 )
@@ -29,8 +29,8 @@ require (
 )
 
 replace (
-	github.com/cadenlund/fries-in-the-bag/packages/go/apigen => ../../packages/go/apigen
-	github.com/cadenlund/fries-in-the-bag/packages/go/handlers => ../../packages/go/handlers
-	github.com/cadenlund/fries-in-the-bag/packages/go/logging => ../../packages/go/logging
-	github.com/cadenlund/fries-in-the-bag/packages/go/repository => ../../packages/go/repository
+	github.com/bengutow1/csc4330_project5/packages/go/apigen => ../../packages/go/apigen
+	github.com/bengutow1/csc4330_project5/packages/go/handlers => ../../packages/go/handlers
+	github.com/bengutow1/csc4330_project5/packages/go/logging => ../../packages/go/logging
+	github.com/bengutow1/csc4330_project5/packages/go/repository => ../../packages/go/repository
 )

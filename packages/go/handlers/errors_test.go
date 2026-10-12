@@ -12,8 +12,8 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/cadenlund/fries-in-the-bag/packages/go/handlers"
-	"github.com/cadenlund/fries-in-the-bag/packages/go/repository"
+	"github.com/bengutow1/csc4330_project5/packages/go/handlers"
+	"github.com/bengutow1/csc4330_project5/packages/go/repository"
 )
 
 // TestConnectErrMapsEverySentinelToItsCode: a sentinel that loses its arm reaches the client as a

@@ -22,8 +22,8 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	tcpostgres "github.com/testcontainers/testcontainers-go/modules/postgres"
 
-	errorv1 "github.com/cadenlund/fries-in-the-bag/packages/go/apigen/error/v1"
-	"github.com/cadenlund/fries-in-the-bag/packages/go/repository"
+	errorv1 "github.com/bengutow1/csc4330_project5/packages/go/apigen/error/v1"
+	"github.com/bengutow1/csc4330_project5/packages/go/repository"
 )
 
 // The tag docker/compose.yml runs: a suite that passes on a different Postgres than the one we

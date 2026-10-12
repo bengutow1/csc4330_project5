@@ -8,7 +8,7 @@ managed:
   enabled: true
   override:
     - file_option: go_package_prefix
-      value: github.com/cadenlund/fries-in-the-bag/packages/go/apigen
+      value: github.com/bengutow1/csc4330_project5/packages/go/apigen
 plugins:
   - remote: buf.build/protocolbuffers/go:v1.36.12
     out: ../packages/go/apigen

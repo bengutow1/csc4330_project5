@@ -1,4 +1,4 @@
-module github.com/cadenlund/fries-in-the-bag/packages/go/repository
+module github.com/bengutow1/csc4330_project5/packages/go/repository
 
 go 1.26.4
 

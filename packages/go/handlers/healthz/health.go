@@ -8,8 +8,8 @@ import (
 
 	"connectrpc.com/connect"
 
-	healthv1 "github.com/cadenlund/fries-in-the-bag/packages/go/apigen/health/v1"
-	"github.com/cadenlund/fries-in-the-bag/packages/go/handlers"
+	healthv1 "github.com/bengutow1/csc4330_project5/packages/go/apigen/health/v1"
+	"github.com/bengutow1/csc4330_project5/packages/go/handlers"
 )
 
 // Check reports whether one dependency can serve. repository.Repository's Ping is one.

@@ -185,7 +185,7 @@ const file_health_v1_health_proto_rawDesc = "" +
 	"\rHealthService\x12<\n" +
 	"\x04Live\x12\x16.health.v1.LiveRequest\x1a\x17.health.v1.LiveResponse\"\x03\x90\x02\x01\x12?\n" +
 	"\x05Ready\x12\x17.health.v1.ReadyRequest\x1a\x18.health.v1.ReadyResponse\"\x03\x90\x02\x01B\xae\x01\n" +
-	"\rcom.health.v1B\vHealthProtoP\x01ZKgithub.com/cadenlund/fries-in-the-bag/packages/go/apigen/health/v1;healthv1\xa2\x02\x03HXX\xaa\x02\tHealth.V1\xca\x02\tHealth\\V1\xe2\x02\x15Health\\V1\\GPBMetadata\xea\x02\n" +
+	"\rcom.health.v1B\vHealthProtoP\x01ZKgithub.com/bengutow1/csc4330_project5/packages/go/apigen/health/v1;healthv1\xa2\x02\x03HXX\xaa\x02\tHealth.V1\xca\x02\tHealth\\V1\xe2\x02\x15Health\\V1\\GPBMetadata\xea\x02\n" +
 	"Health::V1b\x06proto3"
 
 var (

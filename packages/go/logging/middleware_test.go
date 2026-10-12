@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cadenlund/fries-in-the-bag/packages/go/logging"
+	"github.com/bengutow1/csc4330_project5/packages/go/logging"
 )
 
 // TestRequestLoggerRecordsTheStatusAndPathButNeverTheQuery: the query string is where a combo code

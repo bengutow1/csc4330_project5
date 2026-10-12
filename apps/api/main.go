@@ -20,10 +20,10 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/cadenlund/fries-in-the-bag/packages/go/apigen/health/v1/healthv1connect"
-	"github.com/cadenlund/fries-in-the-bag/packages/go/handlers/healthz"
-	"github.com/cadenlund/fries-in-the-bag/packages/go/logging"
-	"github.com/cadenlund/fries-in-the-bag/packages/go/repository"
+	"github.com/bengutow1/csc4330_project5/packages/go/apigen/health/v1/healthv1connect"
+	"github.com/bengutow1/csc4330_project5/packages/go/handlers/healthz"
+	"github.com/bengutow1/csc4330_project5/packages/go/logging"
+	"github.com/bengutow1/csc4330_project5/packages/go/repository"
 )
 
 const addr = ":8080"
