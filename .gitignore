@@ -11,6 +11,8 @@ build/
 bin/
 out/
 target/
+# `go build ./...` inside apps/api writes its binary beside main.go; the moon task builds to bin/.
+/apps/api/api
 
 # env (keep examples)
 .env
