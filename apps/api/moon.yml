@@ -8,10 +8,12 @@ project:
   description: 'The API binary: wiring only, every Connect service mounted on one server.'
 
 tasks:
-  # Run the server locally. `deps` brings Postgres up and migrates it first (db:migrate depends on
-  # docker:up), so this works from a cold checkout.
+  # Run the server locally. Air (.air.toml) rebuilds and restarts it whenever Go under apps/api or
+  # packages/go changes, and a save that does not compile keeps the last good build serving.
+  # `deps` brings Postgres up and migrates it first (db:migrate depends on docker:up), so this
+  # works from a cold checkout. Migrations run only at start: after pulling one, restart this.
   dev:
-    command: 'go run .'
+    command: 'air -c .air.toml'
     preset: 'server'
     deps: ['db:migrate']
     # Local-only values that mirror docker/compose.yml, not secrets. .env.example lists every

@@ -1,0 +1,22 @@
+# Air rebuilds and restarts the API when the Go it is built from changes, so `moon run :dev` keeps
+# Metro up while the server reloads. moon runs it from apps/api (`api:dev`).
+# Settings: https://github.com/air-verse/air/blob/master/air_example.toml
+root = "."
+tmp_dir = "tmp"
+
+[build]
+# .exe so the same file runs on Windows, where Air starts it through PowerShell. macOS and Linux
+# ignore the extension.
+cmd = "go build -o ./tmp/api.exe ."
+entrypoint = ["./tmp/api.exe"]
+# apps/api only wires; the code it serves lives in packages/go. A directory outside the root is
+# watched on top of the root.
+include_dir = ["../../packages/go"]
+include_ext = ["go"]
+# A test never changes the binary, and bin/ is `api:build`'s output.
+exclude_dir = ["bin", "tmp"]
+exclude_regex = ["_test.go"]
+# main.go drains in-flight requests for up to 5 s on SIGINT, and a quiet server exits at once.
+# Windows has no SIGINT, so there Air kills it.
+send_interrupt = true
+kill_delay = "6s"

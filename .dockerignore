@@ -6,6 +6,7 @@
 .moon/docker
 **/bin
 **/dist
+apps/api/tmp
 **/*.log
 .env
 .env.*
