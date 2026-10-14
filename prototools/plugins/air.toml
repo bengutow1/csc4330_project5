@@ -1,0 +1,32 @@
+# A TOML plugin for proto: https://moonrepo.dev/docs/proto/plugins#toml-plugin
+#
+# Installs air, which rebuilds and restarts the API behind `moon run api:dev` whenever its Go
+# changes, from the air-verse/air GitHub releases.
+#
+# The release asset IS the executable, so there is no archive-prefix or exe-path. The asset names
+# carry the version and say "arm64" and "amd64" where proto says "aarch64" and "x86_64", on every
+# platform, so one [install.arch] map covers them. It has to be the global map: the per-platform
+# [platform.*.arch] tables need schema 0.18, newer than the one the pinned proto bundles.
+
+name = "air"
+type = "cli"
+
+[platform.macos]
+download-file = "air_{version}_darwin_{arch}"
+
+[platform.linux]
+download-file = "air_{version}_linux_{arch}"
+
+[platform.windows]
+download-file = "air_{version}_windows_{arch}.exe"
+
+[install]
+download-url = "https://github.com/air-verse/air/releases/download/v{version}/{download_file}"
+checksum-url = "https://github.com/air-verse/air/releases/download/v{version}/air_{version}_checksums.txt"
+
+[install.arch]
+aarch64 = "arm64"
+x86_64 = "amd64"
+
+[resolve]
+git-url = "https://github.com/air-verse/air"

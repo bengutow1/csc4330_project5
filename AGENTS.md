@@ -44,7 +44,7 @@ deps and the caching; a bare `go test` skips all three.
 | Install hooks | `moon sync hooks` |
 | Fast check | `moon run :build :lint :typecheck :test` |
 | Full check (what CI gates on) | `moon ci` |
-| Run the API on :8080 (starts Postgres and migrates first) | `moon run api:dev` |
+| Run the API on :8080, restarting on every Go save (starts Postgres and migrates first) | `moon run api:dev` |
 | Build the app into the iOS simulator (first run, or after a native change) | `moon run mobile:ios` |
 | The same for the Android emulator | `moon run mobile:android` |
 | Run the app once it is installed (Metro only, reloads on save) | `moon run mobile:dev` |

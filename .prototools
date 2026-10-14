@@ -9,6 +9,7 @@ go = "1.26.4"
 "cargo:cocogitto" = "6"
 rust = "stable"
 
+air = "1.67"
 buf = "1.71"
 gitleaks = "8"
 golangci-lint = "2"
@@ -16,6 +17,7 @@ goose = "3.28"
 infisical = "0.43"
 
 [plugins]
+air = "file://./prototools/plugins/air.toml"
 buf = "file://./prototools/plugins/buf.toml"
 gitleaks = "file://./prototools/plugins/gitleaks.toml"
 golangci-lint = "https://raw.githubusercontent.com/b4nst/proto-plugins/refs/heads/main/toml/golangci-lint.toml"

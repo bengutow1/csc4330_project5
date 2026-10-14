@@ -37,7 +37,7 @@ moon sync hooks          # install the pre-commit / commit-msg hooks
 ## Run the API
 
 ```sh
-moon run api:dev         # starts Postgres, migrates it, serves on :8080
+moon run api:dev         # starts Postgres, migrates it, serves on :8080, restarts on every Go save
 curl 'localhost:8080/health.v1.HealthService/Ready?encoding=json&message=%7B%7D'   # {} once it can reach the database
 ```
 
