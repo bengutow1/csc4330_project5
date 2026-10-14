@@ -39,6 +39,8 @@ paths:
   Variants take a kebab-case suffix (`dev-phone`).
 - `dev` runs a project locally, and `moon run :dev` starts the whole stack through `deps`
   (`api:dev` depends on `db:migrate`, which depends on `docker:up`). No aggregate root task.
+  `api:dev` runs under Air (`apps/api/.air.toml`), so a Go save restarts the API and leaves Metro
+  running.
 - Local-only or mutating tasks: `options: { cache: false, runInCI: false }`. Long-running ones:
   `preset: 'server'`, or `persistent: true`. Replacing an inherited command:
   `mergeArgs: 'replace'`.
