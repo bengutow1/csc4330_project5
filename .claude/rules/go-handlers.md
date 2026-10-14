@@ -18,7 +18,7 @@ orchestration type between them.
   domain package called from the handler. It never touches the database.
 - `packages/go/handlers` is one module. Its root package holds what every service shares:
   `ConnectErr`, `HTTPStatus`, `FieldErrors`, `Validate`, `limits.go` and the `Gate`. Each product
-  surface is a subpackage (`handlers/scan`, `handlers/combo`, `handlers/live`). Logic moves to the
+  surface is a subpackage (`handlers/scan`, `handlers/cook`, `handlers/combo`). Logic moves to the
   root the moment a second service needs it; never keep a second copy of a rule.
 
 ## The service type
@@ -237,18 +237,20 @@ var (
 - `ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)`.
 - One pool and one `repository.New(pool)` shared by every service. Migrations never run at boot;
   `moon run db:migrate` does that.
-- A missing optional dependency logs a warning and its RPCs answer `failed_precondition` (no
-  vision key: scans refuse, everything else serves). A missing required one is `log.Error(...)`
-  then `os.Exit(1)`. Never pass a typed-nil pointer into an interface parameter.
+- A missing optional dependency logs a warning and its RPCs answer `failed_precondition`. A
+  missing required one is `log.Error(...)` then `os.Exit(1)`. The vendor keys are their own case:
+  without one the API serves that vendor's mock, and with `APP_ENV=production` it refuses to boot
+  (`go-vendors.md`). Never pass a typed-nil pointer into an interface parameter.
 - Middleware: `logging.RequestLogger(log)` outermost, then `logging.Recoverer(log)` so a panic is
   logged as the 500. `sessions.LoadAndSave` wraps the whole router.
 - Every Connect service is mounted with the same read cap:
   `r.Mount(scanv1connect.NewScanServiceHandler(scanSvc, readCap))`, with
   `readCap := connect.WithReadMaxBytes(4 << 20)`.
-- The server sets `ReadHeaderTimeout: 10 * time.Second` and `IdleTimeout: 2 * time.Minute`, and
-  deliberately no read or write timeout, because the live stream stays open for minutes.
-- Health is `healthz.NewHealth(log, repo.Ping)`. The root context's `Done()` goes into
-  `live.NewWatch` so streams close when the server drains.
+- The server sets `ReadHeaderTimeout` 10 s, `ReadTimeout` 60 s (three photos on a slow phone
+  connection), `WriteTimeout` 90 s (longer than any vendor deadline) and `IdleTimeout` 2 minutes.
+  There are no long-lived streams: a request that needs more time is a design problem, not a
+  timeout to raise.
+- Health is `healthz.NewHealth(log, repo.Ping)`.
 
 The drain, in this shape:
 

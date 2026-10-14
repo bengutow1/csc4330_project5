@@ -128,8 +128,6 @@ err := r.db.QueryRow(ctx, `
   advisory lock) when a check-then-write can race: two friends taking a combo's last seat, two
   plates claiming the same meal window. Better still is one guarded statement
   (`update … where state = 'open'`, `insert … where (select count(*) …) < $3`).
-- Writes that change something a client reads call `r.notify(ctx, <family>Poke(comboID))` beside
-  the statement. See `live-updates.md`.
 
 ## Schema and migrations
 

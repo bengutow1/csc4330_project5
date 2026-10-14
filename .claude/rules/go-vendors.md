@@ -22,8 +22,13 @@ third is a team decision (`AGENTS.md`).
   no repository, no logger. It returns errors, and the caller decides what to log.
 - The handler declares the narrow interface it needs on its own side, so a test can pass a fake.
 - The key and base URL arrive through the constructor from `main.go`, which reads them from the
-  environment and lists them in `.env.example`. With no key, boot logs a warning and the RPCs that
-  need it answer `failed_precondition`; everything else still serves.
+  environment and lists them in `.env.example`.
+- **No key means the mock.** Without `VISION_API_KEY` the API serves `vision.Mock`, and without
+  `PLACES_API_KEY` it serves `places.Mock`; the boot log names whichever is live. The mocks hold
+  canned answers for every case a screen has to show (each tier, an empty fridge, a rejected plate,
+  closed spots, a failure) and are the same fixtures the tests use, so nobody waits on a key to
+  build. With `APP_ENV=production`, a missing key stops the boot instead: a real deployment never
+  serves a fake verdict.
 - The app never talks to a vendor and never holds a key. An `EXPO_PUBLIC_` variable ships inside
   the app, so a key there is published to every phone.
 - Every call has a deadline: a named const sized to that vendor, with a one-line reason. A vision

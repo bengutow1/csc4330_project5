@@ -51,8 +51,8 @@ export default function RecipeRoute() {
 
 - **Every server call goes through a hook from `packages/ts/api`** (see `ts-api.md`). Never
   hand-roll `fetch` against the API. The root layout builds the transport and the query client
-  once (`useMemo`) and hands both to `ApiProvider`, and `useLiveInvalidation()` is mounted once,
-  in the layout that wraps the signed-in screens.
+  once (`useMemo`) and hands both to `ApiProvider`, along with an `AppState` subscription so
+  queries refetch when the app returns to the foreground (`ts-api.md`).
 - The app talks to our API and nothing else. It never calls an AI model or a places API and never
   holds a vendor key: those calls go through the server (`go-vendors.md`).
 - The base URL is `EXPO_PUBLIC_API_URL` when set (a phone on the LAN), else

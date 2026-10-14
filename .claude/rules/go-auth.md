@@ -32,7 +32,6 @@ they own the wire. It is not a service layer and holds no flow beyond auth itsel
 - Store Unix seconds (`time.Now().Unix()`), not `time.Time`: the session is a gob blob.
 - `CurrentAccount` re-reads the row on every request, so a deleted account lands on the next call.
   A session naming a row that no longer exists is `ErrNotAuthenticated`, not an internal error.
-- Inside a server stream the session is READ-ONLY: scs commits the cookie at the first byte.
 - Cookie flags (Secure, SameSite, domain) are set in `main.go`, where the environment is known.
 - "Delete my data" removes the account's rows and destroys its sessions through
   `sessions.Iterate`, never by reaching into the sessions table.

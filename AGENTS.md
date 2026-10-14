@@ -72,7 +72,6 @@ the matching file before you edit those paths.**
 | `packages/go/repository/**`, `db/**` | `.claude/rules/go-repository.md` |
 | `packages/go/auth/**`, `packages/go/policy/**` | `.claude/rules/go-auth.md` |
 | `packages/go/vision/**`, `packages/go/places/**`, anything that calls them | `.claude/rules/go-vendors.md` |
-| `packages/go/poke/**`, `packages/go/handlers/live/**`, a repository write, `packages/ts/api/src/hooks/**` | `.claude/rules/live-updates.md` |
 | `proto/**` | `.claude/rules/proto.md` |
 | Any test or Maestro flow | `.claude/rules/testing.md` |
 | `packages/ts/**` | `.claude/rules/ts-api.md` |
@@ -99,12 +98,12 @@ the matching file before you edit those paths.**
 - **The contract is proto.** `proto/<domain>/v1/*.proto` generates Go into `packages/go/apigen`
   and TypeScript into `packages/ts/apigen`, both committed. Generated types are DTOs at the wire
   and never become the domain model.
-- **`packages/ts/api` is the client's one data layer**: transport, query client, hooks, error
-  mapping and live invalidation. It is the only package that imports `apigen`, and it never
-  imports `react-native`, `react-dom` or a DOM global. The app imports hooks from it and renders.
-- **Live updates are poke, then pull.** A write emits a hint and clients refetch through the
-  ordinary RPCs, which is how both phones in a combo see the other's scan land. No polling loops
-  and no pushed payloads.
+- **`packages/ts/api` is the client's one data layer**: transport, query client, hooks and error
+  mapping. It is the only package that imports `apigen`, and it never imports `react-native`,
+  `react-dom` or a DOM global. The app imports hooks from it and renders.
+- **No live push.** Screens refetch when they open, when the app returns to the foreground and
+  after their own writes. The only polling is the Combo lobby and reveal, which ask for the combo
+  every 2 s while open and stop once it is revealed or ended.
 
 ## Invariants
 

@@ -86,8 +86,6 @@ reviews:
            constant or scan helper.
         4. Flag a check-then-write that can race (the last seat in a combo, two plates claiming
            one meal window) without a transaction and the right lock, or one guarded statement.
-        5. A write that changes something a client reads calls r.notify with the right topic and
-           scope. Flag a write with none: the screen silently never updates.
 
     - path: "packages/go/auth/**/*.go"
       instructions: |
@@ -123,9 +121,8 @@ reviews:
       instructions: |
         Flag a list rpc without a cursor and limit (unless provably tiny and bounded), a renumbered
         or reused field number, a request field that carries the caller's own identity or a
-        verdict the server should decide (a score, tier, points or plate result), and a new
-        live.v1.Topic value. A new topic needs an arm in the client's topic switch and emits from
-        the repository writes it describes.
+        verdict the server should decide (a score, tier, points or plate result), and a server
+        stream: the app has no live push.
 
     - path: "**/*_test.go"
       instructions: |
@@ -142,9 +139,9 @@ reviews:
            only package that imports apigen.
         2. A mutation invalidates through its family's shared useInvalidateX(); flag a second
            hand-kept list of query keys. Flag a hand-built or indexed query key.
-        3. An optimistic patch in onMutate pairs suppressNextPoke with settleTopic in onSettled.
-           Every live topic has an arm in the topic switch, ending in a never check.
-        4. Sign in and sign out use resetQueries, not invalidateQueries.
+        3. Flag refetchInterval anywhere but the Combo lobby and reveal, and one there that keeps
+           running after the combo is revealed or ended.
+        4. Creating or deleting an account uses resetQueries, not invalidateQueries.
 
     - path: "apps/mobile/**"
       instructions: |

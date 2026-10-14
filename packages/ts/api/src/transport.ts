@@ -5,10 +5,7 @@ import { createConnectTransport } from "@connectrpc/connect-web";
 export interface ApiTransportOptions {
   /** Where the api lives: an absolute url on native (a phone has no origin), "/" on web. */
   baseUrl: string;
-  /**
-   * The fetch to send with, when the global one will not do. React Native's built-in fetch
-   * cannot stream a response body, so a server stream (live updates) needs expo/fetch here.
-   */
+  /** The fetch to send with, when the global one will not do: a test's fake, or a platform's own. */
   fetch?: typeof globalThis.fetch;
 }
 

@@ -33,9 +33,6 @@ paths:
   (`int32 max_minutes = 3; // 10, 20 or 45; 0 = any`).
 - Field violations travel as an `error.v1.BadRequest` detail, keyed by the proto field name, which
   is also the name the client gives its input.
-- `live.v1.Topic` is the poke vocabulary: `0` is the heartbeat and hello, `1` is resync, and each
-  later value names one family of client queries. Adding a value means an arm in the client's
-  topic switch (see `live-updates.md`).
 - **Codegen is committed.** `moon run proto:generate` writes the output; the `.proto` change and
   its regenerated code go in the SAME commit, because CI never runs `buf generate`. Never edit
   generated code by hand.

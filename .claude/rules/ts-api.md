@@ -6,8 +6,8 @@ paths:
 # The client data layer
 
 `packages/ts/apigen` holds the generated wire types and nothing else. `packages/ts/api` is the one
-data layer every client uses: the transport, the query client, the hooks, error decoding, uploads
-and live invalidation. Apps render; they do not talk to the network.
+data layer every client uses: the transport, the query client, the hooks, error decoding and
+uploads. Apps render; they do not talk to the network.
 
 ## Boundaries
 
@@ -37,11 +37,14 @@ export function createApiTransport(opts: ApiTransportOptions): Transport {
 - A factory, not a module singleton. The app builds the transport and the query client ONCE (in
   the root layout, inside `useMemo`) and hands both to `ApiProvider`: one rebuilt on render drops
   the whole cache. The app never imports connect-query or TanStack Query itself.
-- The optional `fetch` is how a platform's own fetch arrives. React Native's built-in fetch cannot
-  stream a response body, so a server stream (live updates) needs `expo/fetch` passed in.
+- The optional `fetch` is how a test's fake, or a platform's own fetch, arrives.
 - `makeQueryClient({ error, success })` is the toast seam: the data layer decides WHEN to notify,
   the app decides HOW. Defaults: `staleTime` 60 s, `retry: 1`, refetch on focus. Once accounts
   exist, any `Unauthenticated` error resets `whoAmI`, which sends the app back to onboarding.
+- **Refetch on focus needs the app's help.** React Native has no window focus, so
+  `refetchOnWindowFocus` does nothing until `AppState` is wired in. This package cannot import
+  `react-native`, so the root layout passes an `AppState` subscription to `ApiProvider`, which hands
+  it to TanStack Query's focus manager.
 - A success toast is opt-in per mutation through the typed `meta.successToast` (a string, or
   `(data, vars) => string`), and only where nothing visible changes on its own.
 
@@ -59,14 +62,25 @@ export function createApiTransport(opts: ApiTransportOptions): Transport {
 - `skipToken` until the inputs are real: never send a request keyed on `""` or `0`. Fixed inputs
   are frozen module constants, so the key is stable.
 - `retry: false` where a 401 or 403 is a legitimate answer (`useWhoAmI`).
-- A mutation invalidates through its family's shared invalidator (see `live-updates.md`). To stale
-  another service's family, import that service's schema, never its hooks.
+- A mutation invalidates in `onSettled` through its family's shared invalidator, so there is never
+  a second hand-kept list of keys to drift. A mutation that needs more widens the shared
+  invalidator. To stale another service's family, import that service's schema, never its hooks.
+- Prefer plain invalidation over optimistic patches. An infinite query is invalidated with
+  `cardinality: undefined`, or the infinite key is missed.
 - Creating an account or deleting one uses `queryClient.resetQueries()`, not
   `invalidateQueries`: invalidation keeps the old data on screen, so the next person briefly sees
   the previous one's.
 - Render the server's order as given. Never re-sort or re-filter a server collection (the board,
   the recipe shelves), and never re-derive what the server decided (a score, a tier, points,
   whether a plate counted).
+
+## Freshness
+
+- There is no live push. A query refetches when its screen mounts, when the app returns to the
+  foreground, and when a mutation invalidates its family. Nothing else keeps a screen current.
+- Polling happens in exactly one place. The Combo lobby and reveal refetch `GetCombo` every 2 s
+  (`refetchInterval`) while the screen is open and the combo is still waiting, and stop once it is
+  revealed or ended. No other query sets `refetchInterval`.
 
 ## Errors
 

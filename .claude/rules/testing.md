@@ -122,15 +122,14 @@ func fieldViolations(t *testing.T, err error) map[string]string {
   of theirs moved. A refusal that still wrote passes every other assertion. For a sweep, keep a
   map of closures with one entry per id-bearing RPC.
 - **What only Postgres can do**: check and unique constraints, cascades, defaults, ordering, the
-  folding of driver errors into sentinels, `InTx` rolling back every write, and a NOTIFY that
-  fires only on commit.
+  folding of driver errors into sentinels, and `InTx` rolling back every write.
 - **Races**: start 20 goroutines (`wg.Go`) at a guarded write and assert exactly N succeed (the
   last seat in a combo, two plates claiming one meal window).
 - **Pagination**: walk the cursor to the end with a runaway guard (`if pages > 5 { t.Fatal(…) }`),
   force ties on the sort key, then assert no gaps, no duplicates, the order, and an empty page
   past the end.
 - **"Every…" tests** for anything that must stay complete: every id-bearing RPC is fenced, every
-  topic has an arm, two hand-kept lists agree.
+  tier has its buttons, two hand-kept lists agree.
 
 ## Fakes, only at a true edge
 
@@ -150,8 +149,8 @@ func fieldViolations(t *testing.T, err error) map[string]string {
   wall-clock test goes green at noon and red at midnight.
 - Database-backed tests never compare against this machine's `now`: the container's clock can run
   a hair behind. Stamp "a minute ago" instead.
-- Wait for async work by bounded polling (`for range 200 { …; time.Sleep(10 * time.Millisecond) }`)
-  or a `time.After` timeout on a stream, never a bare sleep.
+- Wait for async work by bounded polling (`for range 200 { …; time.Sleep(10 * time.Millisecond) }`),
+  never a bare sleep.
 
 ## Style
 
@@ -175,8 +174,8 @@ func fieldViolations(t *testing.T, err error) map[string]string {
 
 ## TypeScript
 
-- vitest, colocated `*.test.ts`, on pure modules: the live topic map, error decoding, formatters,
-  which button a tier makes big. No component rendering, no Testing Library, no `vi.mock`.
+- vitest, colocated `*.test.ts`, on pure modules: error decoding, formatters, which button a tier
+  makes big. No component rendering, no Testing Library, no `vi.mock`.
 - Build test inputs exactly as production produces them (a real connect-query key, a wire-shaped
   `BadRequest`). A fabricated shape passes while the real one matches nothing.
 
