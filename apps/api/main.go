@@ -59,12 +59,15 @@ func main() {
 
 	r.Mount(healthv1connect.NewHealthServiceHandler(healthz.NewHealth(log, repo.Ping), readCap))
 
-	// No read or write timeout on purpose: a server stream stays open for minutes.
 	srv := &http.Server{
 		Addr:              addr,
 		Handler:           r,
 		ReadHeaderTimeout: 10 * time.Second,
-		IdleTimeout:       2 * time.Minute,
+		// Three scan photos over a slow phone connection still fit.
+		ReadTimeout: 60 * time.Second,
+		// Longer than any vendor call, which has its own shorter deadline (go-vendors.md).
+		WriteTimeout: 90 * time.Second,
+		IdleTimeout:  2 * time.Minute,
 	}
 	errc := make(chan error, 1)
 	go func() { errc <- srv.ListenAndServe() }()
