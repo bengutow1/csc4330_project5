@@ -5,7 +5,9 @@
 # whose machine you are on.
 #
 # The release asset IS the executable, so there is no archive-prefix or exe-path. The assets say
-# "arm64" where proto says "aarch64", on every platform, hence the per-platform arch maps.
+# "arm64" where proto says "aarch64", on every platform, so one [install.arch] map covers them. It
+# has to be the global map: the per-platform [platform.*.arch] tables need schema 0.18, newer than
+# the one the pinned proto bundles, which ignores them.
 
 name = "goose"
 type = "cli"
@@ -13,24 +15,18 @@ type = "cli"
 [platform.macos]
 download-file = "goose_darwin_{arch}"
 
-[platform.macos.arch]
-aarch64 = "arm64"
-
 [platform.linux]
 download-file = "goose_linux_{arch}"
-
-[platform.linux.arch]
-aarch64 = "arm64"
 
 [platform.windows]
 download-file = "goose_windows_{arch}.exe"
 
-[platform.windows.arch]
-aarch64 = "arm64"
-
 [install]
 download-url = "https://github.com/pressly/goose/releases/download/v{version}/{download_file}"
 checksum-url = "https://github.com/pressly/goose/releases/download/v{version}/checksums.txt"
+
+[install.arch]
+aarch64 = "arm64"
 
 [resolve]
 git-url = "https://github.com/pressly/goose"
