@@ -7,5 +7,6 @@ use (
 	./packages/go/logging
 	./packages/go/points
 	./packages/go/repository
+	./packages/go/scoring
 	./packages/go/vision
 )
