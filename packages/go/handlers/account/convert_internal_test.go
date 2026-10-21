@@ -11,7 +11,8 @@ import (
 )
 
 // TestEveryWireValueHasExactlyOneStoredWord: a value added to a closed set on one side only would
-// either never reach the app, or fail every WhoAmI of a player who picked it.
+// either never reach the app, or fail every WhoAmI of a player who picked it. Equipment and diets
+// are checked in the handlers root, where their tables are.
 func TestEveryWireValueHasExactlyOneStoredWord(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
@@ -20,8 +21,6 @@ func TestEveryWireValueHasExactlyOneStoredWord(t *testing.T) {
 		mapped map[protoreflect.EnumNumber]int
 	}{
 		{name: "roast level", enum: accountv1.RoastLevel(0).Descriptor(), mapped: counts(roastLevels)},
-		{name: "equipment", enum: accountv1.Equipment(0).Descriptor(), mapped: counts(equipment)},
-		{name: "diet", enum: accountv1.Diet(0).Descriptor(), mapped: counts(diets)},
 		{name: "allergy", enum: accountv1.Allergy(0).Descriptor(), mapped: counts(allergies)},
 		{name: "staple", enum: accountv1.Staple(0).Descriptor(), mapped: counts(staples)},
 	}

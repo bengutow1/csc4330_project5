@@ -24,11 +24,13 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/account/v1/accountv1connect"
+	"github.com/bengutow1/csc4330_project5/packages/go/apigen/cook/v1/cookv1connect"
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/fries/v1/friesv1connect"
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/health/v1/healthv1connect"
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/scan/v1/scanv1connect"
 	"github.com/bengutow1/csc4330_project5/packages/go/auth"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/account"
+	"github.com/bengutow1/csc4330_project5/packages/go/handlers/cook"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/fries"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/healthz"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/scan"
@@ -143,6 +145,13 @@ func main() {
 		Limit:  scan.DefaultLimit(),
 		Log:    log,
 	})
+	cookSvc := cook.NewCook(cook.Config{
+		Repo:   repo,
+		Auth:   authn,
+		Vision: visionMock,
+		Limit:  cook.DefaultLimit(),
+		Log:    log,
+	})
 	friesSvc := fries.NewFries(fries.Config{
 		Repo:   repo,
 		Auth:   authn,
@@ -162,6 +171,7 @@ func main() {
 	r.Mount(healthv1connect.NewHealthServiceHandler(healthz.NewHealth(log, repo.Ping), readCap))
 	r.Mount(accountv1connect.NewAccountServiceHandler(accountSvc, readCap))
 	r.Mount(scanv1connect.NewScanServiceHandler(scanSvc, readCap))
+	r.Mount(cookv1connect.NewCookServiceHandler(cookSvc, readCap))
 	r.Mount(friesv1connect.NewFriesServiceHandler(friesSvc, readCap))
 
 	srv := &http.Server{
