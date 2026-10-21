@@ -18,6 +18,7 @@ require (
 )
 
 require (
+	github.com/bengutow1/csc4330_project5/packages/go/points v0.0.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.15 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
@@ -39,6 +40,7 @@ replace (
 	github.com/bengutow1/csc4330_project5/packages/go/handlers => ../../packages/go/handlers
 	github.com/bengutow1/csc4330_project5/packages/go/logging => ../../packages/go/logging
 	github.com/bengutow1/csc4330_project5/packages/go/places => ../../packages/go/places
+	github.com/bengutow1/csc4330_project5/packages/go/points => ../../packages/go/points
 	github.com/bengutow1/csc4330_project5/packages/go/repository => ../../packages/go/repository
 	github.com/bengutow1/csc4330_project5/packages/go/vision => ../../packages/go/vision
 )
