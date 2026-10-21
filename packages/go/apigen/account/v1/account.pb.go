@@ -746,6 +746,96 @@ func (x *WhoAmIResponse) GetAccount() *Account {
 	return nil
 }
 
+type UpdateKitchenRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The whole kitchen: what is left out of a list is off. A value repeated in a list counts once.
+	Kitchen       *Kitchen `protobuf:"bytes,1,opt,name=kitchen,proto3" json:"kitchen,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateKitchenRequest) Reset() {
+	*x = UpdateKitchenRequest{}
+	mi := &file_account_v1_account_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateKitchenRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateKitchenRequest) ProtoMessage() {}
+
+func (x *UpdateKitchenRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_account_v1_account_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateKitchenRequest.ProtoReflect.Descriptor instead.
+func (*UpdateKitchenRequest) Descriptor() ([]byte, []int) {
+	return file_account_v1_account_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *UpdateKitchenRequest) GetKitchen() *Kitchen {
+	if x != nil {
+		return x.Kitchen
+	}
+	return nil
+}
+
+type UpdateKitchenResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The account as stored, with its new kitchen.
+	Account       *Account `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateKitchenResponse) Reset() {
+	*x = UpdateKitchenResponse{}
+	mi := &file_account_v1_account_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateKitchenResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateKitchenResponse) ProtoMessage() {}
+
+func (x *UpdateKitchenResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_account_v1_account_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateKitchenResponse.ProtoReflect.Descriptor instead.
+func (*UpdateKitchenResponse) Descriptor() ([]byte, []int) {
+	return file_account_v1_account_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *UpdateKitchenResponse) GetAccount() *Account {
+	if x != nil {
+		return x.Account
+	}
+	return nil
+}
+
 var File_account_v1_account_proto protoreflect.FileDescriptor
 
 const file_account_v1_account_proto_rawDesc = "" +
@@ -774,6 +864,10 @@ const file_account_v1_account_proto_rawDesc = "" +
 	"\tavailable\x18\x01 \x01(\bR\tavailable\"\x0f\n" +
 	"\rWhoAmIRequest\"?\n" +
 	"\x0eWhoAmIResponse\x12-\n" +
+	"\aaccount\x18\x01 \x01(\v2\x13.account.v1.AccountR\aaccount\"E\n" +
+	"\x14UpdateKitchenRequest\x12-\n" +
+	"\akitchen\x18\x01 \x01(\v2\x13.account.v1.KitchenR\akitchen\"F\n" +
+	"\x15UpdateKitchenResponse\x12-\n" +
 	"\aaccount\x18\x01 \x01(\v2\x13.account.v1.AccountR\aaccount*u\n" +
 	"\n" +
 	"RoastLevel\x12\x1b\n" +
@@ -816,11 +910,12 @@ const file_account_v1_account_proto_rawDesc = "" +
 	"\fSTAPLE_PASTA\x10\x06\x12\x10\n" +
 	"\fSTAPLE_FLOUR\x10\a\x12\x10\n" +
 	"\fSTAPLE_SUGAR\x10\b\x12\x11\n" +
-	"\rSTAPLE_SPICES\x10\t2\xf7\x01\n" +
+	"\rSTAPLE_SPICES\x10\t2\xcd\x02\n" +
 	"\x0eAccountService\x12T\n" +
 	"\rCreateAccount\x12 .account.v1.CreateAccountRequest\x1a!.account.v1.CreateAccountResponse\x12N\n" +
 	"\vCheckHandle\x12\x1e.account.v1.CheckHandleRequest\x1a\x1f.account.v1.CheckHandleResponse\x12?\n" +
-	"\x06WhoAmI\x12\x19.account.v1.WhoAmIRequest\x1a\x1a.account.v1.WhoAmIResponseB\xb6\x01\n" +
+	"\x06WhoAmI\x12\x19.account.v1.WhoAmIRequest\x1a\x1a.account.v1.WhoAmIResponse\x12T\n" +
+	"\rUpdateKitchen\x12 .account.v1.UpdateKitchenRequest\x1a!.account.v1.UpdateKitchenResponseB\xb6\x01\n" +
 	"\x0ecom.account.v1B\fAccountProtoP\x01ZMgithub.com/bengutow1/csc4330_project5/packages/go/apigen/account/v1;accountv1\xa2\x02\x03AXX\xaa\x02\n" +
 	"Account.V1\xca\x02\n" +
 	"Account\\V1\xe2\x02\x16Account\\V1\\GPBMetadata\xea\x02\vAccount::V1b\x06proto3"
@@ -838,7 +933,7 @@ func file_account_v1_account_proto_rawDescGZIP() []byte {
 }
 
 var file_account_v1_account_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
-var file_account_v1_account_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_account_v1_account_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_account_v1_account_proto_goTypes = []any{
 	(RoastLevel)(0),               // 0: account.v1.RoastLevel
 	(Equipment)(0),                // 1: account.v1.Equipment
@@ -853,6 +948,8 @@ var file_account_v1_account_proto_goTypes = []any{
 	(*CheckHandleResponse)(nil),   // 10: account.v1.CheckHandleResponse
 	(*WhoAmIRequest)(nil),         // 11: account.v1.WhoAmIRequest
 	(*WhoAmIResponse)(nil),        // 12: account.v1.WhoAmIResponse
+	(*UpdateKitchenRequest)(nil),  // 13: account.v1.UpdateKitchenRequest
+	(*UpdateKitchenResponse)(nil), // 14: account.v1.UpdateKitchenResponse
 }
 var file_account_v1_account_proto_depIdxs = []int32{
 	6,  // 0: account.v1.Account.kitchen:type_name -> account.v1.Kitchen
@@ -863,17 +960,21 @@ var file_account_v1_account_proto_depIdxs = []int32{
 	4,  // 5: account.v1.Kitchen.staples:type_name -> account.v1.Staple
 	5,  // 6: account.v1.CreateAccountResponse.account:type_name -> account.v1.Account
 	5,  // 7: account.v1.WhoAmIResponse.account:type_name -> account.v1.Account
-	7,  // 8: account.v1.AccountService.CreateAccount:input_type -> account.v1.CreateAccountRequest
-	9,  // 9: account.v1.AccountService.CheckHandle:input_type -> account.v1.CheckHandleRequest
-	11, // 10: account.v1.AccountService.WhoAmI:input_type -> account.v1.WhoAmIRequest
-	8,  // 11: account.v1.AccountService.CreateAccount:output_type -> account.v1.CreateAccountResponse
-	10, // 12: account.v1.AccountService.CheckHandle:output_type -> account.v1.CheckHandleResponse
-	12, // 13: account.v1.AccountService.WhoAmI:output_type -> account.v1.WhoAmIResponse
-	11, // [11:14] is the sub-list for method output_type
-	8,  // [8:11] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	6,  // 8: account.v1.UpdateKitchenRequest.kitchen:type_name -> account.v1.Kitchen
+	5,  // 9: account.v1.UpdateKitchenResponse.account:type_name -> account.v1.Account
+	7,  // 10: account.v1.AccountService.CreateAccount:input_type -> account.v1.CreateAccountRequest
+	9,  // 11: account.v1.AccountService.CheckHandle:input_type -> account.v1.CheckHandleRequest
+	11, // 12: account.v1.AccountService.WhoAmI:input_type -> account.v1.WhoAmIRequest
+	13, // 13: account.v1.AccountService.UpdateKitchen:input_type -> account.v1.UpdateKitchenRequest
+	8,  // 14: account.v1.AccountService.CreateAccount:output_type -> account.v1.CreateAccountResponse
+	10, // 15: account.v1.AccountService.CheckHandle:output_type -> account.v1.CheckHandleResponse
+	12, // 16: account.v1.AccountService.WhoAmI:output_type -> account.v1.WhoAmIResponse
+	14, // 17: account.v1.AccountService.UpdateKitchen:output_type -> account.v1.UpdateKitchenResponse
+	14, // [14:18] is the sub-list for method output_type
+	10, // [10:14] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_account_v1_account_proto_init() }
@@ -887,7 +988,7 @@ func file_account_v1_account_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_account_v1_account_proto_rawDesc), len(file_account_v1_account_proto_rawDesc)),
 			NumEnums:      5,
-			NumMessages:   8,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

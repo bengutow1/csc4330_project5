@@ -17,6 +17,9 @@ service AccountService {
   rpc CheckHandle(CheckHandleRequest) returns (CheckHandleResponse);
   // WhoAmI reads the session's account; unauthenticated when there is none.
   rpc WhoAmI(WhoAmIRequest) returns (WhoAmIResponse);
+  // UpdateKitchen replaces the caller's kitchen with the one sent. A value outside its closed set,
+  // unspecified included, is invalid_argument on its field, naming the valid values.
+  rpc UpdateKitchen(UpdateKitchenRequest) returns (UpdateKitchenResponse);
 }
 
 // Account is the caller as they see themselves: their public name and their kitchen.
@@ -67,6 +70,16 @@ message CheckHandleResponse {
 message WhoAmIRequest {}
 
 message WhoAmIResponse {
+  Account account = 1;
+}
+
+message UpdateKitchenRequest {
+  // The whole kitchen: what is left out of a list is off. A value repeated in a list counts once.
+  Kitchen kitchen = 1;
+}
+
+message UpdateKitchenResponse {
+  // The account as stored, with its new kitchen.
   Account account = 1;
 }
 
