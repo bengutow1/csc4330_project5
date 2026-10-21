@@ -17,7 +17,8 @@ dependsOn:
 tasks:
   # The tests migrate a real Postgres with db/migrations, so editing a migration must re-run them
   # instead of replaying a cached pass. The input covers moon's cache; -count=1 covers Go's, which
-  # doesn't see a migration edited in place and replayed a stale pass after 00006 changed (#26).
+  # never rechecks a file outside the module (cmd/go skips them), and db/migrations is outside every
+  # Go module, so it replayed a stale pass after 00006 changed (#26).
   test:
     args: ['-count=1']
     inputs:
