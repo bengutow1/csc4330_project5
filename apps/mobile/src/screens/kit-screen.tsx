@@ -1,3 +1,4 @@
+import { Tier } from "@fries-in-the-bag/api";
 import { Stack } from "expo-router";
 import { type ReactNode, useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
@@ -5,16 +6,21 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BottomBar } from "@/components/bottom-bar";
 import { Button } from "@/components/button";
 import { Card, Divider } from "@/components/card";
+import { CheckPill } from "@/components/check-pill";
 import { FilterChip, RemovableChip } from "@/components/chip";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { CountUp } from "@/components/count-up";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { Header } from "@/components/header";
 import { Logo } from "@/components/logo";
+import { PhotoCard } from "@/components/photo-card";
 import { PillToggle } from "@/components/pill-toggle";
+import { PointsBreakdown, type PointsLine } from "@/components/points-breakdown";
 import { SegmentedControl } from "@/components/segmented-control";
 import { Sheet } from "@/components/sheet";
 import { Skeleton } from "@/components/skeleton";
+import { TierPill } from "@/components/tier-pill";
 import { UnderlineTabs } from "@/components/underline-tabs";
 import { COLORS, RADII, SPACE, TYPE } from "@/theme";
 
@@ -37,6 +43,15 @@ const FILTERS = ["Open now", "Under $10", "Fast food", "Walkable"];
 const FOODS = ["Eggs", "Spinach", "Cheddar"];
 // Not a ConnectError, so ErrorState shows the generic line, as for a server that never answered.
 const PRETEND_ERROR = new Error("the kit's pretend failure");
+// The kit has no plate photo, so the logo's fries stand in for one.
+const STAND_IN_PHOTO = require("../../assets/logo-fries.svg");
+const TIERS = [Tier.CERTIFIED_CHEF, Tier.HOME_COOK, Tier.SCRAPPY, Tier.FRIES_IN_THE_BAG];
+// Screen 6's plate: a home-cooked meal on the fourth day of a streak.
+const AWARDS: PointsLine[] = [
+  { label: "Home-cooked meal", points: 100 },
+  { label: "4-day streak", points: 40, icon: "flame-outline" },
+];
+const AWARDED = 140;
 
 /**
  * KitScreen shows every shared component in each of its states, for screenshots and kit.yaml.
@@ -60,6 +75,7 @@ export function KitScreen() {
   const [deleted, setDeleted] = useState(false);
   const [retries, setRetries] = useState(0);
   const [retrying, setRetrying] = useState(false);
+  const [plays, setPlays] = useState(1);
 
   // The pretend delete is in flight for a moment, then lands and closes the dialog.
   useEffect(() => {
@@ -297,6 +313,57 @@ export function KitScreen() {
         <Logo />
         <Logo size="small" />
       </Section>
+
+      <Section title="Photo card">
+        <PhotoCard
+          source={STAND_IN_PHOTO}
+          label="The logo's fries, standing in for a plate"
+          caption="Tonight, 7:58 PM"
+        />
+      </Section>
+
+      <Section title="Check pill">
+        <CheckPill label="Looks like Creamy Tomato Pasta" />
+      </Section>
+
+      {/* The pieces that move. Play again mounts them afresh, so the landing, the count and the
+          print run once more. */}
+      <View key={plays} style={styles.moving}>
+        <Section title="Tier pill">
+          <View style={styles.wrap}>
+            {TIERS.map((tier) => (
+              <TierPill key={tier} tier={tier} />
+            ))}
+          </View>
+        </Section>
+
+        <Section title="Count up">
+          <View style={styles.counts}>
+            <View style={styles.count}>
+              <CountUp value={79} style={styles.hero} />
+              <Text style={styles.muted}>fridge score</Text>
+            </View>
+            <View style={styles.count}>
+              <CountUp value={AWARDED} prefix="+" style={[styles.hero, styles.earned]} />
+              <Text style={styles.muted}>points earned</Text>
+            </View>
+          </View>
+        </Section>
+
+        <Section title="Points breakdown">
+          <PointsBreakdown lines={AWARDS} total={AWARDED} />
+        </Section>
+      </View>
+
+      <Section title="Motion">
+        <Button
+          label="Play again"
+          size="small"
+          variant="secondary"
+          onPress={() => setPlays((n) => n + 1)}
+        />
+        <Line>{`Plays: ${plays}`}</Line>
+      </Section>
     </ScrollView>
   );
 }
@@ -342,4 +409,9 @@ const styles = StyleSheet.create({
   },
   skeletonRow: { flexDirection: "row", alignItems: "center", gap: SPACE.md },
   skeletonLines: { flex: 1, gap: SPACE.sm },
+  moving: { gap: SPACE.xxl },
+  counts: { flexDirection: "row", justifyContent: "space-around" },
+  count: { alignItems: "center", gap: SPACE.xs },
+  hero: { ...TYPE.hero, color: COLORS.ink },
+  earned: { color: COLORS.ketchup },
 });

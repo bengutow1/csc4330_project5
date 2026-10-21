@@ -4,6 +4,8 @@
 //
 // Universal by contract: no react-native, no react-dom, no DOM globals.
 
+// The wire's enums that screens render, re-exported by name.
+export { Tier } from "@fries-in-the-bag/apigen/scan/v1/scan_pb";
 export {
   errorMessage,
   fieldErrors,
