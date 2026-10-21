@@ -120,8 +120,8 @@ The system font everywhere (SF Pro on iOS), except the logo in Lilita One from
 
 - The logo, the medals and the other drawings in the screen files are inline SVG. Save each as a
   `.svg` under `apps/mobile/assets/` and draw it with `expo-image`, which renders SVG and tints
-  one-colour art with `tintColor`, so `react-native-svg` and another native rebuild aren't
-  needed. Plain icons come from Ionicons.
+  one-colour art with `tintColor`. `expo-image` arrives with #3 in its one native rebuild, so this
+  needs neither `react-native-svg` nor a second rebuild. Plain icons come from Ionicons.
 - The design's photos are placeholders. Our data has no ingredient or recipe photos, so those
   tiles show a `sunken` tile with the category's icon, at the same size and radius. The camera
   view, plate photos and "My plates" are real photos.
@@ -136,7 +136,9 @@ The system font everywhere (SF Pro on iOS), except the logo in Lilita One from
   `@expo-google-fonts/space-mono`. The root background is `#FBF8F4`, and the interface style is
   light.
 - **#4.** The tokens and type above replace the issue's colours and fonts. The tabs are Snap,
-  Board and Me, with Snap first.
+  Board and Me, with Snap first, and the route table in `docs/contracts.md` puts Snap at
+  `(tabs)/index`.
+- **#18.** The camera is the Snap tab at `(tabs)/index`, not a `scan/index` stack.
 - **#5.** The components above set the look. The primary button is `ketchup`, not gold.
 - **#10.** The design has no receipt paper or rubber stamp. Build the photo card, check pill,
   points breakdown, a tier pill for screen 2 and `CountUp` instead, and show them in `/kit`.
