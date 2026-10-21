@@ -1,0 +1,9 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+id: 'go-scoring'
+layer: 'library'
+language: 'go'
+
+project:
+  name: 'go-scoring'
+  description: 'Pure logic, no I/O: turns a fridge ingredient list into its score from 0 to 100, and the score into its tier.'
