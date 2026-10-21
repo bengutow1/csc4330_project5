@@ -26,6 +26,7 @@ import (
 	"github.com/bengutow1/csc4330_project5/packages/go/logging"
 	"github.com/bengutow1/csc4330_project5/packages/go/places"
 	"github.com/bengutow1/csc4330_project5/packages/go/repository"
+	"github.com/bengutow1/csc4330_project5/packages/go/vision"
 )
 
 func main() {
@@ -47,6 +48,32 @@ func main() {
 	}
 	addr := ":" + port
 
+	// Read once for every vendor below: "production" makes a missing key stop the boot.
+	appEnv := os.Getenv("APP_ENV")
+
+	// The vision model. Without a key the API serves the mock's canned fridges, except in
+	// production, where a missing key stops the boot: a real deployment never hands out a fake
+	// verdict.
+	visionKey := os.Getenv("VISION_API_KEY")
+	visionPin := os.Getenv("VISION_MOCK")
+	switch {
+	case visionKey != "":
+		// The real client is still to come (#20), and serving the mock anyway would ignore the key
+		// without a word.
+		log.Error("VISION_API_KEY is set, but there is no vision client yet; unset it to serve the mock")
+		os.Exit(1)
+	case appEnv == "production":
+		log.Error("VISION_API_KEY is required in production")
+		os.Exit(1)
+	}
+	visionMock, err := vision.NewMock(visionPin)
+	if err != nil {
+		log.Error("VISION_MOCK names no mock fridge", "err", err)
+		os.Exit(1)
+	}
+	log.Info("vision mock is live", "serving", cmp.Or(visionPin, "every fridge in turn"))
+	_ = visionMock // nothing reads a fridge until the scan service (#17) mounts
+
 	// The places provider. Without a key the API serves the mock's made-up spots, except in
 	// production, where a missing key stops the boot: a real deployment never lists fake spots.
 	placesKey := os.Getenv("PLACES_API_KEY")
@@ -57,7 +84,7 @@ func main() {
 		// without a word.
 		log.Error("PLACES_API_KEY is set, but there is no places client yet; unset it to serve the mock")
 		os.Exit(1)
-	case os.Getenv("APP_ENV") == "production":
+	case appEnv == "production":
 		log.Error("PLACES_API_KEY is required in production")
 		os.Exit(1)
 	}

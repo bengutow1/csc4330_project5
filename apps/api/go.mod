@@ -9,6 +9,7 @@ require (
 	github.com/bengutow1/csc4330_project5/packages/go/logging v0.0.0
 	github.com/bengutow1/csc4330_project5/packages/go/places v0.0.0
 	github.com/bengutow1/csc4330_project5/packages/go/repository v0.0.0
+	github.com/bengutow1/csc4330_project5/packages/go/vision v0.0.0
 	github.com/go-chi/chi/v5 v5.3.2
 	github.com/jackc/pgx/v5 v5.11.0
 )
@@ -35,4 +36,5 @@ replace (
 	github.com/bengutow1/csc4330_project5/packages/go/logging => ../../packages/go/logging
 	github.com/bengutow1/csc4330_project5/packages/go/places => ../../packages/go/places
 	github.com/bengutow1/csc4330_project5/packages/go/repository => ../../packages/go/repository
+	github.com/bengutow1/csc4330_project5/packages/go/vision => ../../packages/go/vision
 )

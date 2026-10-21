@@ -7,4 +7,5 @@ use (
 	./packages/go/logging
 	./packages/go/places
 	./packages/go/repository
+	./packages/go/vision
 )
