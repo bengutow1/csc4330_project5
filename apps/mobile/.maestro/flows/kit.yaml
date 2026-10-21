@@ -1,6 +1,10 @@
 # The UI kit: every shared component, each one used, with the line under it asserted. Needs a
 # development build of the app installed (moon run mobile:ios) and Metro running (moon run
 # mobile:dev); a release build sends /kit home.
+#
+# Each section is scrolled to its lowest element (usually its result line) before it is used:
+# scrollUntilVisible stops as soon as its target shows, so a control above that point and the
+# line it writes are both on screen.
 appId: com.cadenlund.friesinthebag
 ---
 - launchApp:
@@ -13,6 +17,8 @@ appId: com.cadenlund.friesinthebag
 - assertVisible: "UI kit"
 
 # Buttons: each press lands, and a pending button shows its ellipsis label.
+- scrollUntilVisible:
+    element: "Last pressed: nothing"
 - tapOn: "Primary"
 - assertVisible: "Last pressed: Primary"
 - tapOn: "Destructive"
@@ -23,13 +29,13 @@ appId: com.cadenlund.friesinthebag
 
 # Pill toggle
 - scrollUntilVisible:
-    element: "Pantry"
+    element: "Mode: Photo"
 - tapOn: "Pantry"
 - assertVisible: "Mode: Pantry"
 
 # Filter chips: a second chip joins the first, and the first can be turned off.
 - scrollUntilVisible:
-    element: "Fast food"
+    element: "Filters: Open now"
 - tapOn: "Fast food"
 - assertVisible: "Filters: Open now, Fast food"
 - tapOn: "Open now"
@@ -37,7 +43,7 @@ appId: com.cadenlund.friesinthebag
 
 # Ingredient chips: the cross removes its food, by its label.
 - scrollUntilVisible:
-    element: "Remove Spinach"
+    element: "Put them back"
 - tapOn: "Remove Spinach"
 - assertVisible: "Foods: Eggs, Cheddar"
 - tapOn: "Put them back"
@@ -45,17 +51,17 @@ appId: com.cadenlund.friesinthebag
 
 # Segmented control and underline tabs
 - scrollUntilVisible:
-    element: "Hall of Fries"
+    element: "Board: Chefs"
 - tapOn: "Hall of Fries"
 - assertVisible: "Board: Hall of Fries"
 - scrollUntilVisible:
-    element: "All time"
+    element: "Range: This week"
 - tapOn: "All time"
 - assertVisible: "Range: All time"
 
 # Cards: a pressable card is one button, named for where it goes.
 - scrollUntilVisible:
-    element: "Open Taco Spot"
+    element: "Card taps: 0"
 - tapOn: "Open Taco Spot"
 - assertVisible: "Card taps: 1"
 
@@ -70,19 +76,19 @@ appId: com.cadenlund.friesinthebag
 
 # Bottom bar: two actions share the width.
 - scrollUntilVisible:
-    element: "Finish"
+    element: "Bottom bar: nothing"
 - tapOn: "Finish"
-- assertVisible: "Last pressed: Finish"
+- assertVisible: "Bottom bar: Finish"
 
 # Skeleton, empty state and error state
 - scrollUntilVisible:
     element: "Loading skeleton"
 - assertVisible: "Loading skeleton"
 - scrollUntilVisible:
-    element: "Snap your fridge"
+    element: "Empty state: nothing"
 - assertVisible: "No plates yet"
 - tapOn: "Snap your fridge"
-- assertVisible: "Last pressed: Snap your fridge"
+- assertVisible: "Empty state: Snap your fridge"
 - scrollUntilVisible:
     element: "Try again"
 - assertVisible: "Couldn't load the board"
@@ -103,7 +109,7 @@ appId: com.cadenlund.friesinthebag
 
 # Confirm dialog: cancel keeps the data; confirming shows the pending label, then lands.
 - scrollUntilVisible:
-    element: "Delete my data"
+    element: "Data: kept"
 - tapOn: "Delete my data"
 - assertVisible: "Delete your data\\?"
 - tapOn: "Cancel"
