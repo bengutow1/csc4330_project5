@@ -69,3 +69,13 @@ export function isFailedPrecondition(err: unknown): boolean {
 export function isUnavailable(err: unknown): boolean {
   return err instanceof ConnectError && err.code === Code.Unavailable;
 }
+
+/**
+ * isUnreachable: the request never got an answer, because the phone is offline or the api is
+ * down. A screen can say so in its own words ("Scans need a connection."), where errorMessage
+ * only has the generic line. The api never sends Unknown itself: handlers.ConnectErr turns an
+ * error it does not know into internal.
+ */
+export function isUnreachable(err: unknown): boolean {
+  return err instanceof ConnectError && err.code === Code.Unknown;
+}

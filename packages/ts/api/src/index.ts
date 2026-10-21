@@ -14,10 +14,10 @@ export {
   RoastLevel,
   Staple,
 } from "@fries-in-the-bag/apigen/account/v1/account_pb";
-// The wire's types and enums that screens render, re-exported by name.
+// The wire's types and enums that screens use, re-exported by name.
 export { Difficulty } from "@fries-in-the-bag/apigen/cook/v1/cook_pb";
 export { type Spot, SpotFilter } from "@fries-in-the-bag/apigen/fries/v1/fries_pb";
-export { Tier } from "@fries-in-the-bag/apigen/scan/v1/scan_pb";
+export { PhotoKind, Tier } from "@fries-in-the-bag/apigen/scan/v1/scan_pb";
 export {
   errorMessage,
   fieldErrors,
@@ -25,6 +25,7 @@ export {
   isNotFound,
   isUnauthenticated,
   isUnavailable,
+  isUnreachable,
 } from "./errors.ts";
 export type { AppStateEvents } from "./focus.ts";
 export {
