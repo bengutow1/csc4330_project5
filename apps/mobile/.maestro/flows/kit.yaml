@@ -5,6 +5,10 @@
 # Each section is scrolled to its lowest element (usually its result line) before it is used:
 # scrollUntilVisible stops as soon as its target shows, so a control above that point and the
 # line it writes are both on screen.
+#
+# A pretend write's pending label lasts only as long as the write, and Maestro's wait for the
+# screen to settle after a tap can outlast it. So after a write the flow waits for the line the
+# write leaves behind, never for its pending label.
 appId: com.cadenlund.friesinthebag
 ---
 - launchApp:
@@ -90,14 +94,14 @@ appId: com.cadenlund.friesinthebag
 - tapOn: "Snap your fridge"
 - assertVisible: "Empty state: Snap your fridge"
 - scrollUntilVisible:
-    element: "Try again"
+    element: "Retries: 0"
 - assertVisible: "Couldn't load the board"
 - assertVisible: "Something went wrong. Try again."
 - tapOn: "Try again"
-- assertVisible: "Trying again…"
 - extendedWaitUntil:
-    visible: "Try again"
+    visible: "Retries: 1"
     timeout: 5000
+- assertVisible: "Try again"
 
 # Sheet: it opens over the kit and closes again.
 - scrollUntilVisible:
@@ -107,7 +111,7 @@ appId: com.cadenlund.friesinthebag
 - tapOn: "Done"
 - assertNotVisible: "Mexican · \\$ · 2.9 km"
 
-# Confirm dialog: cancel keeps the data; confirming shows the pending label, then lands.
+# Confirm dialog: cancel keeps the data; confirming lands the delete.
 - scrollUntilVisible:
     element: "Data: kept"
 - tapOn: "Delete my data"
@@ -117,7 +121,6 @@ appId: com.cadenlund.friesinthebag
 - assertVisible: "Data: kept"
 - tapOn: "Delete my data"
 - tapOn: "Delete"
-- assertVisible: "Deleting…"
 - extendedWaitUntil:
     visible: "Data: deleted"
     timeout: 5000

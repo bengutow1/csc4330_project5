@@ -58,6 +58,7 @@ export function KitScreen() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleted, setDeleted] = useState(false);
+  const [retries, setRetries] = useState(0);
   const [retrying, setRetrying] = useState(false);
 
   // The pretend delete is in flight for a moment, then lands and closes the dialog.
@@ -77,7 +78,10 @@ export function KitScreen() {
     if (!retrying) {
       return;
     }
-    const timer = setTimeout(() => setRetrying(false), PRETEND_WRITE_MS);
+    const timer = setTimeout(() => {
+      setRetrying(false);
+      setRetries((n) => n + 1);
+    }, PRETEND_WRITE_MS);
     return () => clearTimeout(timer);
   }, [retrying]);
 
@@ -262,6 +266,7 @@ export function KitScreen() {
             onRetry={() => setRetrying(true)}
           />
         </View>
+        <Line>{`Retries: ${retries}`}</Line>
       </Section>
 
       <Section title="Sheet">
