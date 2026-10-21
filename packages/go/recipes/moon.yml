@@ -1,0 +1,9 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+id: 'go-recipes'
+layer: 'library'
+language: 'go'
+
+project:
+  name: 'go-recipes'
+  description: 'Pure logic, no I/O: holds a model recipe to the scan list, the staples and the allergies, and judges the diets it fits.'
