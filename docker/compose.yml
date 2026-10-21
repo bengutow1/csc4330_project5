@@ -13,7 +13,8 @@ services:
       POSTGRES_PASSWORD: fries
       POSTGRES_DB: fries
     ports:
-      - "5432:5432"
+      # PGPORT lets a second checkout (an Omni task) run its own Postgres beside this one.
+      - "${PGPORT:-5432}:5432"
     volumes:
       # Postgres 18 images keep their data in a versioned folder under /var/lib/postgresql, and
       # that parent is the volume to mount.
