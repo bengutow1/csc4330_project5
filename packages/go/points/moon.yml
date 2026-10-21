@@ -1,0 +1,9 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+id: 'go-points'
+layer: 'library'
+language: 'go'
+
+project:
+  name: 'go-points'
+  description: 'The points rules with no I/O: what a plate earns, streaks, ranks, badges and the campus clock.'
