@@ -1,5 +1,5 @@
-import { PlaceholderScreen } from "@/screens/placeholder-screen";
+import { SpotsScreen } from "@/screens/fries/spots-screen";
 
 export default function SpotsRoute() {
-  return <PlaceholderScreen title="Spots" issue={27} />;
+  return <SpotsScreen />;
 }

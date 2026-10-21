@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="170" height="170" viewBox="0 0 170 170">
+  <title>A burst around the bag</title>
+  <path d="M26 52 42 64" stroke="#D62F27" stroke-width="7" stroke-linecap="round"/>
+  <path d="M16 92H36" stroke="#F2B705" stroke-width="7" stroke-linecap="round"/>
+  <path d="M24 130 40 120" stroke="#D62F27" stroke-width="7" stroke-linecap="round"/>
+  <path d="M144 52 128 64" stroke="#D62F27" stroke-width="7" stroke-linecap="round"/>
+  <path d="M154 92H134" stroke="#F2B705" stroke-width="7" stroke-linecap="round"/>
+  <path d="M146 130 130 120" stroke="#D62F27" stroke-width="7" stroke-linecap="round"/>
+</svg>

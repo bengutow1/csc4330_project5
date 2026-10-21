@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="170" height="170" viewBox="0 0 170 170">
+  <title>Five fries, falling</title>
+  <rect x="52" y="24" width="13" height="70" rx="3" fill="#F7C531" stroke="#E0A21F" stroke-width="2" transform="rotate(-10 58 59)"/>
+  <rect x="66" y="14" width="13" height="78" rx="3" fill="#F7C531" stroke="#E0A21F" stroke-width="2" transform="rotate(-4 72 53)"/>
+  <rect x="80" y="10" width="13" height="82" rx="3" fill="#F7C531" stroke="#E0A21F" stroke-width="2" transform="rotate(2 86 51)"/>
+  <rect x="94" y="14" width="13" height="78" rx="3" fill="#F7C531" stroke="#E0A21F" stroke-width="2" transform="rotate(7 100 53)"/>
+  <rect x="106" y="22" width="13" height="70" rx="3" fill="#F7C531" stroke="#E0A21F" stroke-width="2" transform="rotate(12 112 57)"/>
+</svg>
