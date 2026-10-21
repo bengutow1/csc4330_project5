@@ -1,0 +1,122 @@
+# The UI kit: every shared component, each one used, with the line under it asserted. Needs a
+# development build of the app installed (moon run mobile:ios) and Metro running (moon run
+# mobile:dev); a release build sends /kit home.
+appId: com.cadenlund.friesinthebag
+---
+- launchApp:
+    clearState: true
+- openLink: friesinthebag://kit
+# iOS asks before opening a link with our scheme; Android does not.
+- tapOn:
+    text: "Open"
+    optional: true
+- assertVisible: "UI kit"
+
+# Buttons: each press lands, and a pending button shows its ellipsis label.
+- tapOn: "Primary"
+- assertVisible: "Last pressed: Primary"
+- tapOn: "Destructive"
+- assertVisible: "Last pressed: Destructive"
+- assertVisible: "Judging…"
+- tapOn: "Small secondary"
+- assertVisible: "Last pressed: Small secondary"
+
+# Pill toggle
+- scrollUntilVisible:
+    element: "Pantry"
+- tapOn: "Pantry"
+- assertVisible: "Mode: Pantry"
+
+# Filter chips: a second chip joins the first, and the first can be turned off.
+- scrollUntilVisible:
+    element: "Fast food"
+- tapOn: "Fast food"
+- assertVisible: "Filters: Open now, Fast food"
+- tapOn: "Open now"
+- assertVisible: "Filters: Fast food"
+
+# Ingredient chips: the cross removes its food, by its label.
+- scrollUntilVisible:
+    element: "Remove Spinach"
+- tapOn: "Remove Spinach"
+- assertVisible: "Foods: Eggs, Cheddar"
+- tapOn: "Put them back"
+- assertVisible: "Foods: Eggs, Spinach, Cheddar"
+
+# Segmented control and underline tabs
+- scrollUntilVisible:
+    element: "Hall of Fries"
+- tapOn: "Hall of Fries"
+- assertVisible: "Board: Hall of Fries"
+- scrollUntilVisible:
+    element: "All time"
+- tapOn: "All time"
+- assertVisible: "Range: All time"
+
+# Cards: a pressable card is one button, named for where it goes.
+- scrollUntilVisible:
+    element: "Open Taco Spot"
+- tapOn: "Open Taco Spot"
+- assertVisible: "Card taps: 1"
+
+# Header: the arrow and the cross each answer.
+- scrollUntilVisible:
+    element: "Header: nothing"
+- tapOn: "Back"
+- assertVisible: "Header: Back"
+- tapOn: "Close"
+- assertVisible: "Header: Close"
+- assertVisible: "Leaderboard"
+
+# Bottom bar: two actions share the width.
+- scrollUntilVisible:
+    element: "Finish"
+- tapOn: "Finish"
+- assertVisible: "Last pressed: Finish"
+
+# Skeleton, empty state and error state
+- scrollUntilVisible:
+    element: "Loading skeleton"
+- assertVisible: "Loading skeleton"
+- scrollUntilVisible:
+    element: "Snap your fridge"
+- assertVisible: "No plates yet"
+- tapOn: "Snap your fridge"
+- assertVisible: "Last pressed: Snap your fridge"
+- scrollUntilVisible:
+    element: "Try again"
+- assertVisible: "Couldn't load the board"
+- assertVisible: "Something went wrong. Try again."
+- tapOn: "Try again"
+- assertVisible: "Trying again…"
+- extendedWaitUntil:
+    visible: "Try again"
+    timeout: 5000
+
+# Sheet: it opens over the kit and closes again.
+- scrollUntilVisible:
+    element: "Open the sheet"
+- tapOn: "Open the sheet"
+- assertVisible: "Mexican · \\$ · 2.9 km"
+- tapOn: "Done"
+- assertNotVisible: "Mexican · \\$ · 2.9 km"
+
+# Confirm dialog: cancel keeps the data; confirming shows the pending label, then lands.
+- scrollUntilVisible:
+    element: "Delete my data"
+- tapOn: "Delete my data"
+- assertVisible: "Delete your data\\?"
+- tapOn: "Cancel"
+- assertNotVisible: "Delete your data\\?"
+- assertVisible: "Data: kept"
+- tapOn: "Delete my data"
+- tapOn: "Delete"
+- assertVisible: "Deleting…"
+- extendedWaitUntil:
+    visible: "Data: deleted"
+    timeout: 5000
+
+# Logo, in both sizes
+- scrollUntilVisible:
+    element: "Fries in the Bag"
+- assertVisible: "Fries in the Bag"
