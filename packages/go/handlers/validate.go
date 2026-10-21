@@ -23,6 +23,7 @@ var validate = sync.OnceValue(func() *validator.Validate {
 	// its first use in any test that reaches it.
 	_ = v.RegisterValidation("handle", isHandle)
 	_ = v.RegisterValidation("emoji", isEmoji)
+	_ = v.RegisterValidation("plaintext", isPlainText)
 	return v
 })
 
@@ -56,6 +57,12 @@ func isEmoji(fl validator.FieldLevel) bool {
 		}
 	}
 	return runes >= 1 && runes <= maxEmojiRunes
+}
+
+// isPlainText is the `plaintext` tag: no control characters. A name sits on one line, so a
+// tab or a line break is never meant, and Postgres text refuses a NUL outright.
+func isPlainText(fl validator.FieldLevel) bool {
+	return !strings.ContainsFunc(fl.Field().String(), unicode.IsControl)
 }
 
 // Validate checks a struct against its `validate` tags and returns one FieldError per invalid
@@ -122,6 +129,8 @@ func sentence(fe validator.FieldError) string {
 		return label + " can only use lowercase letters, numbers and underscores"
 	case "emoji":
 		return label + " must be one emoji"
+	case "plaintext":
+		return label + " can't contain line breaks or other control characters"
 	default:
 		return label + " is invalid"
 	}

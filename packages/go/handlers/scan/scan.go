@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"connectrpc.com/connect"
@@ -125,7 +126,9 @@ func (h *Scan) CreateScan(
 	score := scoring.Fridge(counted)
 
 	// 7. Store the verdict, and answer with it as stored
-	scan, err := h.repo.CreateScan(ctx, me.AccountID, score, fridge.Roast, items)
+	// Postgres text cannot hold a NUL; the roast's line breaks may be meant, so only NULs go
+	roast := strings.ReplaceAll(fridge.Roast, "\x00", "")
+	scan, err := h.repo.CreateScan(ctx, me.AccountID, score, roast, items)
 	if err != nil {
 		return nil, h.fail(op, err)
 	}

@@ -364,13 +364,16 @@ func TestAnInvalidEditIsRefusedIngredientByIngredient(t *testing.T) {
 			want: map[string]string{"ingredients": "ingredients must be at most 40 items"},
 		},
 		{
-			name: "a problem in each of five ingredients",
+			name: "a problem in each of seven ingredients",
 			req: &scanv1.EditIngredientsRequest{ScanId: mine.GetScanId(), Ingredients: []*scanv1.Ingredient{
 				{Name: "  ", Category: scanv1.Category_CATEGORY_CONDIMENT},
 				{Name: "Eggs"},
 				{Name: "Eggs", Category: scanv1.Category(99)},
 				{Name: "Eggs", Category: scanv1.Category_CATEGORY_PROTEIN, Quantity: strings.Repeat("x", 21)},
 				{Name: strings.Repeat("a", 41), Category: scanv1.Category_CATEGORY_PROTEIN},
+				// Postgres text cannot hold a NUL, and a line break has no place in a label.
+				{Name: "Egg\x00s", Category: scanv1.Category_CATEGORY_PROTEIN},
+				{Name: "Eggs", Category: scanv1.Category_CATEGORY_PROTEIN, Quantity: "x\n6"},
 			}},
 			want: map[string]string{
 				"ingredients[0].name":     "name is required",
@@ -378,6 +381,8 @@ func TestAnInvalidEditIsRefusedIngredientByIngredient(t *testing.T) {
 				"ingredients[2].category": "category must be protein or vegetable or fruit or grain or dairy or condiment or drink or snack or leftover or other",
 				"ingredients[3].quantity": "quantity must be at most 20 characters",
 				"ingredients[4].name":     "name must be at most 40 characters",
+				"ingredients[5].name":     "name can't contain line breaks or other control characters",
+				"ingredients[6].quantity": "quantity can't contain line breaks or other control characters",
 			},
 		},
 	}
@@ -427,6 +432,7 @@ func TestJunkFromTheModelIsDropped(t *testing.T) {
 		{Name: "Steak", Category: "meat"},
 		{Name: "  Spinach ", Category: " Vegetable ", Quantity: " 1 bag "},
 		{Name: "Rice", Category: "grain", Quantity: strings.Repeat("x", 21)},
+		{Name: "Mi\x00lk", Category: "dairy"},
 	}
 	// Forty snacks after those: the two good items above leave room for 38 of them.
 	for i := range 40 {
@@ -434,7 +440,7 @@ func TestJunkFromTheModelIsDropped(t *testing.T) {
 	}
 	var logs lockedBuffer
 	srv := scanStack(t, scanFixture{
-		vision: newFakeVision(vision.Fridge{Items: listed, Roast: "A lot of snacks."}),
+		vision: newFakeVision(vision.Fridge{Items: listed, Roast: "A lot of\x00 snacks."}),
 		log:    jsonLog(&logs),
 	})
 	maya := scanner(t, srv, "test_maya")
@@ -458,8 +464,12 @@ func TestJunkFromTheModelIsDropped(t *testing.T) {
 		t.Errorf("score %d, tier %v; want 59, scrappy", v.GetScore(), v.GetTier())
 	}
 	line := logs.String()
-	if !strings.Contains(line, `"msg":"dropped items the model listed"`) || !strings.Contains(line, `"dropped":6`) {
-		t.Errorf("log = %s, want the dropped count, 6", line)
+	if !strings.Contains(line, `"msg":"dropped items the model listed"`) || !strings.Contains(line, `"dropped":7`) {
+		t.Errorf("log = %s, want the dropped count, 7", line)
+	}
+	// Postgres text cannot hold a NUL, so the roast loses it rather than failing a spent scan.
+	if v.GetRoast() != "A lot of snacks." {
+		t.Errorf("roast = %q, want %q", v.GetRoast(), "A lot of snacks.")
 	}
 	if strings.Contains(line, "Steak") || strings.Contains(line, "Rice") {
 		t.Errorf("log = %s, want no item from the list in it", line)
