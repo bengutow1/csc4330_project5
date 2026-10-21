@@ -51,6 +51,8 @@ export function KitScreen() {
   const [board, setBoard] = useState<(typeof BOARDS)[number]["value"]>("chefs");
   const [range, setRange] = useState<(typeof RANGES)[number]["value"]>("week");
   const [headerTap, setHeaderTap] = useState("nothing");
+  const [barTap, setBarTap] = useState("nothing");
+  const [emptyTap, setEmptyTap] = useState("nothing");
   const [cardTaps, setCardTaps] = useState(0);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -209,7 +211,10 @@ export function KitScreen() {
       <Section title="Bottom bar">
         <View style={styles.frame}>
           <BottomBar>
-            <Button label="Show me what I can cook" onPress={press("Show me what I can cook")} />
+            <Button
+              label="Show me what I can cook"
+              onPress={() => setBarTap("Show me what I can cook")}
+            />
           </BottomBar>
         </View>
         <View style={styles.frame}>
@@ -218,11 +223,12 @@ export function KitScreen() {
               label="Share"
               variant="secondary"
               icon="share-outline"
-              onPress={press("Share")}
+              onPress={() => setBarTap("Share")}
             />
-            <Button label="Finish" onPress={press("Finish")} />
+            <Button label="Finish" onPress={() => setBarTap("Finish")} />
           </BottomBar>
         </View>
+        <Line>{`Bottom bar: ${barTap}`}</Line>
       </Section>
 
       <Section title="Skeleton">
@@ -241,9 +247,10 @@ export function KitScreen() {
           <EmptyState
             title="No plates yet"
             line="Cook something and your plates land here."
-            action={{ label: "Snap your fridge", onPress: press("Snap your fridge") }}
+            action={{ label: "Snap your fridge", onPress: () => setEmptyTap("Snap your fridge") }}
           />
         </View>
+        <Line>{`Empty state: ${emptyTap}`}</Line>
       </Section>
 
       <Section title="Error state">
