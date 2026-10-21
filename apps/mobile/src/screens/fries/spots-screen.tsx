@@ -1,5 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { type Spot, SpotFilter, useSpots } from "@fries-in-the-bag/api";
+import { type Spot, SpotFilter, useLastScan, useSpots } from "@fries-in-the-bag/api";
 import { FlashList } from "@shopify/flash-list";
 import { Stack, useRouter } from "expo-router";
 import { type ReactNode, useState } from "react";
@@ -32,10 +32,10 @@ const NEAREST_ICON = 14;
 /**
  * SpotsScreen is the list of spots (F2, screen 9): the server's order and filters, chips that ask
  * the server again, and the nearest fries one tap away. With location off it says why the point
- * helps and offers a search box instead. When nothing is open it says so. A spot opens its sheet.
+ * helps and offers a search box instead. When nothing is open it says so, and offers the last
+ * scan's recipes. A spot opens its sheet.
  */
 export function SpotsScreen() {
-  const router = useRouter();
   const place = usePlayerPoint();
   const [filters, setFilters] = useState<readonly SpotFilter[]>(STARTING_FILTERS);
   const [query, setQuery] = useState("");
@@ -48,6 +48,8 @@ export function SpotsScreen() {
     query: hasPoint ? "" : query,
     filters: sendableFilters(filters, hasPoint),
   });
+  // Asked for as the screen opens, so it is in hand if nothing turns out to be open.
+  const lastScanId = useLastScan().data?.verdict?.scanId;
   const pages = spots.data?.pages ?? [];
   const list = pages.flatMap((page) => page.spots);
   const nearest = pages[0]?.nearestFries;
@@ -67,11 +69,7 @@ export function SpotsScreen() {
   } else if (searching && list.length === 0) {
     body =
       emptyReason(filters) === "closed" ? (
-        <EmptyState
-          title="Even the fries are closed."
-          line="Nothing near you is open right now. Your fridge might have one more meal in it."
-          action={{ label: "Snap your fridge", onPress: () => router.navigate("/") }}
-        />
+        <ClosedState lastScanId={lastScanId} />
       ) : (
         <EmptyState
           title="Nothing fits those chips."
@@ -185,6 +183,35 @@ function LocationOff(props: {
         value={props.query}
       />
     </View>
+  );
+}
+
+/**
+ * ClosedState is the list when nothing near is open. With a last scan it links to that fridge's
+ * recipes, for the least sad thing it can make; before a first scan it offers one instead.
+ */
+function ClosedState(props: { lastScanId: bigint | undefined }) {
+  const router = useRouter();
+  const { lastScanId } = props;
+  if (lastScanId === undefined) {
+    return (
+      <EmptyState
+        title="Even the fries are closed."
+        line="Nothing near you is open right now. Your fridge might have one more meal in it."
+        action={{ label: "Snap your fridge", onPress: () => router.navigate("/") }}
+      />
+    );
+  }
+  return (
+    <EmptyState
+      title="Even the fries are closed."
+      line="Nothing near you is open right now. Your last fridge can still make something."
+      action={{
+        label: "Cook the least sad thing",
+        onPress: () =>
+          router.navigate({ pathname: "/cook/[scanId]", params: { scanId: String(lastScanId) } }),
+      }}
+    />
   );
 }
 
