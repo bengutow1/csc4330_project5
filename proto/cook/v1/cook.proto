@@ -1,0 +1,150 @@
+// cook.v1: Cook mode. A scan's list becomes recipes on two shelves, one recipe walks the player
+// through, and a photo of the finished dish that the server checks earns points on a receipt. The
+// phone sends choices and photos; the points, the streak, the rank and the badges are the
+// server's.
+syntax = "proto3";
+
+package cook.v1;
+
+import "account/v1/account.proto";
+
+// CookService suggests recipes for the caller's scans and pays out for their plates. Every rpc acts
+// for the account in the session, and another player's scan or recipe answers not_found.
+service CookService {
+  // ListRecipes suggests recipes for one of the caller's scans, on two shelves.
+  rpc ListRecipes(ListRecipesRequest) returns (ListRecipesResponse);
+  // GetRecipe reads one of the caller's recipes.
+  rpc GetRecipe(GetRecipeRequest) returns (GetRecipeResponse);
+  // PlateMeal checks a photo of the finished dish and, when it passes, awards its points.
+  rpc PlateMeal(PlateMealRequest) returns (PlateMealResponse);
+}
+
+// Difficulty is how hard a recipe is to make.
+enum Difficulty {
+  DIFFICULTY_UNSPECIFIED = 0;
+  DIFFICULTY_EASY = 1;
+  DIFFICULTY_MEDIUM = 2;
+  DIFFICULTY_HARD = 3;
+}
+
+// PointReason is why an award was made. Each award is one row in the points ledger.
+enum PointReason {
+  POINT_REASON_UNSPECIFIED = 0;
+  // A plate the server checked: +100, at most one per player per meal window.
+  POINT_REASON_COOK = 1;
+  // The recipe came from a scan that scored 35 to 59: +50.
+  POINT_REASON_SCRAPPY_BONUS = 2;
+  // The recipe came from a scan that scored under 35: +100.
+  POINT_REASON_AGAINST_ALL_ODDS = 3;
+  // The day's first plate: +10 for each day of the streak, today included, at most +70.
+  POINT_REASON_STREAK = 4;
+  // A plate cooked in a combo (Next): +50 to each player.
+  POINT_REASON_COMBO_COOK = 5;
+}
+
+// Rank is the title a player's all-time points earn and the way to the next one. The profile
+// reuses it.
+message Rank {
+  // Fry Cook, Line Cook, Sous Chef, Head Chef or Executive Chef.
+  string name = 1;
+  // The next title; "" at Executive Chef, the top.
+  string next = 2;
+  // The points still needed for next; 0 at the top.
+  int32 to_next = 3;
+  // The share of the way from this title to the next, from 0 up to 1; 1 at the top.
+  double progress = 4;
+}
+
+// Badge is a sticker for one feat, earned or still locked. The profile reuses it.
+message Badge {
+  string name = 1;
+  // The line a locked badge shows ("Cook seven days in a row").
+  string how_to_earn = 2;
+  bool earned = 3;
+}
+
+// Recipe is one dish for one of the caller's scans, already checked against its list, the staples
+// and the caller's allergies.
+message Recipe {
+  int64 recipe_id = 1;
+  string title = 2;
+  // The whole time to the plate, in minutes.
+  int32 minutes = 3;
+  Difficulty difficulty = 4;
+  // What it needs to cook with; empty needs none.
+  repeated account.v1.Equipment equipment = 5;
+  // The food it takes that the caller has: items from the scan's list, by name, and staples.
+  repeated string uses = 6;
+  // The food it takes that the caller lacks: no names, or one on the One item away shelf.
+  repeated string missing = 7;
+  // The instructions, in order.
+  repeated string steps = 8;
+  // The points plating it would earn from this scan's score, before any streak.
+  int32 points_preview = 9;
+}
+
+message ListRecipesRequest {
+  // The caller's scan whose list the recipes are for.
+  int64 scan_id = 1;
+  // The longest a recipe may take: 10, 20 or 45 minutes; 0 = any.
+  int32 max_minutes = 2;
+  // Keep only recipes that need nothing beyond this equipment; empty = no filter.
+  repeated account.v1.Equipment equipment = 3;
+  // Keep only recipes that fit this diet; unspecified or none = no filter.
+  account.v1.Diet diet = 4;
+}
+
+// The shelves come whole, without a cursor: they hold one scan's recipes, a handful from the
+// model, and never grow.
+message ListRecipesResponse {
+  // Recipes that take only what the caller has.
+  repeated Recipe make_it_now = 1;
+  // Recipes that take one item the caller lacks.
+  repeated Recipe one_item_away = 2;
+}
+
+message GetRecipeRequest {
+  int64 recipe_id = 1;
+}
+
+message GetRecipeResponse {
+  Recipe recipe = 1;
+}
+
+message PlateMealRequest {
+  // The caller's recipe they cooked.
+  int64 recipe_id = 1;
+  // The finished dish: a JPEG of at most 2 MB.
+  bytes photo = 2;
+}
+
+message PlateMealResponse {
+  Receipt receipt = 1;
+}
+
+// Receipt is what one plate earned, line by line.
+message Receipt {
+  // Whether the server's check found food matching the recipe. A plate that fails earns nothing
+  // and stores nothing.
+  bool passed = 1;
+  // The server's sentence for the player ("That doesn't look like Chicken Fajita Bowl. Try another
+  // angle.").
+  string message = 2;
+  // The awards, in receipt order; none when the plate failed.
+  repeated AwardLine lines = 3;
+  // The sum of lines.
+  int32 total = 4;
+  // The caller's current streak, in days.
+  int32 streak_days = 5;
+  // The badges this plate earned that the caller did not have before it.
+  repeated Badge new_badges = 6;
+  // The caller's rank before this plate and after it; the same when nothing changed.
+  Rank rank_before = 7;
+  Rank rank_after = 8;
+}
+
+// AwardLine is one award: a line on the receipt and a row in the ledger.
+message AwardLine {
+  PointReason reason = 1;
+  int32 points = 2;
+}
