@@ -7,6 +7,7 @@ require (
 	github.com/bengutow1/csc4330_project5/packages/go/apigen v0.0.0
 	github.com/bengutow1/csc4330_project5/packages/go/handlers v0.0.0
 	github.com/bengutow1/csc4330_project5/packages/go/logging v0.0.0
+	github.com/bengutow1/csc4330_project5/packages/go/places v0.0.0
 	github.com/bengutow1/csc4330_project5/packages/go/repository v0.0.0
 	github.com/go-chi/chi/v5 v5.3.2
 	github.com/jackc/pgx/v5 v5.11.0
@@ -32,5 +33,6 @@ replace (
 	github.com/bengutow1/csc4330_project5/packages/go/apigen => ../../packages/go/apigen
 	github.com/bengutow1/csc4330_project5/packages/go/handlers => ../../packages/go/handlers
 	github.com/bengutow1/csc4330_project5/packages/go/logging => ../../packages/go/logging
+	github.com/bengutow1/csc4330_project5/packages/go/places => ../../packages/go/places
 	github.com/bengutow1/csc4330_project5/packages/go/repository => ../../packages/go/repository
 )

@@ -23,6 +23,7 @@ import (
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/health/v1/healthv1connect"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/healthz"
 	"github.com/bengutow1/csc4330_project5/packages/go/logging"
+	"github.com/bengutow1/csc4330_project5/packages/go/places"
 	"github.com/bengutow1/csc4330_project5/packages/go/repository"
 )
 
@@ -44,6 +45,29 @@ func main() {
 		port = "8080"
 	}
 	addr := ":" + port
+	// Only an explicit local APP_ENV relaxes anything, so an unset or misspelled one runs hardened.
+	appEnv := os.Getenv("APP_ENV")
+	localDev := appEnv == "development" || appEnv == "local"
+
+	// Without PLACES_API_KEY the API serves the places mock, and only local development may: a real
+	// deployment never lists made-up spots. No places client exists yet for a key to drive.
+	if os.Getenv("PLACES_API_KEY") != "" {
+		log.Error("PLACES_API_KEY is set, but no places client exists to use it")
+		os.Exit(1)
+	}
+	if !localDev {
+		log.Error("PLACES_API_KEY is required unless APP_ENV is development or local", "app_env", appEnv)
+		os.Exit(1)
+	}
+	placesMock := os.Getenv("PLACES_MOCK")
+	spots, err := places.NewMock(placesMock)
+	if err != nil {
+		log.Error("read PLACES_MOCK", "err", err)
+		os.Exit(1)
+	}
+	log.Info("places mock is live", "places_mock", placesMock)
+	_ = spots // nothing lists spots yet
+
 	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
 		log.Error("open database pool", "err", err)

@@ -1,0 +1,101 @@
+// fries.v1: Fries mode, for when the fridge can't feed you. The server asks the places provider
+// for spots near the player and narrows them the way the player asked. The player's location is
+// used for that one call, never stored and never logged. A fry run logged at a spot earns no
+// points: it only fills the Hall of Fries.
+syntax = "proto3";
+
+package fries.v1;
+
+// FriesService finds spots near the player and logs their fry runs.
+service FriesService {
+  // ListSpots finds spots near the player, filtered the way they asked, closest first. Not
+  // NO_SIDE_EFFECTS, so the player's location never rides in a GET's URL.
+  rpc ListSpots(ListSpotsRequest) returns (ListSpotsResponse);
+  // LogFryRun records that the caller went to a spot. It earns no points.
+  rpc LogFryRun(LogFryRunRequest) returns (LogFryRunResponse);
+}
+
+// SpotFilter narrows the spots. A request can turn on several, and a spot must pass every one.
+enum SpotFilter {
+  SPOT_FILTER_UNSPECIFIED = 0;
+  // Open right now. The app turns it on to start.
+  SPOT_FILTER_OPEN_NOW = 1;
+  // Open at or after 23:00 in the spot's local time (late_night).
+  SPOT_FILTER_LATE_NIGHT = 2;
+  // A price_level of 1.
+  SPOT_FILTER_CHEAP = 3;
+  // Fast food (fast_food).
+  SPOT_FILTER_FAST_FOOD = 4;
+  // Within 1,200 m of the player (walkable).
+  SPOT_FILTER_WALKABLE = 5;
+}
+
+// Spot is one place to eat near the player.
+message Spot {
+  // The places provider's id for the spot. Opaque to the app: send it back as it came.
+  string spot_id = 1;
+  // As the provider writes it.
+  string name = 2;
+  // The straight line from the request's lat and lng, in meters; 0 when it sent none.
+  int32 distance_meters = 3;
+  bool open_now = 4;
+  // When an open spot closes, as 24-hour "HH:MM" in its local time ("02:00" is 2 am). "" when
+  // there is no time to show: closed now, open around the clock, or unknown.
+  string closes_at = 5;
+  // Open at or after 23:00 in the spot's local time. The server works it out from the spot's
+  // hours.
+  bool late_night = 6;
+  // 1 (cheap) to 4 (priciest); 0 when unknown.
+  int32 price_level = 7;
+  // The provider files it under fast food.
+  bool fast_food = 8;
+  // Within 1,200 m of the request's lat and lng; false when it sent none. The server works it out.
+  bool walkable = 9;
+  // The spot's latitude in degrees, for directions.
+  double lat = 10;
+  // The spot's longitude in degrees, for directions.
+  double lng = 11;
+  // One line, as the provider writes it; "" when unknown.
+  string address = 12;
+}
+
+message ListSpotsRequest {
+  // The player's latitude in degrees, -90 to 90. Send lat and lng together, or neither when the
+  // player's location is off, and then query must say where to look. Used for this one call:
+  // never stored, never logged.
+  optional double lat = 1;
+  // The player's longitude in degrees, -180 to 180. Sent with lat, or not at all.
+  optional double lng = 2;
+  // The filters the player has on, each at most once and never SPOT_FILTER_UNSPECIFIED. Empty
+  // means no filter.
+  repeated SpotFilter filters = 3;
+  // What to look for, up to 60 characters ("tacos", "near the stadium"). "" means any food near
+  // lat and lng.
+  string query = 4;
+  // The next_cursor of the page before; "" for the first page.
+  string cursor = 5;
+  // The most spots on this page, from 1 to 50, where more is clamped to 50; 0 = 20.
+  int32 limit = 6;
+}
+
+message ListSpotsResponse {
+  // This page of spots, closest first. Spots at the same distance are ordered by spot_id.
+  repeated Spot spots = 1;
+  // Send as cursor for the next page; "" when this page is the last.
+  string next_cursor = 2;
+  // The closest open fast-food spot the search found, whatever the filters, on every page. Unset
+  // when there is none.
+  Spot nearest_fries = 3;
+}
+
+message LogFryRunRequest {
+  // The spot's spot_id from ListSpots, 1 to 256 characters.
+  string spot_id = 1;
+  // The spot's name from ListSpots, 1 to 120 characters.
+  string spot_name = 2;
+}
+
+message LogFryRunResponse {
+  // The id of the fry run just logged.
+  int64 fry_run_id = 1;
+}

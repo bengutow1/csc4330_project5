@@ -1,0 +1,9 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+id: 'go-places'
+layer: 'library'
+language: 'go'
+
+project:
+  name: 'go-places'
+  description: 'Finds food near a point through the places provider, and the mock the API serves without a key.'

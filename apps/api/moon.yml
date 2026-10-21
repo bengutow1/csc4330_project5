@@ -21,6 +21,8 @@ tasks:
     env:
       DATABASE_URL: 'postgres://fries:fries@localhost:5432/fries?sslmode=disable'
       LOG_FORMAT: 'text'
+      # Unset runs hardened like production, which refuses to serve the vendor mocks.
+      APP_ENV: 'development'
 
   # Compile the binary into bin/, replacing the inherited `go build ./...`, which drops an `api`
   # binary in this folder.
