@@ -80,7 +80,6 @@ func TestAccountByIDReadsTheRowBack(t *testing.T) {
 	}
 }
 
-// TestHandleTakenSeesOnlyAHeldHandle: onboarding says "taken" only when someone has it.
 // TestDeleteAccountFreesTheHandle: CreateAccount undoes an account whose session could not be
 // saved, and the handle has to come free with it. A second delete finds nothing to delete.
 func TestDeleteAccountFreesTheHandle(t *testing.T) {
@@ -114,6 +113,7 @@ func TestDeleteAccountFreesTheHandle(t *testing.T) {
 	}
 }
 
+// TestHandleTakenSeesOnlyAHeldHandle: onboarding says "taken" only when someone has it.
 func TestHandleTakenSeesOnlyAHeldHandle(t *testing.T) {
 	t.Parallel()
 	repo := newRepo(t)
