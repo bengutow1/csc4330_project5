@@ -1,5 +1,5 @@
-# Nothing open. With every spot closed, the list says "Even the fries are closed." and points back
-# at the fridge. Needs the api started on the closed mock (PLACES_MOCK=closed moon run api:dev),
+# Nothing open. With every spot closed, the list says "Even the fries are closed." and, before a
+# first scan, points back at the fridge. Needs the api started on the closed mock (PLACES_MOCK=closed moon run api:dev),
 # with the app installed (moon run mobile:ios) and Metro (moon run mobile:dev).
 appId: com.cadenlund.friesinthebag
 ---
