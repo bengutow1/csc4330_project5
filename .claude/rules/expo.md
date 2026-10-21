@@ -76,6 +76,8 @@ export default function RecipeRoute() {
 
 ## UI
 
+- The look comes from `docs/design.md` and the screens in `docs/design/`: its tokens, type and
+  components. Where an issue's look notes differ, the design wins.
 - Colours come from theme tokens. No hex values in component code.
 - `expo-image` for images; `FlashList` for any list that can grow long. An infinite list uses plain
   `onEndReached` with `onEndReachedThreshold={0.5}` and an `isFetchingNextPage` check. If a list

@@ -5,8 +5,8 @@ The Expo app. Everything in the root `AGENTS.md` applies here. The app's own con
 calls); read both before editing anything in this folder.
 
 Status: `src/screens/home-screen.tsx` is the demo prototype, mounted at `/`. It runs on mock data,
-calls no server, and is replaced screen by screen as the mockups land: the tabs become Kitchen,
-Board and Me, with scanning, cooking, Fries mode and Combo as flows over them. `src/app/status.tsx`
+calls no server, and is replaced screen by screen from the design (`docs/design.md`): the tabs
+become Snap, Board and Me, with scanning, cooking, Fries mode and Combo as flows over them. `src/app/status.tsx`
 (open it with `friesinthebag://status`) asks the API whether it can serve, and is the one screen
 wired to the server so far.
 
