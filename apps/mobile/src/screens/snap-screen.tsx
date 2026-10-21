@@ -2,7 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { errorMessage, fieldErrors, isUnreachable, useCreateScan } from "@fries-in-the-bag/api";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "@/components/button";
@@ -48,44 +48,48 @@ export function SnapScreen() {
   const [kind, setKind] = useState<ShotKind>("fridge");
   const [shots, setShots] = useState<readonly Shot[]>([]);
   const [lost, setLost] = useState(false);
-  // How many times Judge has been tapped, so a photo can tell whether a scan started while it saved.
-  const judged = useRef(0);
+  // Photos taken but not yet in the list, while they come off the camera and shrink.
+  const [saving, setSaving] = useState(0);
+  // Judge was tapped, and the scan waits for those photos so it carries every one taken before.
+  const [asked, setAsked] = useState(false);
+  const judging = asked || create.isPending;
   const first = shots[0];
 
-  // Other photos make another scan, so the last one's failure no longer applies.
+  // Other photos make another scan, so the last one's failure no longer applies. Nothing changes
+  // the list while a scan is in flight: the camera is hidden, and the scan waited for every save.
   const change = (next: (list: readonly Shot[]) => readonly Shot[]) => {
     create.reset();
     setShots(next);
   };
 
-  // The kind is read now, so a shot keeps the tag it was taken under while it shrinks. A photo still
-  // saving when Judge is tapped is left out: the scan went without it, and adding it now would
-  // reset that scan mid-flight and lose its verdict.
-  const keep = async (load: () => Promise<{ source: PhotoSource; size: Size }>) => {
+  // Counted from the moment the shutter is pressed. The kind is read then too, so a shot keeps the
+  // tag it was taken under while it shrinks.
+  const keep = async (photo: Promise<{ source: PhotoSource; size: Size }>) => {
     const shotKind = kind;
-    const before = judged.current;
     setLost(false);
+    setSaving((n) => n + 1);
     try {
-      const { source, size } = await load();
-      const photo = await shrinkPhoto(source, size, SCAN_PHOTO);
-      if (judged.current === before) {
-        change((list) => addShot(list, { ...photo, kind: shotKind }));
-      }
+      const { source, size } = await photo;
+      const shrunk = await shrinkPhoto(source, size, SCAN_PHOTO);
+      change((list) => addShot(list, { ...shrunk, kind: shotKind }));
     } catch {
-      if (judged.current === before) {
-        setLost(true);
-      }
+      setLost(true);
+    } finally {
+      setSaving((n) => n - 1);
     }
   };
-  const fromCamera = (shot: CameraShot) => keep(async () => ({ source: shot.uri, size: shot }));
+  const fromCamera = (shot: Promise<CameraShot>) =>
+    keep(shot.then((taken) => ({ source: taken.uri, size: taken })));
   const fromSample = () =>
-    keep(async () => {
-      const image = await Image.loadAsync(SAMPLE_PHOTO);
-      return { source: image, size: image };
-    });
+    keep(Image.loadAsync(SAMPLE_PHOTO).then((image) => ({ source: image, size: image })));
 
-  const judge = () => {
-    judged.current += 1;
+  // The scan goes once nothing is left to save. It runs here, after the render that saw the last
+  // photo land, so it sends the list as it is now rather than as it was at the tap.
+  useEffect(() => {
+    if (!asked || saving > 0) {
+      return;
+    }
+    setAsked(false);
     create.mutate(
       { photos: scanPhotos(shots) },
       {
@@ -97,11 +101,12 @@ export function SnapScreen() {
           // Back from the verdict is a fresh camera, never the judging moment again.
           create.reset();
           setShots([]);
+          setLost(false);
           router.push({ pathname: "/scan/[id]", params: { id: String(verdict.scanId) } });
         },
       },
     );
-  };
+  }, [asked, saving, shots, create, router]);
 
   const invalid = fieldErrors(create.error);
   const failure = create.isError
@@ -117,7 +122,7 @@ export function SnapScreen() {
           <Text style={styles.tagline}>Or put the fries in the bag.</Text>
         </View>
       </View>
-      {create.isPending && first !== undefined ? (
+      {judging && first !== undefined ? (
         <Judging uri={first.uri} />
       ) : (
         <Camera
@@ -142,9 +147,9 @@ export function SnapScreen() {
         <View style={styles.action}>
           <Button
             label={create.isError ? "Try again" : "Judge my fridge"}
-            pending={create.isPending}
+            pending={judging}
             pendingLabel="Judging…"
-            onPress={judge}
+            onPress={() => setAsked(true)}
           />
         </View>
       ) : null}

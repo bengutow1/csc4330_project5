@@ -34,7 +34,11 @@ export interface CameraShot {
 export function Camera(props: {
   /** Why the camera is needed, in the screen's words. */
   why: string;
-  onShot: (shot: CameraShot) => void;
+  /**
+   * Called as the shutter is pressed, with the photo still on its way, so the screen knows about
+   * it before it lands. The screen says what went wrong when it doesn't.
+   */
+  onShot: (shot: Promise<CameraShot>) => void;
   /** The screen has all the photos it can use, so the shutter rests. */
   full?: boolean;
   /** Beside the shutter, where the design draws the photo library. */
@@ -49,7 +53,6 @@ export function Camera(props: {
   const [ready, setReady] = useState(false);
   const [broken, setBroken] = useState(false);
   const [shooting, setShooting] = useState(false);
-  const [missed, setMissed] = useState(false);
   const granted = permission?.granted === true;
   const live = granted && focused;
 
@@ -72,21 +75,21 @@ export function Camera(props: {
     }
   }, [live]);
 
-  const shoot = async () => {
+  const shoot = () => {
     const view = camera.current;
     if (view === null) {
       return;
     }
     setShooting(true);
-    setMissed(false);
-    try {
-      const photo = await view.takePictureAsync();
-      props.onShot({ uri: photo.uri, width: photo.width, height: photo.height });
-    } catch {
-      setMissed(true);
-    } finally {
-      setShooting(false);
-    }
+    const shot = view
+      .takePictureAsync()
+      .then((photo) => ({ uri: photo.uri, width: photo.width, height: photo.height }));
+    // The shutter rests until this photo is in, whether or not it worked.
+    shot.then(
+      () => setShooting(false),
+      () => setShooting(false),
+    );
+    props.onShot(shot);
   };
 
   return (
@@ -145,7 +148,6 @@ export function Camera(props: {
         )}
       </View>
       {props.children}
-      {missed ? <Text style={styles.error}>That photo didn't take. Try again.</Text> : null}
       <View style={styles.controls}>
         <View style={styles.side}>{props.beside}</View>
         {granted ? (
@@ -244,7 +246,6 @@ const styles = StyleSheet.create({
     borderRightWidth: GUIDE_WIDTH,
     borderBottomRightRadius: RADII.sm,
   },
-  error: { ...TYPE.small, color: COLORS.ketchupInk, textAlign: "center" },
   controls: { flexDirection: "row", alignItems: "center", paddingHorizontal: CONTROLS_INSET },
   side: { flex: 1, alignItems: "flex-start" },
   shutter: {
