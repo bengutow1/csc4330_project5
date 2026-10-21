@@ -115,6 +115,42 @@ func TestWhoAmIAfterTheAccountIsGoneIsUnauthenticated(t *testing.T) {
 	}
 }
 
+// TestASessionThatCannotBeSavedLeavesTheHandleFree: the cookie is the account's only way in, so an
+// account whose session was never saved can never be reached. It must not keep the handle, or the
+// player's next try with the same name says it is taken.
+func TestASessionThatCannotBeSavedLeavesTheHandleFree(t *testing.T) {
+	t.Parallel()
+	srv := accountStack(t, account.Limits{})
+	// Without the sessions table the account's insert works and its session's save fails, as in
+	// a database blip between the two.
+	_, err := srv.pool.Exec(t.Context(), `drop table sessions`)
+	if err != nil {
+		t.Fatalf("drop sessions: %v", err)
+	}
+	maya := newcomer(t, srv.url)
+
+	_, err = maya.CreateAccount(t.Context(), connect.NewRequest(&accountv1.CreateAccountRequest{
+		Handle: "test_maya",
+		Avatar: "🌮",
+	}))
+
+	// Unknown, not internal: the middleware's own save fails too, and its bare 500 goes out before
+	// the handler's error. Any refusal before the insert would come back as another code. (CodeOf
+	// says unknown for no error at all, hence the nil check.)
+	if err == nil || connect.CodeOf(err) != connect.CodeUnknown {
+		t.Fatalf("got code %v (%v), want unknown (the failed save's bare 500)", connect.CodeOf(err), err)
+	}
+	checked, err := maya.CheckHandle(t.Context(), connect.NewRequest(&accountv1.CheckHandleRequest{
+		Handle: "test_maya",
+	}))
+	if err != nil {
+		t.Fatalf("check handle: %v", err)
+	}
+	if !checked.Msg.Available {
+		t.Error("the handle is still held by an account nobody can reach")
+	}
+}
+
 // TestATakenHandleIsAFieldErrorOnHandle: onboarding shows it under the input, so it must arrive
 // as a violation on handle, and the newcomer must still have no account.
 func TestATakenHandleIsAFieldErrorOnHandle(t *testing.T) {

@@ -81,6 +81,39 @@ func TestAccountByIDReadsTheRowBack(t *testing.T) {
 }
 
 // TestHandleTakenSeesOnlyAHeldHandle: onboarding says "taken" only when someone has it.
+// TestDeleteAccountFreesTheHandle: CreateAccount undoes an account whose session could not be
+// saved, and the handle has to come free with it. A second delete finds nothing to delete.
+func TestDeleteAccountFreesTheHandle(t *testing.T) {
+	t.Parallel()
+	repo := newRepo(t)
+	maya := createAccount(t, repo, "test_maya")
+	ben := createAccount(t, repo, "test_ben")
+
+	deleted, err := repo.DeleteAccount(t.Context(), maya.AccountID)
+	if err != nil {
+		t.Fatalf("delete account: %v", err)
+	}
+	again, err := repo.DeleteAccount(t.Context(), maya.AccountID)
+	if err != nil {
+		t.Fatalf("delete account again: %v", err)
+	}
+	taken, err := repo.HandleTaken(t.Context(), "test_maya")
+	if err != nil {
+		t.Fatalf("handle taken: %v", err)
+	}
+
+	if !deleted || again {
+		t.Errorf("deleted = %v, then %v, want true, then false", deleted, again)
+	}
+	if taken {
+		t.Error("the deleted account's handle still reads as taken")
+	}
+	_, err = repo.AccountByID(t.Context(), ben.AccountID)
+	if err != nil {
+		t.Errorf("another account after the delete: %v", err)
+	}
+}
+
 func TestHandleTakenSeesOnlyAHeldHandle(t *testing.T) {
 	t.Parallel()
 	repo := newRepo(t)

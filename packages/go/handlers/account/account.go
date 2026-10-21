@@ -30,6 +30,10 @@ const (
 // handleTaken goes under the handle input when the unique constraint refuses it.
 const handleTaken = "that handle is taken"
 
+// undoTimeout bounds deleting an account whose sign-in failed. The delete runs even after the
+// client hangs up, so it needs a deadline of its own.
+const undoTimeout = 5 * time.Second
+
 // Account implements account.v1 AccountService.
 type Account struct {
 	repo   *repository.Repository
@@ -83,6 +87,15 @@ func (h *Account) fail(op string, err error) error {
 	return handlers.ConnectErr(h.log, op, err)
 }
 
+// undoCreate deletes the account CreateAccount just made, once its sign-in has failed. It outlives
+// the request, so a client that hung up mid-sign-in still gets its handle back.
+func (h *Account) undoCreate(ctx context.Context, accountID int64) error {
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), undoTimeout)
+	defer cancel()
+	_, err := h.repo.DeleteAccount(ctx, accountID)
+	return err
+}
+
 // CreateAccount makes the device account and signs the session in.
 func (h *Account) CreateAccount(
 	ctx context.Context, req *connect.Request[accountv1.CreateAccountRequest],
@@ -112,10 +125,11 @@ func (h *Account) CreateAccount(
 		return nil, h.fail(op, err)
 	}
 
-	// 4. Making the account is the sign-in
+	// 4. Making the account is the sign-in. The session is the account's only way in, so if it
+	// can't be saved the account goes too, and the handle is free for the next try
 	err = h.auth.SignIn(ctx, acct.AccountID)
 	if err != nil {
-		return nil, h.fail(op, err)
+		return nil, h.fail(op, errors.Join(err, h.undoCreate(ctx, acct.AccountID)))
 	}
 
 	account, err := toProtoAccount(acct)
