@@ -27,3 +27,5 @@ infisical = "file://./prototools/plugins/infisical.toml"
 [settings]
 detect-strategy = "prefer-prototools"
 auto-install = true
+
+# Throwaway probe for #7: a change to this file alone must run every task. Never merge.
