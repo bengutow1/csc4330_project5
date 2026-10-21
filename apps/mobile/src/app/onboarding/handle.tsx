@@ -1,5 +1,5 @@
-import { PlaceholderScreen } from "@/screens/placeholder-screen";
+import { HandleScreen } from "@/screens/onboarding/handle-screen";
 
 export default function HandleRoute() {
-  return <PlaceholderScreen title="Pick a handle" issue={14} />;
+  return <HandleScreen />;
 }

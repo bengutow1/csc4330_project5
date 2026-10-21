@@ -1,5 +1,5 @@
-import { HandleScreen } from "@/screens/onboarding/handle-screen";
+import { WelcomeScreen } from "@/screens/onboarding/welcome-screen";
 
-export default function HandleFirstRoute() {
-  return <HandleScreen />;
+export default function WelcomeRoute() {
+  return <WelcomeScreen />;
 }

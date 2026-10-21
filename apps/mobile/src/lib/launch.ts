@@ -1,5 +1,5 @@
 /**
- * OPEN_ROUTES are the routes in neither guard of the root layout, by their first segment. Whose
+ * OPEN_ROUTES are the routes in none of the root layout's guards, by their first segment. Whose
  * phone this is changes nothing there, so the launch cover leaves them alone: /status has to be
  * able to say the API is down, and the kit needs only Metro.
  */
