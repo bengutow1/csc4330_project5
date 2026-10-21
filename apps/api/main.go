@@ -26,8 +26,6 @@ import (
 	"github.com/bengutow1/csc4330_project5/packages/go/repository"
 )
 
-const addr = ":8080"
-
 func main() {
 	log := logging.New("api")
 	slog.SetDefault(log)
@@ -40,6 +38,12 @@ func main() {
 		log.Error("DATABASE_URL is required")
 		os.Exit(1)
 	}
+	// PORT lets a second checkout (an Omni task) run its own API beside this one.
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	addr := ":" + port
 	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
 		log.Error("open database pool", "err", err)

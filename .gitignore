@@ -21,6 +21,9 @@ target/
 .env.*
 !.env.example
 
+# Omni Code: personal task setup, merged over the shared .omni/config.json
+.omni/config.local.json
+
 # logs
 *.log
 
