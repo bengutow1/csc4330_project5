@@ -39,7 +39,7 @@ export function Camera(props: {
    * it before it lands. The screen says what went wrong when it doesn't.
    */
   onShot: (shot: Promise<CameraShot>) => void;
-  /** The screen has all the photos it can use, so the shutter rests. */
+  /** The screen takes no more photos for now, so the shutter rests. */
   full?: boolean;
   /** Beside the shutter, where the design draws the photo library. */
   beside?: ReactNode;
