@@ -2,7 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { errorMessage, fieldErrors, isUnreachable, useCreateScan } from "@fries-in-the-bag/api";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "@/components/button";
@@ -48,6 +48,8 @@ export function SnapScreen() {
   const [kind, setKind] = useState<ShotKind>("fridge");
   const [shots, setShots] = useState<readonly Shot[]>([]);
   const [lost, setLost] = useState(false);
+  // How many times Judge has been tapped, so a photo can tell whether a scan started while it saved.
+  const judged = useRef(0);
   const first = shots[0];
 
   // Other photos make another scan, so the last one's failure no longer applies.
@@ -56,16 +58,23 @@ export function SnapScreen() {
     setShots(next);
   };
 
-  // The kind is read now, so a shot keeps the tag it was taken under while it shrinks.
+  // The kind is read now, so a shot keeps the tag it was taken under while it shrinks. A photo still
+  // saving when Judge is tapped is left out: the scan went without it, and adding it now would
+  // reset that scan mid-flight and lose its verdict.
   const keep = async (load: () => Promise<{ source: PhotoSource; size: Size }>) => {
     const shotKind = kind;
+    const before = judged.current;
     setLost(false);
     try {
       const { source, size } = await load();
       const photo = await shrinkPhoto(source, size, SCAN_PHOTO);
-      change((list) => addShot(list, { ...photo, kind: shotKind }));
+      if (judged.current === before) {
+        change((list) => addShot(list, { ...photo, kind: shotKind }));
+      }
     } catch {
-      setLost(true);
+      if (judged.current === before) {
+        setLost(true);
+      }
     }
   };
   const fromCamera = (shot: CameraShot) => keep(async () => ({ source: shot.uri, size: shot }));
@@ -75,7 +84,8 @@ export function SnapScreen() {
       return { source: image, size: image };
     });
 
-  const judge = () =>
+  const judge = () => {
+    judged.current += 1;
     create.mutate(
       { photos: scanPhotos(shots) },
       {
@@ -91,6 +101,7 @@ export function SnapScreen() {
         },
       },
     );
+  };
 
   const invalid = fieldErrors(create.error);
   const failure = create.isError
