@@ -52,11 +52,10 @@ export function SnapScreen() {
   const [saving, setSaving] = useState(0);
   // Judge was tapped, and the scan waits for those photos so it carries every one taken before.
   const [asked, setAsked] = useState(false);
-  const judging = asked || create.isPending;
   const first = shots[0];
 
   // Other photos make another scan, so the last one's failure no longer applies. Nothing changes
-  // the list while a scan is in flight: the camera is hidden, and the scan waited for every save.
+  // the list while a scan is in flight: the scan waited for every save, then the camera hid.
   const change = (next: (list: readonly Shot[]) => readonly Shot[]) => {
     create.reset();
     setShots(next);
@@ -90,6 +89,10 @@ export function SnapScreen() {
       return;
     }
     setAsked(false);
+    // A photo that didn't save stops the scan here, so the player sees why before judging without it.
+    if (lost) {
+      return;
+    }
     create.mutate(
       { photos: scanPhotos(shots) },
       {
@@ -101,12 +104,11 @@ export function SnapScreen() {
           // Back from the verdict is a fresh camera, never the judging moment again.
           create.reset();
           setShots([]);
-          setLost(false);
           router.push({ pathname: "/scan/[id]", params: { id: String(verdict.scanId) } });
         },
       },
     );
-  }, [asked, saving, shots, create, router]);
+  }, [asked, saving, lost, shots, create, router]);
 
   const invalid = fieldErrors(create.error);
   const failure = create.isError
@@ -122,15 +124,17 @@ export function SnapScreen() {
           <Text style={styles.tagline}>Or put the fries in the bag.</Text>
         </View>
       </View>
-      {judging && first !== undefined ? (
+      {create.isPending && first !== undefined ? (
         <Judging uri={first.uri} />
       ) : (
+        // Once Judge is tapped the shutter rests, but the camera stays until every photo it took
+        // has landed: a capture whose camera is torn down may never finish.
         <Camera
           why={WHY}
           onShot={fromCamera}
-          full={shots.length >= MAX_SHOTS}
+          full={asked || shots.length >= MAX_SHOTS}
           beside={
-            SAMPLE_PHOTO ? (
+            SAMPLE_PHOTO && !asked ? (
               <IconButton icon="image-outline" label="Use a sample photo" onPress={fromSample} />
             ) : null
           }
@@ -147,9 +151,12 @@ export function SnapScreen() {
         <View style={styles.action}>
           <Button
             label={create.isError ? "Try again" : "Judge my fridge"}
-            pending={judging}
+            pending={asked || create.isPending}
             pendingLabel="Judging…"
-            onPress={() => setAsked(true)}
+            onPress={() => {
+              setLost(false);
+              setAsked(true);
+            }}
           />
         </View>
       ) : null}
