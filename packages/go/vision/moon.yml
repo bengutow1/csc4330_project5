@@ -1,0 +1,9 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+id: 'go-vision'
+layer: 'library'
+language: 'go'
+
+project:
+  name: 'go-vision'
+  description: 'The vision model behind the API: reads kitchen photos into an ingredient list and a roast, with a mock for running without a key.'
