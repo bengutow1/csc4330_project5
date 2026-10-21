@@ -3,6 +3,7 @@ package handlers_test
 
 import (
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers"
@@ -176,4 +177,76 @@ func TestValidateRefusesSomethingThatIsNotAStruct(t *testing.T) {
 	if got == nil {
 		t.Error("a string passed validation as if it were a valid request")
 	}
+}
+
+// TestTheHandleTagHoldsTheHandleRule: it restates the handle check on app.account, so a bad handle
+// becomes a message under the input instead of a redacted internal error.
+func TestTheHandleTagHoldsTheHandleRule(t *testing.T) {
+	t.Parallel()
+	const refused = "handle can only use lowercase letters, numbers and underscores"
+	cases := []struct{ name, handle, want string }{
+		{name: "letters, digits and underscores", handle: "chef_maya_2", want: ""},
+		{name: "a space", handle: "chef maya", want: refused},
+		{name: "a dash", handle: "chef-maya", want: refused},
+		{name: "a capital letter", handle: "Chef_maya", want: refused},
+		{name: "an accented letter", handle: "josé", want: refused},
+		{name: "an emoji", handle: "chef🍟", want: refused},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := handlers.Validate(struct {
+				Handle string `pfield:"handle" validate:"handle"`
+			}{c.handle})
+
+			if message(got) != c.want {
+				t.Errorf("got %v, want %q", got, c.want)
+			}
+		})
+	}
+}
+
+// TestTheEmojiTagTakesOneEmojiAndNothingElse: an avatar shows beside the handle on the board, so
+// it must stay a picture and never become a second line of text.
+func TestTheEmojiTagTakesOneEmojiAndNothingElse(t *testing.T) {
+	t.Parallel()
+	const refused = "avatar must be one emoji"
+	cases := []struct{ name, avatar, want string }{
+		{name: "one emoji", avatar: "🍟", want: ""},
+		{name: "a joined emoji", avatar: "👩‍🍳", want: ""},
+		{name: "a skin tone", avatar: "👍🏽", want: ""},
+		{name: "a flag", avatar: "🇺🇸", want: ""},
+		{name: "a subdivision flag", avatar: "🏴󠁧󠁢󠁳󠁣󠁴󠁿", want: ""},
+		{name: "emoji presentation", avatar: "❤️", want: ""},
+		{name: "the longest, ten code points", avatar: "👩🏻‍❤️‍💋‍👨🏼", want: ""},
+		{name: "nothing", avatar: "", want: refused},
+		{name: "a letter", avatar: "a", want: refused},
+		{name: "an emoji and a letter", avatar: "🍟a", want: refused},
+		{name: "a digit", avatar: "7", want: refused},
+		{name: "a space between", avatar: "🍟 🍟", want: refused},
+		{name: "punctuation", avatar: "!", want: refused},
+		{name: "eleven code points", avatar: strings.Repeat("🍟", 11), want: refused},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := handlers.Validate(struct {
+				Avatar string `pfield:"avatar" validate:"emoji"`
+			}{c.avatar})
+
+			if message(got) != c.want {
+				t.Errorf("got %v, want %q", got, c.want)
+			}
+		})
+	}
+}
+
+// message is the one violation's text, or "" when there is none.
+func message(invalid handlers.FieldErrors) string {
+	if len(invalid) == 0 {
+		return ""
+	}
+	return invalid[0].Message
 }

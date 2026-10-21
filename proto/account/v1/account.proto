@@ -5,6 +5,71 @@ syntax = "proto3";
 
 package account.v1;
 
+// AccountService makes the device account and says whose session this is. The session cookie is
+// the only credential, so no request names its caller. The two public rpcs are limited per client
+// IP, and past the limit they answer resource_exhausted.
+service AccountService {
+  // CreateAccount makes the device account and signs the session in. Public; a malformed or
+  // taken handle is invalid_argument on handle.
+  rpc CreateAccount(CreateAccountRequest) returns (CreateAccountResponse);
+  // CheckHandle says whether a handle is free while the player types it. Public; a malformed
+  // handle is invalid_argument on handle.
+  rpc CheckHandle(CheckHandleRequest) returns (CheckHandleResponse);
+  // WhoAmI reads the session's account; unauthenticated when there is none.
+  rpc WhoAmI(WhoAmIRequest) returns (WhoAmIResponse);
+}
+
+// Account is the caller as they see themselves: their public name and their kitchen.
+message Account {
+  // 3 to 20 lowercase letters, digits and underscores, unique. Public on the board.
+  string handle = 1;
+  // One emoji.
+  string avatar = 2;
+  Kitchen kitchen = 3;
+}
+
+// Kitchen is what the player cooks with and around, which shapes every roast and recipe.
+message Kitchen {
+  // Medium for a new account.
+  RoastLevel roast_level = 1;
+  // What the kitchen can cook with. Empty for a new account, until onboarding asks.
+  repeated Equipment equipment = 2;
+  // None for a new account.
+  Diet diet = 3;
+  // Empty means none.
+  repeated Allergy allergies = 4;
+  // What the player always has on hand. Every staple for a new account.
+  repeated Staple staples = 5;
+}
+
+message CreateAccountRequest {
+  // Trimmed and lowercased, then 3 to 20 lowercase letters, digits and underscores.
+  string handle = 1;
+  // One emoji.
+  string avatar = 2;
+}
+
+message CreateAccountResponse {
+  // The account as stored, with the default kitchen.
+  Account account = 1;
+}
+
+message CheckHandleRequest {
+  // Trimmed and lowercased, then held to CreateAccount's rule.
+  string handle = 1;
+}
+
+message CheckHandleResponse {
+  // False when another player has it.
+  bool available = 1;
+}
+
+message WhoAmIRequest {}
+
+message WhoAmIResponse {
+  Account account = 1;
+}
+
 // RoastLevel is how hard the roast hits. Medium is the default.
 enum RoastLevel {
   ROAST_LEVEL_UNSPECIFIED = 0;

@@ -1,0 +1,22 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+id: 'go-auth'
+layer: 'library'
+language: 'go'
+
+project:
+  name: 'go-auth'
+  description: 'The device account session: signing a session in, and whose account a request carries.'
+
+# Sessions live in Postgres, so the tests run on a real one migrated with db/migrations, like the
+# repository's.
+dependsOn:
+  - id: 'db'
+    scope: 'development'
+
+tasks:
+  # Editing a migration must re-run these tests instead of replaying a cached pass.
+  test:
+    inputs:
+      - '**/*'
+      - '/db/migrations/**/*'

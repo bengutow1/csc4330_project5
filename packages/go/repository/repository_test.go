@@ -45,19 +45,18 @@ func TestPingFailsOnceTheDatabaseIsGone(t *testing.T) {
 func TestInTxCommitsEveryWriteWhenFnSucceeds(t *testing.T) {
 	t.Parallel()
 	pool := newPool(t)
-	scratchTable(t, pool)
 	repo := repository.New(pool)
 
 	err := repo.InTx(t.Context(), func(tx *repository.Repository) error {
-		insertScratch(t, tx, 1)
-		insertScratch(t, tx, 2)
+		createAccount(t, tx, "test_one")
+		createAccount(t, tx, "test_two")
 		return nil
 	})
 
 	if err != nil {
 		t.Fatalf("in tx: %v", err)
 	}
-	got := scratchRows(t, pool)
+	got := accountRows(t, pool)
 	if got != 2 {
 		t.Errorf("rows = %d, want 2", got)
 	}
@@ -68,19 +67,18 @@ func TestInTxCommitsEveryWriteWhenFnSucceeds(t *testing.T) {
 func TestInTxRollsBackEveryWriteWhenFnFails(t *testing.T) {
 	t.Parallel()
 	pool := newPool(t)
-	scratchTable(t, pool)
 	repo := repository.New(pool)
 
 	err := repo.InTx(t.Context(), func(tx *repository.Repository) error {
-		insertScratch(t, tx, 1)
-		insertScratch(t, tx, 2)
+		createAccount(t, tx, "test_one")
+		createAccount(t, tx, "test_two")
 		return errBoom
 	})
 
 	if !errors.Is(err, errBoom) {
 		t.Fatalf("err = %v, want fn's own error back", err)
 	}
-	got := scratchRows(t, pool)
+	got := accountRows(t, pool)
 	if got != 0 {
 		t.Errorf("rows = %d, want 0 (rolled back)", got)
 	}
@@ -91,13 +89,12 @@ func TestInTxRollsBackEveryWriteWhenFnFails(t *testing.T) {
 func TestANestedInTxCommitsOnlyWithTheOuterTransaction(t *testing.T) {
 	t.Parallel()
 	pool := newPool(t)
-	scratchTable(t, pool)
 	repo := repository.New(pool)
 
 	err := repo.InTx(t.Context(), func(tx *repository.Repository) error {
-		insertScratch(t, tx, 1)
+		createAccount(t, tx, "test_one")
 		err := tx.InTx(t.Context(), func(inner *repository.Repository) error {
-			insertScratch(t, inner, 2)
+			createAccount(t, inner, "test_two")
 			return nil
 		})
 		if err != nil {
@@ -109,7 +106,7 @@ func TestANestedInTxCommitsOnlyWithTheOuterTransaction(t *testing.T) {
 	if !errors.Is(err, errBoom) {
 		t.Fatalf("err = %v, want the outer fn's error", err)
 	}
-	got := scratchRows(t, pool)
+	got := accountRows(t, pool)
 	if got != 0 {
 		t.Errorf("rows = %d, want 0 (the inner commit is only a savepoint)", got)
 	}
@@ -120,13 +117,12 @@ func TestANestedInTxCommitsOnlyWithTheOuterTransaction(t *testing.T) {
 func TestAFailedNestedInTxUndoesOnlyItsOwnWork(t *testing.T) {
 	t.Parallel()
 	pool := newPool(t)
-	scratchTable(t, pool)
 	repo := repository.New(pool)
 
 	err := repo.InTx(t.Context(), func(tx *repository.Repository) error {
-		insertScratch(t, tx, 1)
+		createAccount(t, tx, "test_one")
 		err := tx.InTx(t.Context(), func(inner *repository.Repository) error {
-			insertScratch(t, inner, 2)
+			createAccount(t, inner, "test_two")
 			return errBoom
 		})
 		if !errors.Is(err, errBoom) {
@@ -138,7 +134,7 @@ func TestAFailedNestedInTxUndoesOnlyItsOwnWork(t *testing.T) {
 	if err != nil {
 		t.Fatalf("in tx: %v", err)
 	}
-	got := scratchRows(t, pool)
+	got := accountRows(t, pool)
 	if got != 1 {
 		t.Errorf("rows = %d, want 1 (only the outer write)", got)
 	}
@@ -168,28 +164,21 @@ func TestInTxRefusesAHandleThatCannotBegin(t *testing.T) {
 // so the nil embedded interface is never reached.
 type noBegin struct{ repository.DBTX }
 
-func scratchTable(t *testing.T, pool *pgxpool.Pool) {
+func createAccount(t *testing.T, repo *repository.Repository, handle string) repository.Account {
 	t.Helper()
-	_, err := pool.Exec(t.Context(), `create table scratch (n int not null)`)
+	a, err := repo.CreateAccount(t.Context(), handle, "🍟")
 	if err != nil {
-		t.Fatalf("create scratch table: %v", err)
+		t.Fatalf("create account %s: %v", handle, err)
 	}
+	return a
 }
 
-func insertScratch(t *testing.T, repo *repository.Repository, n int) {
-	t.Helper()
-	err := repo.ExecForTest(t.Context(), `insert into scratch (n) values ($1)`, n)
-	if err != nil {
-		t.Fatalf("insert %d: %v", n, err)
-	}
-}
-
-func scratchRows(t *testing.T, pool *pgxpool.Pool) int {
+func accountRows(t *testing.T, pool *pgxpool.Pool) int {
 	t.Helper()
 	var n int
-	err := pool.QueryRow(t.Context(), `select count(*) from scratch`).Scan(&n)
+	err := pool.QueryRow(t.Context(), `select count(*) from app.account`).Scan(&n)
 	if err != nil {
-		t.Fatalf("count scratch rows: %v", err)
+		t.Fatalf("count accounts: %v", err)
 	}
 	return n
 }

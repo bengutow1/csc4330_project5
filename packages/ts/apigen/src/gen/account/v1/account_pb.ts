@@ -6,14 +6,210 @@
 // @generated from file account/v1/account.proto (package account.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenEnum, GenFile } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file account/v1/account.proto.
  */
 export const file_account_v1_account: GenFile = /*@__PURE__*/
-  fileDesc("ChhhY2NvdW50L3YxL2FjY291bnQucHJvdG8SCmFjY291bnQudjEqdQoKUm9hc3RMZXZlbBIbChdST0FTVF9MRVZFTF9VTlNQRUNJRklFRBAAEhQKEFJPQVNUX0xFVkVMX01JTEQQARIWChJST0FTVF9MRVZFTF9NRURJVU0QAhIcChhST0FTVF9MRVZFTF9FWFRSQV9DUklTUFkQAyqEAQoJRXF1aXBtZW50EhkKFUVRVUlQTUVOVF9VTlNQRUNJRklFRBAAEhcKE0VRVUlQTUVOVF9NSUNST1dBVkUQARIWChJFUVVJUE1FTlRfU1RPVkVUT1AQAhISCg5FUVVJUE1FTlRfT1ZFThADEhcKE0VRVUlQTUVOVF9BSVJfRlJZRVIQBCpmCgREaWV0EhQKEERJRVRfVU5TUEVDSUZJRUQQABINCglESUVUX05PTkUQARITCg9ESUVUX1ZFR0VUQVJJQU4QAhIOCgpESUVUX1ZFR0FOEAMSFAoQRElFVF9QRVNDQVRBUklBThAEKtMBCgdBbGxlcmd5EhcKE0FMTEVSR1lfVU5TUEVDSUZJRUQQABITCg9BTExFUkdZX1BFQU5VVFMQARIVChFBTExFUkdZX1RSRUVfTlVUUxACEhAKDEFMTEVSR1lfTUlMSxADEhAKDEFMTEVSR1lfRUdHUxAEEhEKDUFMTEVSR1lfV0hFQVQQBRIPCgtBTExFUkdZX1NPWRAGEhAKDEFMTEVSR1lfRklTSBAHEhUKEUFMTEVSR1lfU0hFTExGSVNIEAgSEgoOQUxMRVJHWV9TRVNBTUUQCSrBAQoGU3RhcGxlEhYKElNUQVBMRV9VTlNQRUNJRklFRBAAEg8KC1NUQVBMRV9TQUxUEAESEQoNU1RBUExFX1BFUFBFUhACEg4KClNUQVBMRV9PSUwQAxIRCg1TVEFQTEVfQlVUVEVSEAQSDwoLU1RBUExFX1JJQ0UQBRIQCgxTVEFQTEVfUEFTVEEQBhIQCgxTVEFQTEVfRkxPVVIQBxIQCgxTVEFQTEVfU1VHQVIQCBIRCg1TVEFQTEVfU1BJQ0VTEAlCtgEKDmNvbS5hY2NvdW50LnYxQgxBY2NvdW50UHJvdG9QAVpNZ2l0aHViLmNvbS9iZW5ndXRvdzEvY3NjNDMzMF9wcm9qZWN0NS9wYWNrYWdlcy9nby9hcGlnZW4vYWNjb3VudC92MTthY2NvdW50djGiAgNBWFiqAgpBY2NvdW50LlYxygIKQWNjb3VudFxWMeICFkFjY291bnRcVjFcR1BCTWV0YWRhdGHqAgtBY2NvdW50OjpWMWIGcHJvdG8z");
+  fileDesc("ChhhY2NvdW50L3YxL2FjY291bnQucHJvdG8SCmFjY291bnQudjEiTwoHQWNjb3VudBIOCgZoYW5kbGUYASABKAkSDgoGYXZhdGFyGAIgASgJEiQKB2tpdGNoZW4YAyABKAsyEy5hY2NvdW50LnYxLktpdGNoZW4izQEKB0tpdGNoZW4SKwoLcm9hc3RfbGV2ZWwYASABKA4yFi5hY2NvdW50LnYxLlJvYXN0TGV2ZWwSKAoJZXF1aXBtZW50GAIgAygOMhUuYWNjb3VudC52MS5FcXVpcG1lbnQSHgoEZGlldBgDIAEoDjIQLmFjY291bnQudjEuRGlldBImCglhbGxlcmdpZXMYBCADKA4yEy5hY2NvdW50LnYxLkFsbGVyZ3kSIwoHc3RhcGxlcxgFIAMoDjISLmFjY291bnQudjEuU3RhcGxlIjYKFENyZWF0ZUFjY291bnRSZXF1ZXN0Eg4KBmhhbmRsZRgBIAEoCRIOCgZhdmF0YXIYAiABKAkiPQoVQ3JlYXRlQWNjb3VudFJlc3BvbnNlEiQKB2FjY291bnQYASABKAsyEy5hY2NvdW50LnYxLkFjY291bnQiJAoSQ2hlY2tIYW5kbGVSZXF1ZXN0Eg4KBmhhbmRsZRgBIAEoCSIoChNDaGVja0hhbmRsZVJlc3BvbnNlEhEKCWF2YWlsYWJsZRgBIAEoCCIPCg1XaG9BbUlSZXF1ZXN0IjYKDldob0FtSVJlc3BvbnNlEiQKB2FjY291bnQYASABKAsyEy5hY2NvdW50LnYxLkFjY291bnQqdQoKUm9hc3RMZXZlbBIbChdST0FTVF9MRVZFTF9VTlNQRUNJRklFRBAAEhQKEFJPQVNUX0xFVkVMX01JTEQQARIWChJST0FTVF9MRVZFTF9NRURJVU0QAhIcChhST0FTVF9MRVZFTF9FWFRSQV9DUklTUFkQAyqEAQoJRXF1aXBtZW50EhkKFUVRVUlQTUVOVF9VTlNQRUNJRklFRBAAEhcKE0VRVUlQTUVOVF9NSUNST1dBVkUQARIWChJFUVVJUE1FTlRfU1RPVkVUT1AQAhISCg5FUVVJUE1FTlRfT1ZFThADEhcKE0VRVUlQTUVOVF9BSVJfRlJZRVIQBCpmCgREaWV0EhQKEERJRVRfVU5TUEVDSUZJRUQQABINCglESUVUX05PTkUQARITCg9ESUVUX1ZFR0VUQVJJQU4QAhIOCgpESUVUX1ZFR0FOEAMSFAoQRElFVF9QRVNDQVRBUklBThAEKtMBCgdBbGxlcmd5EhcKE0FMTEVSR1lfVU5TUEVDSUZJRUQQABITCg9BTExFUkdZX1BFQU5VVFMQARIVChFBTExFUkdZX1RSRUVfTlVUUxACEhAKDEFMTEVSR1lfTUlMSxADEhAKDEFMTEVSR1lfRUdHUxAEEhEKDUFMTEVSR1lfV0hFQVQQBRIPCgtBTExFUkdZX1NPWRAGEhAKDEFMTEVSR1lfRklTSBAHEhUKEUFMTEVSR1lfU0hFTExGSVNIEAgSEgoOQUxMRVJHWV9TRVNBTUUQCSrBAQoGU3RhcGxlEhYKElNUQVBMRV9VTlNQRUNJRklFRBAAEg8KC1NUQVBMRV9TQUxUEAESEQoNU1RBUExFX1BFUFBFUhACEg4KClNUQVBMRV9PSUwQAxIRCg1TVEFQTEVfQlVUVEVSEAQSDwoLU1RBUExFX1JJQ0UQBRIQCgxTVEFQTEVfUEFTVEEQBhIQCgxTVEFQTEVfRkxPVVIQBxIQCgxTVEFQTEVfU1VHQVIQCBIRCg1TVEFQTEVfU1BJQ0VTEAky9wEKDkFjY291bnRTZXJ2aWNlElQKDUNyZWF0ZUFjY291bnQSIC5hY2NvdW50LnYxLkNyZWF0ZUFjY291bnRSZXF1ZXN0GiEuYWNjb3VudC52MS5DcmVhdGVBY2NvdW50UmVzcG9uc2USTgoLQ2hlY2tIYW5kbGUSHi5hY2NvdW50LnYxLkNoZWNrSGFuZGxlUmVxdWVzdBofLmFjY291bnQudjEuQ2hlY2tIYW5kbGVSZXNwb25zZRI/CgZXaG9BbUkSGS5hY2NvdW50LnYxLldob0FtSVJlcXVlc3QaGi5hY2NvdW50LnYxLldob0FtSVJlc3BvbnNlQrYBCg5jb20uYWNjb3VudC52MUIMQWNjb3VudFByb3RvUAFaTWdpdGh1Yi5jb20vYmVuZ3V0b3cxL2NzYzQzMzBfcHJvamVjdDUvcGFja2FnZXMvZ28vYXBpZ2VuL2FjY291bnQvdjE7YWNjb3VudHYxogIDQVhYqgIKQWNjb3VudC5WMcoCCkFjY291bnRcVjHiAhZBY2NvdW50XFYxXEdQQk1ldGFkYXRh6gILQWNjb3VudDo6VjFiBnByb3RvMw");
+
+/**
+ * Account is the caller as they see themselves: their public name and their kitchen.
+ *
+ * @generated from message account.v1.Account
+ */
+export type Account = Message<"account.v1.Account"> & {
+  /**
+   * 3 to 20 lowercase letters, digits and underscores, unique. Public on the board.
+   *
+   * @generated from field: string handle = 1;
+   */
+  handle: string;
+
+  /**
+   * One emoji.
+   *
+   * @generated from field: string avatar = 2;
+   */
+  avatar: string;
+
+  /**
+   * @generated from field: account.v1.Kitchen kitchen = 3;
+   */
+  kitchen?: Kitchen | undefined;
+};
+
+/**
+ * Describes the message account.v1.Account.
+ * Use `create(AccountSchema)` to create a new message.
+ */
+export const AccountSchema: GenMessage<Account> = /*@__PURE__*/
+  messageDesc(file_account_v1_account, 0);
+
+/**
+ * Kitchen is what the player cooks with and around, which shapes every roast and recipe.
+ *
+ * @generated from message account.v1.Kitchen
+ */
+export type Kitchen = Message<"account.v1.Kitchen"> & {
+  /**
+   * Medium for a new account.
+   *
+   * @generated from field: account.v1.RoastLevel roast_level = 1;
+   */
+  roastLevel: RoastLevel;
+
+  /**
+   * What the kitchen can cook with. Empty for a new account, until onboarding asks.
+   *
+   * @generated from field: repeated account.v1.Equipment equipment = 2;
+   */
+  equipment: Equipment[];
+
+  /**
+   * None for a new account.
+   *
+   * @generated from field: account.v1.Diet diet = 3;
+   */
+  diet: Diet;
+
+  /**
+   * Empty means none.
+   *
+   * @generated from field: repeated account.v1.Allergy allergies = 4;
+   */
+  allergies: Allergy[];
+
+  /**
+   * What the player always has on hand. Every staple for a new account.
+   *
+   * @generated from field: repeated account.v1.Staple staples = 5;
+   */
+  staples: Staple[];
+};
+
+/**
+ * Describes the message account.v1.Kitchen.
+ * Use `create(KitchenSchema)` to create a new message.
+ */
+export const KitchenSchema: GenMessage<Kitchen> = /*@__PURE__*/
+  messageDesc(file_account_v1_account, 1);
+
+/**
+ * @generated from message account.v1.CreateAccountRequest
+ */
+export type CreateAccountRequest = Message<"account.v1.CreateAccountRequest"> & {
+  /**
+   * Trimmed and lowercased, then 3 to 20 lowercase letters, digits and underscores.
+   *
+   * @generated from field: string handle = 1;
+   */
+  handle: string;
+
+  /**
+   * One emoji.
+   *
+   * @generated from field: string avatar = 2;
+   */
+  avatar: string;
+};
+
+/**
+ * Describes the message account.v1.CreateAccountRequest.
+ * Use `create(CreateAccountRequestSchema)` to create a new message.
+ */
+export const CreateAccountRequestSchema: GenMessage<CreateAccountRequest> = /*@__PURE__*/
+  messageDesc(file_account_v1_account, 2);
+
+/**
+ * @generated from message account.v1.CreateAccountResponse
+ */
+export type CreateAccountResponse = Message<"account.v1.CreateAccountResponse"> & {
+  /**
+   * The account as stored, with the default kitchen.
+   *
+   * @generated from field: account.v1.Account account = 1;
+   */
+  account?: Account | undefined;
+};
+
+/**
+ * Describes the message account.v1.CreateAccountResponse.
+ * Use `create(CreateAccountResponseSchema)` to create a new message.
+ */
+export const CreateAccountResponseSchema: GenMessage<CreateAccountResponse> = /*@__PURE__*/
+  messageDesc(file_account_v1_account, 3);
+
+/**
+ * @generated from message account.v1.CheckHandleRequest
+ */
+export type CheckHandleRequest = Message<"account.v1.CheckHandleRequest"> & {
+  /**
+   * Trimmed and lowercased, then held to CreateAccount's rule.
+   *
+   * @generated from field: string handle = 1;
+   */
+  handle: string;
+};
+
+/**
+ * Describes the message account.v1.CheckHandleRequest.
+ * Use `create(CheckHandleRequestSchema)` to create a new message.
+ */
+export const CheckHandleRequestSchema: GenMessage<CheckHandleRequest> = /*@__PURE__*/
+  messageDesc(file_account_v1_account, 4);
+
+/**
+ * @generated from message account.v1.CheckHandleResponse
+ */
+export type CheckHandleResponse = Message<"account.v1.CheckHandleResponse"> & {
+  /**
+   * False when another player has it.
+   *
+   * @generated from field: bool available = 1;
+   */
+  available: boolean;
+};
+
+/**
+ * Describes the message account.v1.CheckHandleResponse.
+ * Use `create(CheckHandleResponseSchema)` to create a new message.
+ */
+export const CheckHandleResponseSchema: GenMessage<CheckHandleResponse> = /*@__PURE__*/
+  messageDesc(file_account_v1_account, 5);
+
+/**
+ * @generated from message account.v1.WhoAmIRequest
+ */
+export type WhoAmIRequest = Message<"account.v1.WhoAmIRequest"> & {
+};
+
+/**
+ * Describes the message account.v1.WhoAmIRequest.
+ * Use `create(WhoAmIRequestSchema)` to create a new message.
+ */
+export const WhoAmIRequestSchema: GenMessage<WhoAmIRequest> = /*@__PURE__*/
+  messageDesc(file_account_v1_account, 6);
+
+/**
+ * @generated from message account.v1.WhoAmIResponse
+ */
+export type WhoAmIResponse = Message<"account.v1.WhoAmIResponse"> & {
+  /**
+   * @generated from field: account.v1.Account account = 1;
+   */
+  account?: Account | undefined;
+};
+
+/**
+ * Describes the message account.v1.WhoAmIResponse.
+ * Use `create(WhoAmIResponseSchema)` to create a new message.
+ */
+export const WhoAmIResponseSchema: GenMessage<WhoAmIResponse> = /*@__PURE__*/
+  messageDesc(file_account_v1_account, 7);
 
 /**
  * RoastLevel is how hard the roast hits. Medium is the default.
@@ -249,4 +445,47 @@ export enum Staple {
  */
 export const StapleSchema: GenEnum<Staple> = /*@__PURE__*/
   enumDesc(file_account_v1_account, 4);
+
+/**
+ * AccountService makes the device account and says whose session this is. The session cookie is
+ * the only credential, so no request names its caller. The two public rpcs are limited per client
+ * IP, and past the limit they answer resource_exhausted.
+ *
+ * @generated from service account.v1.AccountService
+ */
+export const AccountService: GenService<{
+  /**
+   * CreateAccount makes the device account and signs the session in. Public; a malformed or
+   * taken handle is invalid_argument on handle.
+   *
+   * @generated from rpc account.v1.AccountService.CreateAccount
+   */
+  createAccount: {
+    methodKind: "unary";
+    input: typeof CreateAccountRequestSchema;
+    output: typeof CreateAccountResponseSchema;
+  },
+  /**
+   * CheckHandle says whether a handle is free while the player types it. Public; a malformed
+   * handle is invalid_argument on handle.
+   *
+   * @generated from rpc account.v1.AccountService.CheckHandle
+   */
+  checkHandle: {
+    methodKind: "unary";
+    input: typeof CheckHandleRequestSchema;
+    output: typeof CheckHandleResponseSchema;
+  },
+  /**
+   * WhoAmI reads the session's account; unauthenticated when there is none.
+   *
+   * @generated from rpc account.v1.AccountService.WhoAmI
+   */
+  whoAmI: {
+    methodKind: "unary";
+    input: typeof WhoAmIRequestSchema;
+    output: typeof WhoAmIResponseSchema;
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_account_v1_account, 0);
 

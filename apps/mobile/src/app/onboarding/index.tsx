@@ -1,5 +1,5 @@
-import { PlaceholderScreen } from "@/screens/placeholder-screen";
+import { HandleScreen } from "@/screens/onboarding/handle-screen";
 
-export default function WelcomeRoute() {
-  return <PlaceholderScreen title="Welcome" issue={6} />;
+export default function HandleFirstRoute() {
+  return <HandleScreen />;
 }

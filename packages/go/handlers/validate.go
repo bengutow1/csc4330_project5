@@ -4,8 +4,10 @@ package handlers
 import (
 	"errors"
 	"reflect"
+	"regexp"
 	"strings"
 	"sync"
+	"unicode"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -17,8 +19,43 @@ var validate = sync.OnceValue(func() *validator.Validate {
 	v.RegisterTagNameFunc(func(f reflect.StructField) string {
 		return f.Tag.Get("pfield")
 	})
+	// Registering fails only for an empty tag or a nil func, and a tag left unregistered panics on
+	// its first use in any test that reaches it.
+	_ = v.RegisterValidation("handle", isHandle)
+	_ = v.RegisterValidation("emoji", isEmoji)
 	return v
 })
+
+// handlePattern is the handle check on app.account, less the length, which min and max carry:
+// lowercase letters, digits and underscores. Keep the two in step.
+var handlePattern = regexp.MustCompile(`^[a-z0-9_]*$`)
+
+// isHandle is the `handle` tag.
+func isHandle(fl validator.FieldLevel) bool {
+	return handlePattern.MatchString(fl.Field().String())
+}
+
+// maxEmojiRunes is the most code points one emoji takes: a kiss with two skin tones has 10. The
+// avatar check on app.account holds the same bound; keep the two in step.
+const maxEmojiRunes = 10
+
+// isEmoji is the `emoji` tag: one emoji, so every code point is a picture or the glue that joins
+// pictures, and no letter, digit, space or punctuation gets through.
+func isEmoji(fl validator.FieldLevel) bool {
+	runes := 0
+	for _, r := range fl.Field().String() {
+		runes++
+		switch {
+		case unicode.Is(unicode.So, r): // the pictures, flags' regional indicators included
+		case unicode.Is(unicode.Sk, r): // skin tones
+		case r == '\u200d', r == '\ufe0f', r == '\u20e3': // the joiner, emoji style, a keycap
+		case r >= '\U000e0020' && r <= '\U000e007f': // the tags that spell a subdivision flag
+		default:
+			return false
+		}
+	}
+	return runes >= 1 && runes <= maxEmojiRunes
+}
 
 // Validate checks a struct against its `validate` tags and returns one FieldError per invalid
 // field in declaration order, or nil when everything is valid. Describe the request at the call
@@ -80,6 +117,10 @@ func sentence(fe validator.FieldError) string {
 		return label + " must be exactly " + fe.Param() + unit
 	case "oneof":
 		return label + " must be " + strings.ReplaceAll(fe.Param(), " ", " or ")
+	case "handle":
+		return label + " can only use lowercase letters, numbers and underscores"
+	case "emoji":
+		return label + " must be one emoji"
 	default:
 		return label + " is invalid"
 	}

@@ -4,12 +4,15 @@ The Expo app. Everything in the root `AGENTS.md` applies here. The app's own con
 `.claude/rules/expo.md` (screens, data, UI, copy) and `.claude/rules/ts-api.md` (the data layer it
 calls); read both before editing anything in this folder.
 
-Status: the shell. The tabs are Snap (the camera), Board and Me, with the verdict, cooking, Fries
-mode and Combo as flows over them, and every Core route in `docs/contracts.md` mounts
-`PlaceholderScreen`, which names the issue that builds it. Each issue replaces its route's mount
-with a screen from the design (`docs/design.md`). `src/app/status.tsx` (open it with
-`friesinthebag://status`) asks the API whether it can serve, and is the one screen wired to the
-server so far.
+Status: the shell, behind a device account. The root layout asks `WhoAmI` and guards the routes
+with `Stack.Protected`: no account opens the plain handle screen at `onboarding/index` (#14
+designs onboarding), and every other Core route needs one. A new route that needs an account goes
+into that guard's list in `src/app/_layout.tsx`, or anyone can open it. The tabs are Snap (the
+camera), Board and Me, with the verdict, cooking, Fries mode and Combo as flows over them, and
+every Core route in `docs/contracts.md` mounts `PlaceholderScreen`, which names the issue that
+builds it. Each issue replaces its route's mount with a screen from the design
+(`docs/design.md`). `src/app/status.tsx` (open it with `friesinthebag://status`) asks the API
+whether it can serve, with or without an account.
 
 ## Running it
 
@@ -22,7 +25,8 @@ server so far.
   Android emulator, so run `moon run api:dev` beside it. On a real phone, set
   `EXPO_PUBLIC_API_URL` to the Mac's LAN address.
 - Maestro flows live in `.maestro/flows/`: `maestro test .maestro/flows` from this folder, with the
-  app installed and the API running.
+  app installed and the API running. A flow that needs a player starts with `clearState: true`,
+  then `runFlow: subflows/sign-up.yaml`.
 
 ## Expo has changed: do not trust your training data
 

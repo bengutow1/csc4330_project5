@@ -18,10 +18,15 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+	"github.com/alexedwards/scs/pgxstore"
+	"github.com/alexedwards/scs/v2"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/bengutow1/csc4330_project5/packages/go/apigen/account/v1/accountv1connect"
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/health/v1/healthv1connect"
+	"github.com/bengutow1/csc4330_project5/packages/go/auth"
+	"github.com/bengutow1/csc4330_project5/packages/go/handlers/account"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/healthz"
 	"github.com/bengutow1/csc4330_project5/packages/go/logging"
 	"github.com/bengutow1/csc4330_project5/packages/go/places"
@@ -47,6 +52,9 @@ func main() {
 		port = "8080"
 	}
 	addr := ":" + port
+	// APP_ENV=production hardens the API: a missing vendor key stops the boot, and the session
+	// cookie is Secure. Anything else is local dev.
+	appEnv := os.Getenv("APP_ENV")
 
 	// Read once for every vendor below: "production" makes a missing key stop the boot.
 	appEnv := os.Getenv("APP_ENV")
@@ -109,14 +117,35 @@ func main() {
 	// `moon run db:migrate` applies them.
 	repo := repository.New(pool)
 
+	// Sessions live in Postgres, and the cookie is the device account's only credential, so it
+	// lasts a year. It is Secure only in production: local dev serves plain http to the simulator
+	// and to phones on the LAN, which would never send a Secure cookie back.
+	sessionStore := pgxstore.New(pool)
+	defer sessionStore.StopCleanup()
+	sessions := scs.New()
+	sessions.Store = sessionStore
+	sessions.Lifetime = auth.Lifetime
+	sessions.Cookie.Secure = appEnv == "production"
+	sessions.Cookie.SameSite = http.SameSiteLaxMode
+	authn := auth.New(sessions, repo)
+
+	accountSvc := account.NewAccount(account.Config{
+		Repo:   repo,
+		Auth:   authn,
+		Limits: account.DefaultLimits(),
+		Log:    log,
+	})
+
 	// Every service reads request bodies under the same cap.
 	readCap := connect.WithReadMaxBytes(4 << 20)
 
 	r := chi.NewRouter()
 	r.Use(logging.RequestLogger(log))
 	r.Use(logging.Recoverer(log))
+	r.Use(sessions.LoadAndSave)
 
 	r.Mount(healthv1connect.NewHealthServiceHandler(healthz.NewHealth(log, repo.Ping), readCap))
+	r.Mount(accountv1connect.NewAccountServiceHandler(accountSvc, readCap))
 
 	srv := &http.Server{
 		Addr:              addr,

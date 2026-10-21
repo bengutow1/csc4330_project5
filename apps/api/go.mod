@@ -4,7 +4,10 @@ go 1.26.4
 
 require (
 	connectrpc.com/connect v1.21.0
+	github.com/alexedwards/scs/pgxstore v0.0.0-20251002162104-209de6e426de
+	github.com/alexedwards/scs/v2 v2.9.0
 	github.com/bengutow1/csc4330_project5/packages/go/apigen v0.0.0
+	github.com/bengutow1/csc4330_project5/packages/go/auth v0.0.0
 	github.com/bengutow1/csc4330_project5/packages/go/handlers v0.0.0
 	github.com/bengutow1/csc4330_project5/packages/go/logging v0.0.0
 	github.com/bengutow1/csc4330_project5/packages/go/places v0.0.0
@@ -32,6 +35,7 @@ require (
 
 replace (
 	github.com/bengutow1/csc4330_project5/packages/go/apigen => ../../packages/go/apigen
+	github.com/bengutow1/csc4330_project5/packages/go/auth => ../../packages/go/auth
 	github.com/bengutow1/csc4330_project5/packages/go/handlers => ../../packages/go/handlers
 	github.com/bengutow1/csc4330_project5/packages/go/logging => ../../packages/go/logging
 	github.com/bengutow1/csc4330_project5/packages/go/places => ../../packages/go/places
