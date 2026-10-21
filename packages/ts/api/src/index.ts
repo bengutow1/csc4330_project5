@@ -30,6 +30,7 @@ export type { AppStateEvents } from "./focus.ts";
 export {
   useCheckHandle,
   useCreateAccount,
+  useCreatingAccount,
   useUpdateKitchen,
   useWhoAmI,
 } from "./hooks/use-account.ts";
