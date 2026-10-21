@@ -7,7 +7,7 @@
     "@expo-google-fonts/lilita-one": "^0.4.1",
     "@expo/vector-icons": "^15.1.1",
     "@fries-in-the-bag/api": "workspace:*",
-    "@shopify/flash-list": "2.0.2",
+    "@shopify/flash-list": "2.3.3",
     "expo": "~57.0.26",
     "expo-camera": "~57.0.6",
     "expo-constants": "~57.0.21",
@@ -29,6 +29,6 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
-    "typescript": "~6.0.3"
+    "typescript": "~7.0.2"
   }
 }
