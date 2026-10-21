@@ -34,8 +34,8 @@ export default function RecipeRoute() {
 - Route files use a default export because expo-router requires it; everything else uses named
   exports. Typed routes are on: navigate with
   `{ pathname: "/recipe/[id]", params: { id: String(recipe.id) } }`.
-- Three tabs (Kitchen, Board, Me) live in a `(tabs)` group. Scanning, cooking, Fries mode and
-  Combo are stacks that open over them.
+- Three tabs (Snap, Board, Me) live in a `(tabs)` group, and Snap is the camera. The verdict,
+  cooking, Fries mode and Combo are stacks that open over them.
 - The root and tab layouts set `unstable_settings` anchors, so a deep link still gets a back stack.
 - **Gate with `<Stack.Protected guard={…}>`** in the root layout (onboarding until the device
   account exists), never a `useEffect` that calls `router.replace`: the effect races expo-router's
