@@ -67,8 +67,15 @@ func main() {
 		log.Error("VISION_MOCK names no mock fridge", "err", err)
 		os.Exit(1)
 	}
-	log.Info("vision mock is live", "serving", cmp.Or(visionPin, "every fridge in turn"))
-	_ = visionMock // nothing reads a fridge until the scan service (#17) mounts
+	platePin := os.Getenv("VISION_MOCK_PLATE")
+	err = visionMock.PinPlates(platePin)
+	if err != nil {
+		log.Error("VISION_MOCK_PLATE names no plate pin", "err", err)
+		os.Exit(1)
+	}
+	log.Info("vision mock is live", "serving", cmp.Or(visionPin, "every fridge in turn"),
+		"plates", cmp.Or(platePin, "every plate passes"))
+	_ = visionMock // nothing calls the model until the scan (#17) and cook (#21) services mount
 
 	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
