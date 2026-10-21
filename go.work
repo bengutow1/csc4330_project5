@@ -6,4 +6,5 @@ use (
 	./packages/go/handlers
 	./packages/go/logging
 	./packages/go/repository
+	./packages/go/vision
 )

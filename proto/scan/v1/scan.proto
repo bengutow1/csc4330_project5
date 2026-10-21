@@ -1,0 +1,135 @@
+// scan.v1: a scan is one to three photos of a kitchen (fridge, freezer, pantry) that the vision
+// model reads into an ingredient list. What comes back is a verdict: the score our code computes
+// from that list, its tier, the model's roast and the ingredients spotted. The phone sends photos
+// and corrections, never a score. The server scores a scan once, when it is created, and editing
+// the list later never changes it.
+syntax = "proto3";
+
+package scan.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// ScanService judges the caller's kitchen and keeps their verdicts. Every rpc acts for the account
+// in the session, and another player's scan answers not_found. A scan spends model time, so each
+// player gets 12 an hour; past that, CreateScan answers resource_exhausted.
+service ScanService {
+  // CreateScan judges the photos and stores the verdict; unavailable when the model fails.
+  rpc CreateScan(CreateScanRequest) returns (CreateScanResponse);
+  // GetScan reads one of the caller's verdicts.
+  rpc GetScan(GetScanRequest) returns (GetScanResponse);
+  // GetLastScan reads the caller's newest verdict, if they have one.
+  rpc GetLastScan(GetLastScanRequest) returns (GetLastScanResponse);
+  // EditIngredients replaces a verdict's list and keeps its score.
+  rpc EditIngredients(EditIngredientsRequest) returns (EditIngredientsResponse);
+}
+
+// PhotoKind says which part of the kitchen a photo shows.
+enum PhotoKind {
+  PHOTO_KIND_UNSPECIFIED = 0;
+  PHOTO_KIND_FRIDGE = 1;
+  PHOTO_KIND_FREEZER = 2;
+  PHOTO_KIND_PANTRY = 3;
+}
+
+// Category is the closed set every ingredient falls in.
+enum Category {
+  CATEGORY_UNSPECIFIED = 0;
+  CATEGORY_PROTEIN = 1;
+  CATEGORY_VEGETABLE = 2;
+  CATEGORY_FRUIT = 3;
+  CATEGORY_GRAIN = 4;
+  CATEGORY_DAIRY = 5;
+  CATEGORY_CONDIMENT = 6;
+  CATEGORY_DRINK = 7;
+  CATEGORY_SNACK = 8;
+  CATEGORY_LEFTOVER = 9;
+  CATEGORY_OTHER = 10;
+}
+
+// Tier is the band a score falls in, and it decides which button the verdict makes big. The
+// server derives it from the score and never stores it.
+enum Tier {
+  TIER_UNSPECIFIED = 0;
+  // A score of 85 to 100.
+  TIER_CERTIFIED_CHEF = 1;
+  // A score of 60 to 84.
+  TIER_HOME_COOK = 2;
+  // A score of 35 to 59.
+  TIER_SCRAPPY = 3;
+  // A score of 0 to 34.
+  TIER_FRIES_IN_THE_BAG = 4;
+}
+
+// Photo is one shot of the kitchen. The server never stores it: it goes to the model and is gone.
+message Photo {
+  // A JPEG of at most 2 MB. The app shrinks it first, to 1024 px on the long edge at quality 0.7.
+  bytes jpeg = 1;
+  // Required: UNSPECIFIED is refused.
+  PhotoKind kind = 2;
+}
+
+// Ingredient is one food on a verdict's list.
+message Ingredient {
+  // What it is ("Greek yogurt"): 1 to 40 characters once trimmed.
+  string name = 1;
+  // Required: UNSPECIFIED is refused.
+  Category category = 2;
+  // Free text such as "x4" or "1 bag", at most 20 characters. "" when unknown. It never counts
+  // toward the score.
+  string quantity = 3;
+}
+
+// Verdict is what a scan returns, and all the server keeps of it.
+message Verdict {
+  // Names the scan for GetScan and EditIngredients.
+  int64 scan_id = 1;
+  // 0 to 100, scored by the server from the list the model spotted when the scan was created.
+  // Editing the list never changes it.
+  int32 score = 2;
+  // The band the score falls in.
+  Tier tier = 3;
+  // A line or two from the model about the fridge, never the person, at the player's roast level.
+  string roast = 4;
+  // In display order, 0 to 40 of them. Empty means the scan found no food.
+  repeated Ingredient ingredients = 5;
+  // When the scan was judged.
+  google.protobuf.Timestamp created_at = 6;
+}
+
+message CreateScanRequest {
+  // 1 to 3 photos of the same kitchen, together under the 4 MiB the server reads per request.
+  repeated Photo photos = 1;
+}
+
+message CreateScanResponse {
+  // The verdict as stored.
+  Verdict verdict = 1;
+}
+
+message GetScanRequest {
+  // The scan to read. Required: 0 is refused.
+  int64 scan_id = 1;
+}
+
+message GetScanResponse {
+  Verdict verdict = 1;
+}
+
+message GetLastScanRequest {}
+
+message GetLastScanResponse {
+  // The caller's newest verdict. Unset before their first scan.
+  Verdict verdict = 1;
+}
+
+message EditIngredientsRequest {
+  // The scan to fix. Required: 0 is refused.
+  int64 scan_id = 1;
+  // The whole corrected list, replacing the old one: 0 to 40 ingredients, in display order.
+  repeated Ingredient ingredients = 2;
+}
+
+message EditIngredientsResponse {
+  // The verdict with the new list and the same score.
+  Verdict verdict = 1;
+}
