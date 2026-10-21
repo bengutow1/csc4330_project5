@@ -5,7 +5,13 @@ import { ScanService } from "@fries-in-the-bag/apigen/scan/v1/scan_pb";
 import { partialMatchKey } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
 import { createApiTransport } from "../transport.ts";
-import { RECIPES, type RecipeFilters, recipeInput, recipesInput } from "./use-cook.ts";
+import {
+  RECIPES,
+  type RecipeFilters,
+  recipeInput,
+  recipesInput,
+  shelvesPlaceholder,
+} from "./use-cook.ts";
 
 const ANY: RecipeFilters = { maxMinutes: 0, equipment: [], diet: Diet.NONE };
 
@@ -27,6 +33,24 @@ describe("recipesInput", () => {
       equipment: [Equipment.MICROWAVE],
       diet: Diet.VEGAN,
     });
+  });
+});
+
+describe("shelvesPlaceholder", () => {
+  const shelves = { makeItNow: [], oneItemAway: [] };
+
+  it("keeps a scan's shelves up while a changed chip loads", () => {
+    expect(shelvesPlaceholder(shelves, 42n, 42n)).toBe(shelves);
+  });
+
+  it("never shows one scan's shelves under another", () => {
+    expect(shelvesPlaceholder(shelves, 42n, 43n)).toBeUndefined();
+    expect(shelvesPlaceholder(shelves, 42n, undefined)).toBeUndefined();
+  });
+
+  it("has nothing to keep before a scan's shelves have shown", () => {
+    expect(shelvesPlaceholder(shelves, undefined, 42n)).toBeUndefined();
+    expect(shelvesPlaceholder(undefined, 42n, 42n)).toBeUndefined();
   });
 });
 
