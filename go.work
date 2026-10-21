@@ -6,6 +6,8 @@ use (
 	./packages/go/handlers
 	./packages/go/logging
 	./packages/go/places
+	./packages/go/points
 	./packages/go/repository
+	./packages/go/scoring
 	./packages/go/vision
 )

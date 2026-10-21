@@ -2,7 +2,7 @@ import { isUnavailable, useReady } from "@fries-in-the-bag/api";
 import { Stack } from "expo-router";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { API_URL } from "@/lib/api-url";
-import { COLORS } from "@/theme";
+import { COLORS, RADII, SPACE, TYPE } from "@/theme";
 
 /**
  * StatusScreen asks the api whether it can serve, through the same transport, query client and
@@ -16,18 +16,18 @@ export function StatusScreen() {
       <Stack.Screen options={{ title: "Server status" }} />
       {ready.isPending ? (
         <View style={styles.row}>
-          <ActivityIndicator color={COLORS.gold} />
+          <ActivityIndicator color={COLORS.ketchup} />
           <Text style={styles.body}>Checking the server…</Text>
         </View>
       ) : ready.isError ? (
-        <Text style={[styles.verdict, { color: COLORS.red }]}>
+        <Text style={[styles.verdict, { color: COLORS.ketchupInk }]}>
           {/* Unavailable means the server answered and said no; anything else, it never answered. */}
           {isUnavailable(ready.error)
             ? "The server is up but not ready"
             : "Couldn't reach the server"}
         </Text>
       ) : (
-        <Text style={[styles.verdict, { color: COLORS.green }]}>Server ready</Text>
+        <Text style={[styles.verdict, { color: COLORS.pickle }]}>Server ready</Text>
       )}
       {__DEV__ ? <Text style={styles.dim}>{API_URL}</Text> : null}
       <Pressable
@@ -43,17 +43,18 @@ export function StatusScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, padding: 24, gap: 16, backgroundColor: COLORS.bg },
-  row: { flexDirection: "row", alignItems: "center", gap: 12 },
-  body: { color: COLORS.text, fontSize: 16 },
-  verdict: { fontSize: 22, fontWeight: "800" },
-  dim: { color: COLORS.dim, fontSize: 13 },
+  root: { flex: 1, padding: SPACE.xl, gap: SPACE.lg, backgroundColor: COLORS.bg },
+  row: { flexDirection: "row", alignItems: "center", gap: SPACE.md },
+  body: { ...TYPE.body, color: COLORS.ink },
+  verdict: TYPE.title,
+  dim: { ...TYPE.caption, color: COLORS.muted },
   button: {
-    backgroundColor: COLORS.gold,
-    paddingVertical: 15,
-    borderRadius: 16,
+    height: 52,
+    borderRadius: RADII.lg,
+    backgroundColor: COLORS.ketchup,
     alignItems: "center",
+    justifyContent: "center",
   },
-  pressed: { opacity: 0.7 },
-  buttonText: { color: COLORS.bg, fontSize: 17, fontWeight: "800" },
+  pressed: { backgroundColor: COLORS.ketchupInk },
+  buttonText: { ...TYPE.button, color: COLORS.surface },
 });

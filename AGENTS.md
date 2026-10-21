@@ -8,9 +8,10 @@ together. `apps/` holds deployables, `packages/` holds shared code.
 Status: scaffolded, no features yet. The API serves only the health probes. The Go packages hold
 what every feature builds on (the error boundary, validation, the repository, logging), and the
 schema holds only the `app` schema and its shared trigger: copy their shape. `packages/ts/api`
-holds the transport, the query client, error decoding and one hook (`useReady`). `apps/mobile` is
-the demo prototype on mock data, with one screen (`/status`) wired to the API end to end. Its UI
-is rebuilt from the mockups, screen by screen.
+holds the transport, the query client, the foreground refetch, error decoding and one hook
+(`useReady`). `apps/mobile` is the shell: three tabs and a placeholder for every Core route, with
+one screen (`/status`) wired to the API end to end. Each issue builds its screen from the design
+in `docs/design.md`.
 
 ## Words we use
 

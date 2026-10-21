@@ -1,0 +1,23 @@
+$schema: 'https://moonrepo.dev/schemas/tasks.json'
+
+# Workspace-wide files that every task reads, though none sits in a project's folder: the pinned
+# tools, the Go workspace, moon's own config, the root package.json and pnpm workspace, and the
+# shared TypeScript, lint and lock files. As implicit inputs, a change to one marks every task
+# affected, so `moon ci` re-runs every project instead of finding nothing touched (a .prototools
+# bump used to run no task at all). No inheritedBy on purpose: Go, TypeScript and bash projects
+# all inherit it, and it adds no tasks.
+implicitInputs:
+  - '/.prototools'
+  - '/go.work'
+  # moon's config, not all of .moon: the cache under it changes on every run, and hashing it
+  # would end caching for every task.
+  - '/.moon/*.yml'
+  - '/.moon/tasks/**/*'
+  - '/tsconfig.base.json'
+  - '/biome.json'
+  - '/.golangci.yml'
+  - '/pnpm-lock.yaml'
+  # pnpm's packageManager pin and the Biome, TypeScript and Vitest versions, and the workspace's
+  # nodeLinker and peer overrides. The lock repeats most of it, but not nodeLinker.
+  - '/package.json'
+  - '/pnpm-workspace.yaml'

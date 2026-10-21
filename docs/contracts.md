@@ -104,12 +104,11 @@ built. Each owner replaces their own placeholder.
 
 | Route under `src/app/` | Screen | Issue |
 | --- | --- | --- |
-| `(tabs)/index` | Kitchen (K1) | #15 |
+| `(tabs)/index` | Snap: the camera, then judging (S1, S2) | #18 |
 | `(tabs)/board` | Board (B1) | #29 |
 | `(tabs)/me` | Profile (P1) | #30 |
 | `onboarding/index`, `onboarding/handle`, `onboarding/kitchen` | O1, O2, O3 | #6, #14 |
 | `settings` | Settings (P3) | #16 |
-| `scan/index` | Camera, then judging (S1, S2) | #18 |
 | `scan/[id]` | Verdict, with the edit sheet (S3, S4) | #19 |
 | `cook/[scanId]` | Recipes (C1) | #22 |
 | `recipe/[id]` | Recipe (C2) | #22 |
@@ -117,8 +116,9 @@ built. Each owner replaces their own placeholder.
 | `fries/index` | Fries moment (F1) | #27 |
 | `fries/spots` | Spots, with the spot sheet (F2, F3) | #27 |
 
-Next issues add their own routes (`combo/…`, `recipe/[id]/steps`, `fries/roulette`, `badges`), and
-`status` stays as it is.
+The app opens on the Snap tab, as the design draws it (`docs/design.md`), so the kitchen home (K1,
+#15) has no route while it is on hold. Next issues add their own routes (`combo/…`,
+`recipe/[id]/steps`, `fries/roulette`, `badges`), and `status` stays as it is.
 
 ## Freshness
 

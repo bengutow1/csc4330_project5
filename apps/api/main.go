@@ -66,13 +66,16 @@ func main() {
 		log.Error("VISION_API_KEY is required in production")
 		os.Exit(1)
 	}
-	visionMock, err := vision.NewMock(visionPin)
+	platePin := os.Getenv("VISION_MOCK_PLATE")
+	visionMock, err := vision.NewMock(visionPin, platePin)
 	if err != nil {
-		log.Error("VISION_MOCK names no mock fridge", "err", err)
+		// err says which of the two names a pin the mock does not have.
+		log.Error("VISION_MOCK or VISION_MOCK_PLATE names no mock pin", "err", err)
 		os.Exit(1)
 	}
-	log.Info("vision mock is live", "serving", cmp.Or(visionPin, "every fridge in turn"))
-	_ = visionMock // nothing reads a fridge until the scan service (#17) mounts
+	log.Info("vision mock is live", "serving", cmp.Or(visionPin, "every fridge in turn"),
+		"plates", cmp.Or(platePin, "every plate passes"))
+	_ = visionMock // nothing calls the model until the scan (#17) and cook (#21) services mount
 
 	// The places provider. Without a key the API serves the mock's made-up spots, except in
 	// production, where a missing key stops the boot: a real deployment never lists fake spots.

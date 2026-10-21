@@ -281,9 +281,9 @@ func TestScansAtOnceStillTakeTurns(t *testing.T) {
 func TestAMisspelledPinIsRefused(t *testing.T) {
 	t.Parallel()
 	for _, pin := range []string{"scrapy", "Scrappy", " scrappy", "fries", "chef"} {
-		mock, err := vision.NewMock(pin)
+		mock, err := vision.NewMock(pin, "")
 		if err == nil {
-			t.Errorf("NewMock(%q) = %v, want an error", pin, mock)
+			t.Errorf("NewMock(%q, \"\") = %v, want an error", pin, mock)
 		}
 	}
 }
@@ -306,10 +306,10 @@ func TestAnUnknownRoastLevelIsRefused(t *testing.T) {
 	}
 }
 
-// newMock is the mock as the API builds it, two-second pause included.
+// newMock is the mock as the API builds it with no plate pin, two-second pause included.
 func newMock(t *testing.T, pin string) *vision.Mock {
 	t.Helper()
-	mock, err := vision.NewMock(pin)
+	mock, err := vision.NewMock(pin, "")
 	if err != nil {
 		t.Fatalf("new mock %q: %v", pin, err)
 	}
