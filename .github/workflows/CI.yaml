@@ -4,6 +4,8 @@ on:
   pull_request:
   push:
     branches: [main]
+  # Run by hand from the Actions tab: checks every project, affected or not.
+  workflow_dispatch:
 
 jobs:
   verify:
@@ -32,4 +34,21 @@ jobs:
           auto-install: true                # install every tool pinned in .prototools
       - run: gitleaks git . --redact --no-banner   # secret scan
       - run: cog check                             # conventional commit enforcement
-      - run: moon ci                               # build / test / lint affected projects
+      # Build, lint and test the affected projects. A pull request compares against its base. A
+      # push compares against the tip before it, so every commit it brings counts, not just the
+      # last. A push with no earlier tip to compare against (a new branch sends all zeros) runs
+      # everything, and so does a manual run.
+      - name: moon ci
+        env:
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            moon ci --force
+          elif [ "$EVENT" != "push" ]; then
+            moon ci
+          elif git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            moon ci --base "$BEFORE"
+          else
+            moon ci --force
+          fi
