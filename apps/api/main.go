@@ -24,9 +24,11 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/account/v1/accountv1connect"
+	"github.com/bengutow1/csc4330_project5/packages/go/apigen/fries/v1/friesv1connect"
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/health/v1/healthv1connect"
 	"github.com/bengutow1/csc4330_project5/packages/go/auth"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/account"
+	"github.com/bengutow1/csc4330_project5/packages/go/handlers/fries"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/healthz"
 	"github.com/bengutow1/csc4330_project5/packages/go/logging"
 	"github.com/bengutow1/csc4330_project5/packages/go/places"
@@ -102,7 +104,6 @@ func main() {
 		os.Exit(1)
 	}
 	log.Info("places mock is live", "mode", cmp.Or(placesMock, "default"))
-	_ = spots // nothing lists spots until the fries service (#26) mounts
 
 	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
@@ -132,6 +133,13 @@ func main() {
 		Limits: account.DefaultLimits(),
 		Log:    log,
 	})
+	friesSvc := fries.NewFries(fries.Config{
+		Repo:   repo,
+		Auth:   authn,
+		Spots:  spots,
+		Limits: fries.DefaultLimits(),
+		Log:    log,
+	})
 
 	// Every service reads request bodies under the same cap.
 	readCap := connect.WithReadMaxBytes(4 << 20)
@@ -143,6 +151,7 @@ func main() {
 
 	r.Mount(healthv1connect.NewHealthServiceHandler(healthz.NewHealth(log, repo.Ping), readCap))
 	r.Mount(accountv1connect.NewAccountServiceHandler(accountSvc, readCap))
+	r.Mount(friesv1connect.NewFriesServiceHandler(friesSvc, readCap))
 
 	srv := &http.Server{
 		Addr:              addr,

@@ -201,7 +201,8 @@ export type ListSpotsResponse = Message<"fries.v1.ListSpotsResponse"> & {
 
   /**
    * The closest open fast-food spot the search found, whatever the filters, on every page. Unset
-   * when there is none.
+   * when there is none, and when the request sent no lat and lng: without a point, nothing is
+   * nearest.
    *
    * @generated from field: fries.v1.Spot nearest_fries = 3;
    */
@@ -300,7 +301,7 @@ export enum SpotFilter {
   FAST_FOOD = 4,
 
   /**
-   * Within 1,200 m of the player (walkable).
+   * Within 1,200 m of the player (walkable). Needs lat and lng: refused without them.
    *
    * @generated from enum value: SPOT_FILTER_WALKABLE = 5;
    */

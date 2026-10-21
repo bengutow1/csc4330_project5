@@ -14,6 +14,7 @@ import (
 
 	"github.com/bengutow1/csc4330_project5/packages/go/auth"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers"
+	"github.com/bengutow1/csc4330_project5/packages/go/places"
 	"github.com/bengutow1/csc4330_project5/packages/go/repository"
 )
 
@@ -32,6 +33,7 @@ func TestConnectErrMapsEverySentinelToItsCode(t *testing.T) {
 		{name: "too many requests", sentinel: handlers.ErrTooManyRequests, code: connect.CodeResourceExhausted},
 		{name: "not authenticated", sentinel: auth.ErrNotAuthenticated, code: connect.CodeUnauthenticated},
 		{name: "forbidden", sentinel: auth.ErrForbidden, code: connect.CodePermissionDenied},
+		{name: "places unavailable", sentinel: places.ErrUnavailable, code: connect.CodeUnavailable},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

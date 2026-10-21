@@ -39,7 +39,7 @@ const (
 	SpotFilter_SPOT_FILTER_CHEAP SpotFilter = 3
 	// Fast food (fast_food).
 	SpotFilter_SPOT_FILTER_FAST_FOOD SpotFilter = 4
-	// Within 1,200 m of the player (walkable).
+	// Within 1,200 m of the player (walkable). Needs lat and lng: refused without them.
 	SpotFilter_SPOT_FILTER_WALKABLE SpotFilter = 5
 )
 
@@ -347,7 +347,8 @@ type ListSpotsResponse struct {
 	// Send as cursor for the next page; "" when this page is the last.
 	NextCursor string `protobuf:"bytes,2,opt,name=next_cursor,json=nextCursor,proto3" json:"next_cursor,omitempty"`
 	// The closest open fast-food spot the search found, whatever the filters, on every page. Unset
-	// when there is none.
+	// when there is none, and when the request sent no lat and lng: without a point, nothing is
+	// nearest.
 	NearestFries  *Spot `protobuf:"bytes,3,opt,name=nearest_fries,json=nearestFries,proto3" json:"nearest_fries,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
