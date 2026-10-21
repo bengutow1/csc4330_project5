@@ -15,8 +15,10 @@ dependsOn:
     scope: 'development'
 
 tasks:
-  # Editing a migration must re-run these tests instead of replaying a cached pass.
+  # Editing a migration must re-run these tests instead of replaying a cached pass. The input covers
+  # moon's cache; -count=1 covers Go's, which doesn't see a migration edited in place.
   test:
+    args: ['-count=1']
     inputs:
       - '**/*'
       - '/db/migrations/**/*'
