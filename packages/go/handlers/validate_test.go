@@ -246,6 +246,36 @@ func TestTheEmojiTagTakesOneEmojiAndNothingElse(t *testing.T) {
 	}
 }
 
+// TestThePlaintextTagRefusesControlCharacters: a name sits on one line, and Postgres text refuses
+// a NUL outright, so one must become a message under the input rather than an internal error.
+func TestThePlaintextTagRefusesControlCharacters(t *testing.T) {
+	t.Parallel()
+	const refused = "name can't contain line breaks or other control characters"
+	cases := []struct{ name, text, want string }{
+		{name: "words and a space", text: "Greek yogurt", want: ""},
+		{name: "an accented letter", text: "Jalapeño", want: ""},
+		{name: "an emoji", text: "🍕 leftovers", want: ""},
+		{name: "a joined emoji", text: "👩‍🍳 special", want: ""},
+		{name: "a NUL", text: "Egg\x00s", want: refused},
+		{name: "a line break", text: "Eggs\nMilk", want: refused},
+		{name: "a tab", text: "Eggs\tMilk", want: refused},
+		{name: "a C1 control", text: "Eggs\u0085", want: refused},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := handlers.Validate(struct {
+				Name string `pfield:"name" validate:"plaintext"`
+			}{c.text})
+
+			if message(got) != c.want {
+				t.Errorf("got %v, want %q", got, c.want)
+			}
+		})
+	}
+}
+
 // message is the one violation's text, or "" when there is none.
 func message(invalid handlers.FieldErrors) string {
 	if len(invalid) == 0 {

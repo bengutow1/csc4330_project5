@@ -26,11 +26,12 @@ var jpegStart = []byte{0xFF, 0xD8, 0xFF}
 // buildEdit's list restates it.
 const maxItems = 40
 
-// itemInput holds one ingredient, normalized, to app.scan_item's checks: keep the two in step.
+// itemInput holds one ingredient, normalized, to app.scan_item's checks (keep the two in step),
+// and to plain text on one line, which the table cannot hold a NUL against anyway.
 type itemInput struct {
-	Name     string `pfield:"name"     validate:"required,max=40"`
+	Name     string `pfield:"name"     validate:"required,max=40,plaintext"`
 	Category string `pfield:"category" validate:"required,oneof=protein vegetable fruit grain dairy condiment drink snack leftover other"`
-	Quantity string `pfield:"quantity" validate:"max=20"`
+	Quantity string `pfield:"quantity" validate:"max=20,plaintext"`
 }
 
 // buildPhotos checks a scan's photos and returns their bytes for the model. Every problem is
