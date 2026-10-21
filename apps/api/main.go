@@ -8,6 +8,7 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"log/slog"
 	"net/http"
@@ -45,28 +46,28 @@ func main() {
 		port = "8080"
 	}
 	addr := ":" + port
-	// Only an explicit local APP_ENV relaxes anything, so an unset or misspelled one runs hardened.
-	appEnv := os.Getenv("APP_ENV")
-	localDev := appEnv == "development" || appEnv == "local"
 
-	// Without PLACES_API_KEY the API serves the places mock, and only local development may: a real
-	// deployment never lists made-up spots. No places client exists yet for a key to drive.
-	if os.Getenv("PLACES_API_KEY") != "" {
-		log.Error("PLACES_API_KEY is set, but no places client exists to use it")
-		os.Exit(1)
-	}
-	if !localDev {
-		log.Error("PLACES_API_KEY is required unless APP_ENV is development or local", "app_env", appEnv)
-		os.Exit(1)
-	}
+	// The places provider. Without a key the API serves the mock's made-up spots, except in
+	// production, where a missing key stops the boot: a real deployment never lists fake spots.
+	placesKey := os.Getenv("PLACES_API_KEY")
 	placesMock := os.Getenv("PLACES_MOCK")
+	switch {
+	case placesKey != "":
+		// The real client is still to come (#32), and serving the mock anyway would ignore the key
+		// without a word.
+		log.Error("PLACES_API_KEY is set, but there is no places client yet; unset it to serve the mock")
+		os.Exit(1)
+	case os.Getenv("APP_ENV") == "production":
+		log.Error("PLACES_API_KEY is required in production")
+		os.Exit(1)
+	}
 	spots, err := places.NewMock(placesMock)
 	if err != nil {
-		log.Error("read PLACES_MOCK", "err", err)
+		log.Error("PLACES_MOCK names no mock mode", "err", err)
 		os.Exit(1)
 	}
-	log.Info("places mock is live", "places_mock", placesMock)
-	_ = spots // nothing lists spots yet
+	log.Info("places mock is live", "mode", cmp.Or(placesMock, "default"))
+	_ = spots // nothing lists spots until the fries service (#26) mounts
 
 	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
