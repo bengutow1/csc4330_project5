@@ -6,16 +6,16 @@ points on a campus leaderboard, and Combo mode lets two friends merge their frid
 together. `apps/` holds deployables, `packages/` holds shared code.
 
 Status: device accounts and scans, and nothing to cook yet. The API serves the health probes,
-`AccountService` (make a device account, check a handle, who am I) and `ScanService` (judge a
-kitchen's photos with the vision mock, read a verdict, fix its list), with sessions in Postgres.
-The Go packages hold what every feature builds on (the error boundary, validation, the gate, the
-limiter, the session, the repository, logging), and the schema holds the `app` schema, its shared
-trigger, `app.account`, the sessions table and `app.scan` with its items: copy their shape.
-`packages/ts/api` holds the transport, the query client, the foreground refetch, error decoding
-and the health, account and scan hooks.
-`apps/mobile` is the shell: a first launch picks a handle on a plain screen, then three tabs and a
-placeholder for every Core route, with `/status` wired to the API end to end. Each issue builds
-its screen from the design in `docs/design.md`.
+`AccountService` (make a device account, check a handle, who am I, save the kitchen) and
+`ScanService` (judge a kitchen's photos with the vision mock, read a verdict, fix its list), with
+sessions in Postgres. The Go packages hold what every feature builds on (the error boundary,
+validation, the gate, the limiter, the session, the repository, logging), and the schema holds the
+`app` schema, its shared trigger, `app.account`, the sessions table and `app.scan` with its items:
+copy their shape. `packages/ts/api` holds the transport, the query client, the foreground refetch,
+error decoding and the health, account and scan hooks.
+`apps/mobile` is the shell: a first launch goes through onboarding (welcome, handle and avatar,
+kitchen), then three tabs and a placeholder for every other Core route, with `/status` wired to
+the API end to end. Each issue builds its screen from the design in `docs/design.md`.
 
 ## Words we use
 

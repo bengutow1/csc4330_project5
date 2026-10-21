@@ -1,0 +1,78 @@
+# A first launch, end to end: the welcome, a handle (a malformed one and a taken one refused under
+# the input), the kitchen, then the Snap tab, and the session keeps the player signed in after the
+# app is killed. Needs the app installed (moon run mobile:ios), Metro (moon run mobile:dev) and the
+# api (moon run api:dev).
+appId: com.cadenlund.friesinthebag
+---
+# Another player takes a handle first, so there is one to collide with.
+- evalScript: ${output.taken = 'test_' + Math.floor(Math.random() * 100000000)}
+- launchApp:
+    clearState: true
+- tapOn: "Get started"
+- tapOn: "Handle"
+- inputText: ${output.taken}
+- tapOn: "Next"
+- tapOn: "Save my kitchen"
+- assertVisible: "Coming in #18."
+
+# A fresh install from here on.
+- launchApp:
+    clearState: true
+- assertVisible:
+    text: ".*becomes a decision in under a minute.*"
+    label: "O1 welcomes a first launch with the pitch"
+- tapOn: "Get started"
+- assertVisible: "Pick a handle"
+- tapOn: "Handle"
+- inputText: "x"
+- tapOn: "Next"
+- assertVisible: "handle must be at least 3 characters"
+- eraseText
+- inputText: ${output.taken}
+- extendedWaitUntil:
+    visible: "that handle is taken"
+    timeout: 5000
+    label: "O2 checks the handle while it is typed"
+- eraseText
+- inputText: "test_"
+- inputRandomNumber:
+    length: 8
+- assertNotVisible: "that handle is taken"
+- tapOn: "Pick 🌮 as your avatar"
+- tapOn: "Next"
+- assertVisible:
+    text: "Your kitchen"
+    label: "O3 opens once the account exists"
+- tapOn: "Air fryer"
+- tapOn: "Vegetarian"
+# Centered before each tap: Maestro counts a chip the bottom bar hides as visible, and its tap
+# would land on Save instead.
+- scrollUntilVisible:
+    element: "Peanuts"
+    centerElement: true
+- tapOn: "Peanuts"
+- scrollUntilVisible:
+    element: "Sugar"
+    centerElement: true
+- tapOn:
+    text: "Sugar"
+    label: "Turn a staple off; they all start on"
+- scrollUntilVisible:
+    element: "Extra crispy"
+    centerElement: true
+- tapOn: "Extra crispy"
+- tapOn: "Save my kitchen"
+- assertVisible:
+    text: "Coming in #18."
+    label: "Saving the kitchen lands on the Snap tab"
+- assertNotVisible: "Your kitchen"
+# Leave the app first, as a person does. iOS writes its cookies to disk lazily, so killing the app
+# a second after sign-up, while it is still open, can lose a session no player would lose.
+- pressKey: Home
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: "Coming in #18."
+    timeout: 10000
+    label: "The session survives the app being killed"
+- assertNotVisible: "Get started"

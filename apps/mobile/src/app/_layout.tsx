@@ -6,10 +6,11 @@ import {
   useWhoAmI,
 } from "@fries-in-the-bag/api";
 import { Stack, useSegments } from "expo-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { AppState } from "react-native";
 import { API_URL } from "@/lib/api-url";
 import { launchCoverShows } from "@/lib/launch";
+import { type Setup, SetupContext } from "@/lib/setup";
 import { LaunchCover } from "@/screens/launch-cover";
 import { COLORS } from "@/theme";
 
@@ -31,11 +32,19 @@ export default function RootLayout() {
 
 /**
  * RootStack sits inside ApiProvider so it can ask whose phone this is, and opens each route only
- * on the right side of the answer: onboarding without an account, everything else with one.
+ * at the right stage: the welcome and the handle without an account, the kitchen between making
+ * the account and saving it, everything else after.
  */
 function RootStack() {
   const whoAmI = useWhoAmI();
   const [route] = useSegments();
+  // Only this launch's onboarding sets it. A player who quits on the kitchen screen comes back to
+  // the tabs, with the kitchen on its defaults.
+  const [settingUp, setSettingUp] = useState(false);
+  const setup = useMemo<Setup>(
+    () => ({ start: () => setSettingUp(true), finish: () => setSettingUp(false) }),
+    [],
+  );
   // A failed refetch keeps the account it had, so a dropped connection signs nobody out. A dead
   // session does: the query client resets WhoAmI when any call comes back unauthenticated.
   const signedIn = whoAmI.data !== undefined;
@@ -48,7 +57,7 @@ function RootStack() {
   });
 
   return (
-    <>
+    <SetupContext.Provider value={setup}>
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: COLORS.bg },
@@ -62,11 +71,15 @@ function RootStack() {
         <Stack.Protected guard={!signedIn}>
           <Stack.Screen name="onboarding/index" />
           <Stack.Screen name="onboarding/handle" />
+        </Stack.Protected>
+        {/* The one route open while setting up: the handle screen closes as the account arrives,
+            the tabs are shut, so the guards land here. */}
+        <Stack.Protected guard={signedIn && settingUp}>
           <Stack.Screen name="onboarding/kitchen" />
         </Stack.Protected>
-        {/* Every route that needs an account. A route in neither list is open to anyone, and goes
-            in OPEN_ROUTES (src/lib/launch.ts) so the launch cover leaves it alone. */}
-        <Stack.Protected guard={signedIn}>
+        {/* Every route that needs an account. A route in none of these lists is open to anyone,
+            and goes in OPEN_ROUTES (src/lib/launch.ts) so the launch cover leaves it alone. */}
+        <Stack.Protected guard={signedIn && !settingUp}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="scan/[id]" />
           <Stack.Screen name="cook/[scanId]" />
@@ -84,6 +97,6 @@ function RootStack() {
           onRetry={() => void whoAmI.refetch()}
         />
       ) : null}
-    </>
+    </SetupContext.Provider>
   );
 }
