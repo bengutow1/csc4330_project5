@@ -4,6 +4,7 @@
 //
 // Universal by contract: no react-native, no react-dom, no DOM globals.
 
+export { type Spot, SpotFilter } from "@fries-in-the-bag/apigen/fries/v1/fries_pb";
 export {
   errorMessage,
   fieldErrors,
@@ -14,6 +15,12 @@ export {
 } from "./errors.ts";
 export type { AppStateEvents } from "./focus.ts";
 export { useCheckHandle, useCreateAccount, useWhoAmI } from "./hooks/use-account.ts";
+export {
+  type SpotsSearch,
+  useInvalidateFryRuns,
+  useLogFryRun,
+  useSpots,
+} from "./hooks/use-fries.ts";
 export { useReady } from "./hooks/use-health.ts";
 export { ApiProvider } from "./provider.tsx";
 export { makeQueryClient, type ToastHandlers } from "./query-client.ts";
