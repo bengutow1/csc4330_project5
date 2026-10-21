@@ -1,5 +1,5 @@
-import { PlaceholderScreen } from "@/screens/placeholder-screen";
+import { FriesMomentScreen } from "@/screens/fries/fries-moment-screen";
 
 export default function FriesRoute() {
-  return <PlaceholderScreen title="Fries moment" issue={27} />;
+  return <FriesMomentScreen />;
 }

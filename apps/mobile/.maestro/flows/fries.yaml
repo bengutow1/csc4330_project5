@@ -1,0 +1,46 @@
+# Fries mode, end to end. The fries moment asks for location the first time Find food is tapped,
+# the list opens closest first with Open now on, a chip asks the server again, a spot opens its
+# sheet, and Log fry run lands. The simulator stands on campus, and the api's places mock sets its
+# street around wherever it is asked. Needs the app installed (moon run mobile:ios), Metro (moon run
+# mobile:dev) and the api (moon run api:dev) with no PLACES_API_KEY.
+#
+# Maestro reads text as a regular expression: a spot's card is one element whose label runs on past
+# its name (".*"), and the $ in "Under $10" is escaped.
+appId: com.cadenlund.friesinthebag
+---
+- setLocation:
+    latitude: 30.4133
+    longitude: -91.18
+- launchApp:
+    clearState: true
+- runFlow: subflows/sign-up.yaml
+- openLink: friesinthebag://fries
+# iOS asks before opening a link with our scheme; Android does not.
+- tapOn:
+    text: "Open"
+    optional: true
+- assertVisible: "Time to put the fries in the bag."
+- tapOn: "Find food"
+# The first tap asks for location. iOS and Android word the button differently.
+- tapOn:
+    text: "Allow While Using App"
+    optional: true
+- tapOn:
+    text: "While using the app"
+    optional: true
+- assertVisible: "Food nearby"
+# Open now starts on: the closed burger place is left out, and the nearest fries are listed.
+- extendedWaitUntil:
+    visible: "Night Owl Fries.*"
+    timeout: 10000
+- assertNotVisible: "Early Bird Burgers.*"
+# A chip asks the server again: Under $10 keeps the two cheap spots and nothing else.
+- tapOn: 'Under \$10'
+- extendedWaitUntil:
+    visible: "Sunny Side Taco Truck.*"
+    timeout: 10000
+- assertNotVisible: "Campus Corner Deli.*"
+- tapOn: "Sunny Side Taco Truck.*"
+- assertVisible: "Get directions"
+- tapOn: "Log fry run"
+- assertVisible: "Fry run logged."
