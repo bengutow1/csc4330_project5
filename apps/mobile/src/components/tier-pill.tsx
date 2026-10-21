@@ -1,28 +1,13 @@
-import { Tier } from "@fries-in-the-bag/api";
+import type { Tier } from "@fries-in-the-bag/api";
 import * as Haptics from "expo-haptics";
 import { useEffect } from "react";
 import { StyleSheet, Text } from "react-native";
 import Animated, { Easing, Keyframe, useReducedMotion } from "react-native-reanimated";
-import { COLORS, RADII, SPACE, TYPE } from "@/theme";
+import { tierLook } from "@/lib/tier";
+import { RADII, SPACE, TYPE } from "@/theme";
 
 // The landing ends on the thud.
 const LAND_MS = 280;
-
-// Each tier's name and tint, best first. A tier added to the wire fails to compile until it has
-// its own.
-const LOOKS: Record<
-  Exclude<Tier, Tier.UNSPECIFIED>,
-  { label: string; fill: string; ink: string }
-> = {
-  [Tier.CERTIFIED_CHEF]: { label: "Certified Chef", fill: COLORS.pickleTint, ink: COLORS.pickle },
-  [Tier.HOME_COOK]: { label: "Home Cook", fill: COLORS.blueberryTint, ink: COLORS.blueberry },
-  [Tier.SCRAPPY]: { label: "Scrappy", fill: COLORS.mustardTint, ink: COLORS.mustardInk },
-  [Tier.FRIES_IN_THE_BAG]: {
-    label: "Fries in the Bag",
-    fill: COLORS.ketchupTint,
-    ink: COLORS.ketchupInk,
-  },
-};
 
 // Brought down like a stamp: big and turned, gathering speed, then flat on the page.
 const LANDING = new Keyframe({
@@ -41,21 +26,20 @@ const LANDING = new Keyframe({
  */
 export function TierPill(props: { tier: Tier }) {
   const reduceMotion = useReducedMotion();
-  const tier = props.tier;
+  // Unspecified, or newer than this build: nothing lands, and nothing thuds.
+  const look = tierLook(props.tier);
 
   useEffect(() => {
-    // Every verdict has a tier, so unspecified means there is nothing to land.
-    if (tier === Tier.UNSPECIFIED) {
+    if (!look) {
       return;
     }
     const timer = setTimeout(thud, reduceMotion ? 0 : LAND_MS);
     return () => clearTimeout(timer);
-  }, [tier, reduceMotion]);
+  }, [look, reduceMotion]);
 
-  if (tier === Tier.UNSPECIFIED) {
+  if (!look) {
     return null;
   }
-  const look = LOOKS[tier];
   return (
     <Animated.View
       entering={LANDING}
