@@ -42,7 +42,10 @@ export function HandleScreen() {
   const settled = useDebouncedValue(handle, CHECK_DELAY_MS);
   const check = useCheckHandle(settled);
   const create = useCreateAccount();
-  const invalid = fieldErrors(create.error);
+  // Next's answer speaks only while the handle reads as it was sent. Typing moves past it without
+  // letting go of a call still on its way, so Next stays pending until that call lands.
+  const asSent = create.variables?.handle === handle;
+  const invalid = asSent ? fieldErrors(create.error) : {};
   // The check speaks only for the handle it was asked about, and the server's answer to Next
   // speaks over it.
   const checked =
@@ -52,14 +55,14 @@ export function HandleScreen() {
   const handleError = invalid.handle ?? checked;
   // A failure that belongs to no input (the server out of reach, too many tries) sits above the
   // button instead.
-  const failed = create.isError && Object.keys(invalid).length === 0;
+  const failed = asSent && create.isError && Object.keys(invalid).length === 0;
 
-  const type = (text: string) => {
-    setHandle(text);
-    // The last answer to Next was about the handle as it was.
-    create.reset();
-  };
   const submit = () => {
+    // The return key gets here even while Next is pending, and a second account would strand the
+    // first.
+    if (create.isPending) {
+      return;
+    }
     // Before the account exists, so the guards never open the tabs ahead of the kitchen.
     setup.start();
     create.mutate({ handle, avatar });
@@ -85,7 +88,7 @@ export function HandleScreen() {
             accessibilityLabel="Handle"
             autoCapitalize="none"
             autoCorrect={false}
-            onChangeText={type}
+            onChangeText={setHandle}
             onSubmitEditing={submit}
             placeholder="chef_maya"
             placeholderTextColor={COLORS.muted}
