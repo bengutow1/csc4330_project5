@@ -24,6 +24,7 @@ import (
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/health/v1/healthv1connect"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/healthz"
 	"github.com/bengutow1/csc4330_project5/packages/go/logging"
+	"github.com/bengutow1/csc4330_project5/packages/go/places"
 	"github.com/bengutow1/csc4330_project5/packages/go/repository"
 	"github.com/bengutow1/csc4330_project5/packages/go/vision"
 )
@@ -47,6 +48,9 @@ func main() {
 	}
 	addr := ":" + port
 
+	// Read once for every vendor below: "production" makes a missing key stop the boot.
+	appEnv := os.Getenv("APP_ENV")
+
 	// The vision model. Without a key the API serves the mock's canned fridges, except in
 	// production, where a missing key stops the boot: a real deployment never hands out a fake
 	// verdict.
@@ -58,7 +62,7 @@ func main() {
 		// without a word.
 		log.Error("VISION_API_KEY is set, but there is no vision client yet; unset it to serve the mock")
 		os.Exit(1)
-	case os.Getenv("APP_ENV") == "production":
+	case appEnv == "production":
 		log.Error("VISION_API_KEY is required in production")
 		os.Exit(1)
 	}
@@ -72,6 +76,28 @@ func main() {
 	log.Info("vision mock is live", "serving", cmp.Or(visionPin, "every fridge in turn"),
 		"plates", cmp.Or(platePin, "every plate passes"))
 	_ = visionMock // nothing calls the model until the scan (#17) and cook (#21) services mount
+
+	// The places provider. Without a key the API serves the mock's made-up spots, except in
+	// production, where a missing key stops the boot: a real deployment never lists fake spots.
+	placesKey := os.Getenv("PLACES_API_KEY")
+	placesMock := os.Getenv("PLACES_MOCK")
+	switch {
+	case placesKey != "":
+		// The real client is still to come (#32), and serving the mock anyway would ignore the key
+		// without a word.
+		log.Error("PLACES_API_KEY is set, but there is no places client yet; unset it to serve the mock")
+		os.Exit(1)
+	case appEnv == "production":
+		log.Error("PLACES_API_KEY is required in production")
+		os.Exit(1)
+	}
+	spots, err := places.NewMock(placesMock)
+	if err != nil {
+		log.Error("PLACES_MOCK names no mock mode", "err", err)
+		os.Exit(1)
+	}
+	log.Info("places mock is live", "mode", cmp.Or(placesMock, "default"))
+	_ = spots // nothing lists spots until the fries service (#26) mounts
 
 	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
