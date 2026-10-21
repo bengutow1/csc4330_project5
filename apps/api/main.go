@@ -52,11 +52,8 @@ func main() {
 		port = "8080"
 	}
 	addr := ":" + port
-	// APP_ENV=production hardens the API: a missing vendor key stops the boot, and the session
-	// cookie is Secure. Anything else is local dev.
-	appEnv := os.Getenv("APP_ENV")
-
-	// Read once for every vendor below: "production" makes a missing key stop the boot.
+	// Read once for every vendor below and the session cookie: "production" makes a missing key
+	// stop the boot and the cookie Secure. Anything else is local dev.
 	appEnv := os.Getenv("APP_ENV")
 
 	// The vision model. Without a key the API serves the mock's canned fridges, except in
