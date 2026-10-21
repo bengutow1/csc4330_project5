@@ -2,7 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { CameraView, type FlashMode, useCameraPermissions } from "expo-camera";
 import { useIsFocused } from "expo-router";
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { AppState, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { Button } from "@/components/button";
 import { IconButton } from "@/components/icon-button";
 import { COLORS, RADII, SPACE, TYPE } from "@/theme";
@@ -42,7 +42,7 @@ export function Camera(props: {
   /** Between the viewfinder and the shutter: the screen's own controls. */
   children?: ReactNode;
 }) {
-  const [permission, requestPermission] = useCameraPermissions();
+  const [permission, requestPermission, readPermission] = useCameraPermissions();
   const focused = useIsFocused();
   const camera = useRef<CameraView>(null);
   const [flash, setFlash] = useState<FlashMode>("off");
@@ -52,6 +52,17 @@ export function Camera(props: {
   const [missed, setMissed] = useState(false);
   const granted = permission?.granted === true;
   const live = granted && focused;
+
+  // The player can turn the camera on in Settings while the app is away, and Android doesn't
+  // restart an app when it grants a permission, so the answer is read again on every return.
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        void readPermission();
+      }
+    });
+    return () => subscription.remove();
+  }, [readPermission]);
 
   // A preview that stopped starts from scratch: it warms up again, and may work this time.
   useEffect(() => {
