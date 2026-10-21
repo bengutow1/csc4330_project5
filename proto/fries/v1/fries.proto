@@ -57,6 +57,9 @@ message Spot {
   double lng = 11;
   // One line, as the provider writes it; "" when unknown.
   string address = 12;
+  // The kind of food in a word or two, as the provider names it ("Mexican", "Pizza", "Fast
+  // food"); "" when unknown. The list shows it before the price and distance.
+  string category = 13;
 }
 
 message ListSpotsRequest {

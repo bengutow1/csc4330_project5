@@ -117,7 +117,10 @@ type Spot struct {
 	// The spot's longitude in degrees, for directions.
 	Lng float64 `protobuf:"fixed64,11,opt,name=lng,proto3" json:"lng,omitempty"`
 	// One line, as the provider writes it; "" when unknown.
-	Address       string `protobuf:"bytes,12,opt,name=address,proto3" json:"address,omitempty"`
+	Address string `protobuf:"bytes,12,opt,name=address,proto3" json:"address,omitempty"`
+	// The kind of food in a word or two, as the provider names it ("Mexican", "Pizza", "Fast
+	// food"); "" when unknown. The list shows it before the price and distance.
+	Category      string `protobuf:"bytes,13,opt,name=category,proto3" json:"category,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -232,6 +235,13 @@ func (x *Spot) GetLng() float64 {
 func (x *Spot) GetAddress() string {
 	if x != nil {
 		return x.Address
+	}
+	return ""
+}
+
+func (x *Spot) GetCategory() string {
+	if x != nil {
+		return x.Category
 	}
 	return ""
 }
@@ -497,7 +507,7 @@ var File_fries_v1_fries_proto protoreflect.FileDescriptor
 
 const file_fries_v1_fries_proto_rawDesc = "" +
 	"\n" +
-	"\x14fries/v1/fries.proto\x12\bfries.v1\"\xcb\x02\n" +
+	"\x14fries/v1/fries.proto\x12\bfries.v1\"\xe7\x02\n" +
 	"\x04Spot\x12\x17\n" +
 	"\aspot_id\x18\x01 \x01(\tR\x06spotId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12'\n" +
@@ -513,7 +523,8 @@ const file_fries_v1_fries_proto_rawDesc = "" +
 	"\x03lat\x18\n" +
 	" \x01(\x01R\x03lat\x12\x10\n" +
 	"\x03lng\x18\v \x01(\x01R\x03lng\x12\x18\n" +
-	"\aaddress\x18\f \x01(\tR\aaddress\"\xc4\x01\n" +
+	"\aaddress\x18\f \x01(\tR\aaddress\x12\x1a\n" +
+	"\bcategory\x18\r \x01(\tR\bcategory\"\xc4\x01\n" +
 	"\x10ListSpotsRequest\x12\x15\n" +
 	"\x03lat\x18\x01 \x01(\x01H\x00R\x03lat\x88\x01\x01\x12\x15\n" +
 	"\x03lng\x18\x02 \x01(\x01H\x01R\x03lng\x88\x01\x01\x12.\n" +

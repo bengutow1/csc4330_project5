@@ -250,6 +250,99 @@ func TestChangingAnAnswerLeavesTheMockAlone(t *testing.T) {
 	}
 }
 
+// TestEveryMockSpotHasItsCuisine: screen 9 writes a spot's cuisine before its price and distance
+// ("Mexican · $ · 2.9 km"), so a spot without one would show a bare price.
+func TestEveryMockSpotHasItsCuisine(t *testing.T) {
+	t.Parallel()
+	want := map[string]string{
+		"Early Bird Burgers":    "Burgers",
+		"Campus Corner Deli":    "Deli",
+		"Night Owl Fries":       "Fast food",
+		"Sunny Side Taco Truck": "Mexican",
+		"Drumstick Drive-Thru":  "Wings",
+		"Main Street Pizza":     "Pizza",
+		"Green Bowl":            "Salads",
+		"Lucky Noodle House":    "Noodles",
+		"Slow Smoke BBQ":        "BBQ",
+		"Ember Steakhouse":      "Steakhouse",
+	}
+
+	got := nearby(t, newMock(t, ""), campusLat, campusLng)
+
+	if len(got) != len(want) {
+		t.Fatalf("got %d spots, want %d", len(got), len(want))
+	}
+	for _, spot := range got {
+		if spot.Category != want[spot.Name] {
+			t.Errorf("%s: category %q, want %q", spot.Name, spot.Category, want[spot.Name])
+		}
+	}
+}
+
+// TestASearchSetsTheStreetAroundCampusWithNoDistance: with location off, the app sends only
+// words, and the mock cannot find a place from words. It sets the usual street around the campus
+// point, so the map still has spots to show, and measures no distance: there is no player to
+// measure from.
+func TestASearchSetsTheStreetAroundCampusWithNoDistance(t *testing.T) {
+	t.Parallel()
+	mock := newMock(t, "")
+	aroundCampus := nearby(t, mock, campusLat, campusLng)
+
+	got := search(t, mock, "tacos near the stadium")
+
+	if len(got) != len(aroundCampus) {
+		t.Fatalf("got %d spots, want the usual %d", len(got), len(aroundCampus))
+	}
+	for i, spot := range got {
+		want := aroundCampus[i]
+		if spot.DistanceMeters != 0 {
+			t.Errorf("%s: %d m away, want 0 (no point to measure from)", spot.Name, spot.DistanceMeters)
+		}
+		if spot.ID != want.ID || spot.Lat != want.Lat || spot.Lng != want.Lng {
+			t.Errorf("got %s at %v, %v, want %s at %v, %v (the street around campus)",
+				spot.ID, spot.Lat, spot.Lng, want.ID, want.Lat, want.Lng)
+		}
+		if spot.OpenNow != want.OpenNow || spot.ClosesAt != want.ClosesAt ||
+			spot.Category != want.Category || !slices.Equal(spot.Hours, want.Hours) {
+			t.Errorf("%s: open %v until %q (%s), want open %v until %q (%s), as on the usual street",
+				spot.Name, spot.OpenNow, spot.ClosesAt, spot.Category, want.OpenNow, want.ClosesAt, want.Category)
+		}
+	}
+}
+
+// TestClosedClosesEverySpotASearchFinds: "Even the fries are closed." has to show with location
+// off too.
+func TestClosedClosesEverySpotASearchFinds(t *testing.T) {
+	t.Parallel()
+
+	got := search(t, newMock(t, "closed"), "fries")
+
+	if len(got) != 10 {
+		t.Fatalf("got %d spots, want all 10, closed", len(got))
+	}
+	for _, spot := range got {
+		if spot.OpenNow || spot.ClosesAt != "" {
+			t.Errorf("%s is open until %q, want every spot closed", spot.Name, spot.ClosesAt)
+		}
+	}
+}
+
+// TestACanceledSearchGetsNoSpots: a search the caller gave up on fails, as Nearby does.
+func TestACanceledSearchGetsNoSpots(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+
+	got, err := newMock(t, "").Search(ctx, "fries")
+
+	if !errors.Is(err, context.Canceled) {
+		t.Errorf("err = %v, want context.Canceled", err)
+	}
+	if got != nil {
+		t.Errorf("got %d spots, want none", len(got))
+	}
+}
+
 func newMock(t *testing.T, mode string) *places.Mock {
 	t.Helper()
 	mock, err := places.NewMock(mode)
@@ -269,6 +362,15 @@ func nearby(t *testing.T, mock *places.Mock, lat, lng float64) []places.Place {
 }
 
 // index is where the spot with that name sits in the list. A missing spot fails the test.
+func search(t *testing.T, mock *places.Mock, query string) []places.Place {
+	t.Helper()
+	got, err := mock.Search(t.Context(), query)
+	if err != nil {
+		t.Fatalf("search %q: %v", query, err)
+	}
+	return got
+}
+
 func index(t *testing.T, spots []places.Place, name string) int {
 	t.Helper()
 	i := slices.IndexFunc(spots, func(p places.Place) bool { return p.Name == name })

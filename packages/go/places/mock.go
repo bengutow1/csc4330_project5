@@ -36,6 +36,34 @@ func (c *Mock) Nearby(ctx context.Context, lat, lng float64, query string) ([]Pl
 	if err != nil {
 		return nil, fmt.Errorf("places: mock nearby: %w", err)
 	}
+	return c.street(lat, lng), nil
+}
+
+// searchLat and searchLng are where Search sets the street: the campus point the tests ask from.
+// Any point would do, as long as the map has somewhere to put the spots.
+const (
+	searchLat = 30.4133
+	searchLng = -91.1800
+)
+
+// Search answers a search with no point, which the app sends when the player's location is off
+// and query says where to look. The mock cannot find a place from words, so it sets the ten spots
+// around searchLat, searchLng, each 0 m away: there is no player to measure from. Like Nearby, it
+// ignores query.
+func (c *Mock) Search(ctx context.Context, query string) ([]Place, error) {
+	err := ctx.Err()
+	if err != nil {
+		return nil, fmt.Errorf("places: mock search: %w", err)
+	}
+	out := c.street(searchLat, searchLng)
+	for i := range out {
+		out[i].DistanceMeters = 0
+	}
+	return out, nil
+}
+
+// street is the ten spots set around lat, lng, each at its own distance from that point.
+func (c *Mock) street(lat, lng float64) []Place {
 	out := make([]Place, 0, len(mockSpots))
 	for _, s := range mockSpots {
 		spotLat, spotLng := offset(lat, lng, float64(s.meters), s.bearing)
@@ -49,6 +77,7 @@ func (c *Mock) Nearby(ctx context.Context, lat, lng float64, query string) ([]Pl
 			Lat:            spotLat,
 			Lng:            spotLng,
 			Address:        s.address,
+			Category:       s.category,
 			// A copy, so a caller that edits its answer cannot change the next one.
 			Hours: slices.Clone(s.hours),
 		}
@@ -58,12 +87,13 @@ func (c *Mock) Nearby(ctx context.Context, lat, lng float64, query string) ([]Pl
 		}
 		out = append(out, p)
 	}
-	return out, nil
+	return out
 }
 
 // mockSpot is one of the mock's spots before it is set around a point.
 type mockSpot struct {
 	id, name, address string
+	category          string  // the cuisine screen 9 writes before the price
 	meters            int     // from the point Nearby is asked about
 	bearing           float64 // degrees clockwise from north
 	open              bool
@@ -80,52 +110,62 @@ type mockSpot struct {
 var mockSpots = []mockSpot{
 	{
 		id: "mock-03", name: "Night Owl Fries", address: "77 Maple Dr",
-		meters: 1200, bearing: 120, open: true, price: 1, fastFood: true,
+		category: "Fast food",
+		meters:   1200, bearing: 120, open: true, price: 1, fastFood: true,
 		hours: []Opening{{Open: at(10, 30), Close: at(26, 0)}},
 	},
 	{
 		id: "mock-07", name: "Green Bowl", address: "33 Cedar Ln",
-		meters: 2400, bearing: 260, open: true, price: 2,
+		category: "Salads",
+		meters:   2400, bearing: 260, open: true, price: 2,
 		hours: []Opening{{Open: at(10, 0), Close: at(21, 0)}},
 	},
 	{
 		id: "mock-06", name: "Main Street Pizza", address: "560 Main St",
-		meters: 2400, bearing: 80, open: true, price: 2,
+		category: "Pizza",
+		meters:   2400, bearing: 80, open: true, price: 2,
 		hours: []Opening{{Open: at(11, 0), Close: at(24, 0)}},
 	},
 	{
 		id: "mock-01", name: "Early Bird Burgers", address: "18 Elm St",
-		meters: 300, bearing: 45, open: false, price: 0, fastFood: true,
+		category: "Burgers",
+		meters:   300, bearing: 45, open: false, price: 0, fastFood: true,
 		hours: []Opening{{Open: at(6, 0), Close: at(14, 0)}},
 	},
 	{
 		id: "mock-10", name: "Ember Steakhouse", address: "8 Market Sq",
-		meters: 5000, bearing: 230, open: true, price: 4,
+		category: "Steakhouse",
+		meters:   5000, bearing: 230, open: true, price: 4,
 		hours: []Opening{{Open: at(17, 0), Close: at(22, 0)}},
 	},
 	{
 		id: "mock-02", name: "Campus Corner Deli", address: "402 Oak Ave",
-		meters: 650, bearing: 200, open: true, price: 2,
+		category: "Deli",
+		meters:   650, bearing: 200, open: true, price: 2,
 		hours: []Opening{{Open: at(8, 0), Close: at(21, 0)}},
 	},
 	{
 		id: "mock-05", name: "Drumstick Drive-Thru", address: "1290 Pine St",
-		meters: 1900, bearing: 160, open: true, price: 2, fastFood: true,
+		category: "Wings",
+		meters:   1900, bearing: 160, open: true, price: 2, fastFood: true,
 		hours: []Opening{{Open: at(10, 0), Close: at(23, 0)}},
 	},
 	{
 		id: "mock-08", name: "Lucky Noodle House", address: "905 Birch Rd",
-		meters: 3200, bearing: 20, open: true, price: 2,
+		category: "Noodles",
+		meters:   3200, bearing: 20, open: true, price: 2,
 		hours: []Opening{{Open: at(11, 0), Close: at(14, 30)}, {Open: at(17, 0), Close: at(22, 0)}},
 	},
 	// A truck: no fixed address and no posted hours.
 	{
 		id: "mock-04", name: "Sunny Side Taco Truck",
-		meters: 1500, bearing: 300, open: true, price: 1,
+		category: "Mexican",
+		meters:   1500, bearing: 300, open: true, price: 1,
 	},
 	{
 		id: "mock-09", name: "Slow Smoke BBQ", address: "2104 River Rd",
-		meters: 4100, bearing: 340, open: true, price: 3,
+		category: "BBQ",
+		meters:   4100, bearing: 340, open: true, price: 3,
 		hours: []Opening{{Open: at(11, 0), Close: at(21, 30)}},
 	},
 }
