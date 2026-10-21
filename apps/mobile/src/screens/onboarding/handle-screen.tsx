@@ -1,4 +1,10 @@
-import { errorMessage, fieldErrors, useCheckHandle, useCreateAccount } from "@fries-in-the-bag/api";
+import {
+  errorMessage,
+  fieldErrors,
+  useCheckHandle,
+  useCreateAccount,
+  useCreatingAccount,
+} from "@fries-in-the-bag/api";
 import { Stack, useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -42,8 +48,11 @@ export function HandleScreen() {
   const settled = useDebouncedValue(handle, CHECK_DELAY_MS);
   const check = useCheckHandle(settled);
   const create = useCreateAccount();
+  // Any account still being made, this visit's or one the player backed out of. A second would
+  // strand the first, so Next waits for it.
+  const creating = useCreatingAccount();
   // Next's answer speaks only while the handle reads as it was sent. Typing moves past it without
-  // letting go of a call still on its way, so Next stays pending until that call lands.
+  // letting go of the call.
   const asSent = create.variables?.handle === handle;
   const invalid = asSent ? fieldErrors(create.error) : {};
   // The check speaks only for the handle it was asked about, and the server's answer to Next
@@ -58,9 +67,8 @@ export function HandleScreen() {
   const failed = asSent && create.isError && Object.keys(invalid).length === 0;
 
   const submit = () => {
-    // The return key gets here even while Next is pending, and a second account would strand the
-    // first.
-    if (create.isPending) {
+    // The return key gets here even while Next is pending.
+    if (creating) {
       return;
     }
     // Before the account exists, so the guards never open the tabs ahead of the kitchen.
@@ -119,7 +127,7 @@ export function HandleScreen() {
       </ScrollView>
       {failed ? <Text style={styles.failed}>{errorMessage(create.error)}</Text> : null}
       <BottomBar>
-        <Button label="Next" pendingLabel="Saving…" pending={create.isPending} onPress={submit} />
+        <Button label="Next" pendingLabel="Saving…" pending={creating} onPress={submit} />
       </BottomBar>
     </KeyboardAvoidingView>
   );

@@ -1,6 +1,11 @@
 import { createConnectQueryKey, skipToken, useMutation, useQuery } from "@connectrpc/connect-query";
 import { AccountService } from "@fries-in-the-bag/apigen/account/v1/account_pb";
-import { useQueryClient } from "@tanstack/react-query";
+import {
+  type MutationFilters,
+  type QueryClient,
+  useIsMutating,
+  useQueryClient,
+} from "@tanstack/react-query";
 
 // WhoAmI takes no input. A module constant keeps the query key the same on every render.
 const WHO_AM_I_INPUT = {};
@@ -26,14 +31,37 @@ export function useWhoAmI() {
 }
 
 /**
+ * CREATING_ACCOUNT finds a CreateAccount this device still has out, from whichever screen sent
+ * it. A screen the player backs out of keeps its call running, and a second account would strand
+ * the first.
+ */
+export const CREATING_ACCOUNT = {
+  mutationKey: createConnectQueryKey({
+    schema: AccountService.method.createAccount,
+    cardinality: undefined,
+  }),
+} satisfies MutationFilters;
+
+/**
  * useCreateAccount makes the device account and signs this device in. Success resets every
  * query rather than invalidating it, which would keep the previous session's answers on screen.
  */
 export function useCreateAccount() {
   const queryClient = useQueryClient();
-  return useMutation(AccountService.method.createAccount, {
+  return useMutation(AccountService.method.createAccount, createAccountOptions(queryClient));
+}
+
+/** createAccountOptions is what useCreateAccount sends with, CREATING_ACCOUNT's key included. */
+export function createAccountOptions(queryClient: QueryClient) {
+  return {
+    mutationKey: CREATING_ACCOUNT.mutationKey,
     onSuccess: () => queryClient.resetQueries(),
-  });
+  };
+}
+
+/** useCreatingAccount says whether a CreateAccount is still out (CREATING_ACCOUNT). */
+export function useCreatingAccount() {
+  return useIsMutating(CREATING_ACCOUNT) > 0;
 }
 
 /**
