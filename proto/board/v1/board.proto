@@ -1,0 +1,87 @@
+// board.v1: the boards. Chefs ranks players by the points they earned cooking, this week or all
+// time. The Hall of Fries ranks them by fry runs: a joke board, and the only place fry runs count.
+// The Fridge of the Week is the week's best fridge. The server ranks every row, and the app shows
+// them as they come. A week starts Monday at 00:00, campus time (America/Chicago).
+syntax = "proto3";
+
+package board.v1;
+
+// BoardService serves the boards and the Fridge of the Week.
+service BoardService {
+  // GetBoard returns a page of one board's rows, best first, and the caller's own row.
+  rpc GetBoard(GetBoardRequest) returns (GetBoardResponse);
+  // GetFridgeOfTheWeek returns the week's best fridge, or nothing before anyone scans this week.
+  rpc GetFridgeOfTheWeek(GetFridgeOfTheWeekRequest) returns (GetFridgeOfTheWeekResponse);
+}
+
+// Board names a board.
+enum Board {
+  BOARD_UNSPECIFIED = 0;
+  // Points from cooking.
+  BOARD_CHEFS = 1;
+  // Fry runs, which earn no points anywhere else.
+  BOARD_HALL_OF_FRIES = 2;
+}
+
+// Range is the stretch of time a board counts.
+enum Range {
+  RANGE_UNSPECIFIED = 0;
+  // Since Monday 00:00, campus time.
+  RANGE_THIS_WEEK = 1;
+  // Since the first day.
+  RANGE_ALL_TIME = 2;
+}
+
+// Row is one player's place on a board.
+message Row {
+  // 1 for the most. Players with the same value share a rank, and the next rank skips past them
+  // (1, 1, 3). Rows that share a rank are ordered by handle.
+  int32 rank = 1;
+  string handle = 2;
+  // One emoji.
+  string avatar = 3;
+  // Points on Chefs, fry runs on the Hall of Fries, counted over the range.
+  int64 value = 4;
+  // The Hall of Fries leader wears the crown: true on its rank-1 rows, and never on Chefs.
+  bool crown = 5;
+}
+
+message GetBoardRequest {
+  // Which board. Required: BOARD_UNSPECIFIED is refused.
+  Board board = 1;
+  // Which stretch of time. Required: RANGE_UNSPECIFIED is refused.
+  Range range = 2;
+  // The next_cursor of the page before; "" for the first page.
+  string cursor = 3;
+  // The most rows on this page, from 1 to 50, where more is clamped to 50; 0 = 20.
+  int32 limit = 4;
+}
+
+message GetBoardResponse {
+  // This page of rows, best first. Only players with a value above 0 in the range are ranked.
+  repeated Row rows = 1;
+  // Send as cursor for the next page; "" when this page is the last.
+  string next_cursor = 2;
+  // The caller's own row, on every page, whether or not the page shows it. Unset when the caller
+  // has no value in the range.
+  Row my_row = 3;
+}
+
+message GetFridgeOfTheWeekRequest {}
+
+message GetFridgeOfTheWeekResponse {
+  // The week's best fridge: the highest score scanned since Monday 00:00, campus time, the
+  // earliest scan on a tie. Unset before anyone scans this week.
+  FridgeOfTheWeek fridge = 1;
+}
+
+// FridgeOfTheWeek is one scan, and whose it was.
+message FridgeOfTheWeek {
+  string handle = 1;
+  // One emoji.
+  string avatar = 2;
+  // 0 to 100.
+  int32 score = 3;
+  // The model's line about that fridge, never the person.
+  string roast = 4;
+}
