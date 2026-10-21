@@ -92,8 +92,9 @@ export default function RecipeRoute() {
 - Confirm anything that affects the other player (ending a combo, removing a player) with the
   app's own dialog component. Never `Alert.alert` (a no-op on web) or `window.confirm`.
 - Hiding a control is a courtesy, not a permission: the server checks every call again.
-- Ask for each permission at first use, never at launch: the camera on the scan screen, location
-  at the fries moment, notifications after the first points receipt. A denied permission gets a
+- Ask for each permission at first use, never at launch: the camera when the player taps to allow
+  it on the Snap tab, which says why first (the app opens on that tab, so it never prompts on its
+  own), location at the fries moment, notifications after the first points receipt. A denied permission gets a
   screen that says why it was needed and offers the way around it (a search box instead of
   location).
 - Fast food in general, no chain in particular: no logos or mascots, and spot names stay plain
