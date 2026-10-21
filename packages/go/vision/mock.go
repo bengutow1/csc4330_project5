@@ -33,27 +33,36 @@ type Mock struct {
 	reads        atomic.Uint64 // verdicts served so far, which picks the next fridge
 }
 
-// NewMock builds the mock. pin is "" to serve every fridge in turn, a fridge's name
+// NewMock builds the mock. fridgePin is "" to serve every fridge in turn, a fridge's name
 // (certified_chef, home_cook, scrappy, fries_in_the_bag or empty) to serve only that one, or
-// "error" to fail every call. Any other pin is refused.
-func NewMock(pin string) (*Mock, error) {
+// "error" to fail every call. platePin is "" to pass every plate, or "reject" to fail every one.
+// Any other pin is refused. The pins are fixed once the mock is built.
+func NewMock(fridgePin, platePin string) (*Mock, error) {
 	m := &Mock{fridges: mockFridges, wait: mockWait}
-	switch pin {
+	switch fridgePin {
 	case "":
 		// Every fridge, in turn.
 	case mockFailPin:
 		m.fail = true
 	default:
-		i := slices.IndexFunc(mockFridges, func(f mockFridge) bool { return f.name == pin })
+		i := slices.IndexFunc(mockFridges, func(f mockFridge) bool { return f.name == fridgePin })
 		if i < 0 {
 			names := make([]string, 0, len(mockFridges)+1)
 			for _, f := range mockFridges {
 				names = append(names, f.name)
 			}
 			names = append(names, mockFailPin)
-			return nil, fmt.Errorf("vision: no mock fridge is named %q, want one of %s", pin, strings.Join(names, ", "))
+			return nil, fmt.Errorf("vision: no mock fridge is named %q, want one of %s", fridgePin, strings.Join(names, ", "))
 		}
 		m.fridges = mockFridges[i : i+1]
+	}
+	switch platePin {
+	case "":
+		// Every plate passes.
+	case mockRejectPin:
+		m.rejectPlates = true
+	default:
+		return nil, fmt.Errorf("vision: no plate pin is named %q, want %q or none", platePin, mockRejectPin)
 	}
 	return m, nil
 }
@@ -84,20 +93,6 @@ func (m *Mock) ReadFridge(ctx context.Context, photos [][]byte, level RoastLevel
 	return Fridge{Items: slices.Clone(f.items), Roast: roast}, nil
 }
 
-// PinPlates sets how the mock judges plates: "" passes every plate, and "reject" fails every one.
-// Any other pin is refused. Call it before the first check.
-func (m *Mock) PinPlates(pin string) error {
-	switch pin {
-	case "":
-		m.rejectPlates = false
-	case mockRejectPin:
-		m.rejectPlates = true
-	default:
-		return fmt.Errorf("vision: no plate pin is named %q, want %q or none", pin, mockRejectPin)
-	}
-	return nil
-}
-
 // Recipes answers as the model would, after the pause the model takes: the canned recipes of the
 // mock fridge whose list shares the most names with items. It ignores the kitchen, so every
 // recipe reaches the server's checks and filters, which are what a player's settings narrow.
@@ -112,8 +107,8 @@ func (m *Mock) Recipes(ctx context.Context, items []Item, kitchen Kitchen) ([]Re
 	return recipesFor(items), nil
 }
 
-// CheckPlate answers as the model would, after the pause: the plate passes, unless PinPlates
-// pinned the mock to reject every one.
+// CheckPlate answers as the model would, after the pause: the plate passes, unless the mock is
+// pinned to reject every one.
 func (m *Mock) CheckPlate(ctx context.Context, photo []byte, recipeTitle string) (PlateCheck, error) {
 	err := m.pause(ctx, "check plate")
 	if err != nil {

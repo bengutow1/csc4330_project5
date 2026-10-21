@@ -62,15 +62,11 @@ func main() {
 		log.Error("VISION_API_KEY is required in production")
 		os.Exit(1)
 	}
-	visionMock, err := vision.NewMock(visionPin)
-	if err != nil {
-		log.Error("VISION_MOCK names no mock fridge", "err", err)
-		os.Exit(1)
-	}
 	platePin := os.Getenv("VISION_MOCK_PLATE")
-	err = visionMock.PinPlates(platePin)
+	visionMock, err := vision.NewMock(visionPin, platePin)
 	if err != nil {
-		log.Error("VISION_MOCK_PLATE names no plate pin", "err", err)
+		// err says which of the two names a pin the mock does not have.
+		log.Error("VISION_MOCK or VISION_MOCK_PLATE names no mock pin", "err", err)
 		os.Exit(1)
 	}
 	log.Info("vision mock is live", "serving", cmp.Or(visionPin, "every fridge in turn"),
