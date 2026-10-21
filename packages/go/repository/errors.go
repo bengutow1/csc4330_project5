@@ -31,3 +31,9 @@ func known(op string, err error) error {
 	}
 	return fmt.Errorf("%s: %w", op, err)
 }
+
+// isNoRows reports whether a read matched no row, for the reads where none is an answer rather
+// than a missing thing (a player's last scan, before their first).
+func isNoRows(err error) bool {
+	return errors.Is(err, pgx.ErrNoRows)
+}

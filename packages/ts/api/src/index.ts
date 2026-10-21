@@ -15,6 +15,13 @@ export {
 export type { AppStateEvents } from "./focus.ts";
 export { useCheckHandle, useCreateAccount, useWhoAmI } from "./hooks/use-account.ts";
 export { useReady } from "./hooks/use-health.ts";
+export {
+  useCreateScan,
+  useEditIngredients,
+  useInvalidateScans,
+  useLastScan,
+  useScan,
+} from "./hooks/use-scan.ts";
 export { ApiProvider } from "./provider.tsx";
 export { makeQueryClient, type ToastHandlers } from "./query-client.ts";
 export { type ApiTransportOptions, createApiTransport } from "./transport.ts";

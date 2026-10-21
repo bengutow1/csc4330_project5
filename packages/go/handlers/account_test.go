@@ -5,7 +5,6 @@ import (
 	"maps"
 	"net/http"
 	"net/http/cookiejar"
-	"net/http/httptest"
 	"net/url"
 	"slices"
 	"strings"
@@ -13,9 +12,6 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
-	"github.com/alexedwards/scs/pgxstore"
-	"github.com/alexedwards/scs/v2"
-	"github.com/jackc/pgx/v5/pgxpool"
 
 	accountv1 "github.com/bengutow1/csc4330_project5/packages/go/apigen/account/v1"
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/account/v1/accountv1connect"
@@ -308,34 +304,14 @@ func assertDefaultKitchen(t *testing.T, name string, k *accountv1.Kitchen) {
 	}
 }
 
-// stack is AccountService served the way main.go serves it.
-type stack struct {
-	url  string
-	pool *pgxpool.Pool
-}
-
 // accountStack mounts AccountService behind the session middleware, over the test's own
 // database, which holds the sessions too.
 func accountStack(t *testing.T, limits account.Limits) stack {
 	t.Helper()
-	pool := newPool(t)
-	repo := repository.New(pool)
-	sessions := scs.New()
-	// The cleanup goroutine is off: the test's database is gone before it would first run.
-	sessions.Store = pgxstore.NewWithCleanupInterval(pool, 0)
-	sessions.Lifetime = auth.Lifetime
-	// httptest serves plain http, which a Secure cookie never comes back over.
-	sessions.Cookie.Secure = false
-	svc := account.NewAccount(account.Config{
-		Repo:   repo,
-		Auth:   auth.New(sessions, repo),
-		Limits: limits,
+	return sessionStack(t, func(mux *http.ServeMux, repo *repository.Repository, authn *auth.Auth) {
+		svc := account.NewAccount(account.Config{Repo: repo, Auth: authn, Limits: limits})
+		mux.Handle(accountv1connect.NewAccountServiceHandler(svc))
 	})
-	mux := http.NewServeMux()
-	mux.Handle(accountv1connect.NewAccountServiceHandler(svc))
-	srv := httptest.NewServer(sessions.LoadAndSave(mux))
-	t.Cleanup(srv.Close)
-	return stack{url: srv.URL, pool: pool}
 }
 
 // person is one phone: a client and the cookie jar it keeps between calls.
