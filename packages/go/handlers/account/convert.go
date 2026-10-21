@@ -5,28 +5,19 @@ import (
 	"fmt"
 
 	accountv1 "github.com/bengutow1/csc4330_project5/packages/go/apigen/account/v1"
+	"github.com/bengutow1/csc4330_project5/packages/go/handlers"
 	"github.com/bengutow1/csc4330_project5/packages/go/repository"
 )
 
-// The closed sets, from the words the database stores to the wire's enums. A word missing here
-// fails the rpc with a logged internal error rather than reaching the app as unspecified.
+// The closed sets only the account speaks, from the words the database stores to the wire's
+// enums. A word missing here fails the rpc with a logged internal error rather than reaching the
+// app as unspecified. Equipment and diets are in the handlers root, because recipes speak them
+// too.
 var (
 	roastLevels = map[string]accountv1.RoastLevel{
 		repository.RoastMild:        accountv1.RoastLevel_ROAST_LEVEL_MILD,
 		repository.RoastMedium:      accountv1.RoastLevel_ROAST_LEVEL_MEDIUM,
 		repository.RoastExtraCrispy: accountv1.RoastLevel_ROAST_LEVEL_EXTRA_CRISPY,
-	}
-	equipment = map[string]accountv1.Equipment{
-		repository.EquipmentMicrowave: accountv1.Equipment_EQUIPMENT_MICROWAVE,
-		repository.EquipmentStovetop:  accountv1.Equipment_EQUIPMENT_STOVETOP,
-		repository.EquipmentOven:      accountv1.Equipment_EQUIPMENT_OVEN,
-		repository.EquipmentAirFryer:  accountv1.Equipment_EQUIPMENT_AIR_FRYER,
-	}
-	diets = map[string]accountv1.Diet{
-		repository.DietNone:        accountv1.Diet_DIET_NONE,
-		repository.DietVegetarian:  accountv1.Diet_DIET_VEGETARIAN,
-		repository.DietVegan:       accountv1.Diet_DIET_VEGAN,
-		repository.DietPescatarian: accountv1.Diet_DIET_PESCATARIAN,
 	}
 	allergies = map[string]accountv1.Allergy{
 		repository.AllergyPeanuts:   accountv1.Allergy_ALLERGY_PEANUTS,
@@ -58,11 +49,11 @@ func toProtoAccount(a repository.Account) (*accountv1.Account, error) {
 	if err != nil {
 		return nil, err
 	}
-	diet, err := wire(diets, a.Diet, "diet")
+	diet, err := handlers.WireDiet(a.Diet)
 	if err != nil {
 		return nil, err
 	}
-	kitchenEquipment, err := wireEach(equipment, a.Equipment, "equipment")
+	kitchenEquipment, err := handlers.WireEquipment(a.Equipment)
 	if err != nil {
 		return nil, err
 	}
