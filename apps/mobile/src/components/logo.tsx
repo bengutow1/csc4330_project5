@@ -1,6 +1,8 @@
+import { LilitaOne_400Regular } from "@expo-google-fonts/lilita-one";
+import { useFonts } from "expo-font";
 import { Image } from "expo-image";
 import { StyleSheet, Text, View } from "react-native";
-import { COLORS, SPACE, TYPE } from "@/theme";
+import { COLORS, FONTS, SPACE, TYPE } from "@/theme";
 
 // The fries in a bag, drawn in the screen files and saved as an asset (docs/design.md).
 const FRIES = require("../../assets/logo-fries.svg");
@@ -20,6 +22,10 @@ const SIZES = {
 
 /** Logo is "Fries" over "in the Bag" in Lilita One, beside the fries in a bag. */
 export function Logo(props: { size?: keyof typeof SIZES }) {
+  // The logo is Lilita One's only user, so it loads the font. Text drawn before its font lands
+  // keeps the fallback even after, so the wordmark mounts afresh once the font is in: O1 draws
+  // the logo at launch.
+  const [fontLoaded] = useFonts({ [FONTS.logo]: LilitaOne_400Regular });
   const size = SIZES[props.size ?? "large"];
   return (
     <View
@@ -28,7 +34,7 @@ export function Logo(props: { size?: keyof typeof SIZES }) {
       accessibilityLabel="Fries in the Bag"
       style={styles.row}
     >
-      <View>
+      <View key={fontLoaded ? "font" : "fallback"}>
         <Text style={[styles.word, { fontSize: size.fries, lineHeight: size.fries * LEADING }]}>
           Fries
         </Text>
