@@ -25,9 +25,11 @@ import (
 
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/account/v1/accountv1connect"
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/health/v1/healthv1connect"
+	"github.com/bengutow1/csc4330_project5/packages/go/apigen/scan/v1/scanv1connect"
 	"github.com/bengutow1/csc4330_project5/packages/go/auth"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/account"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/healthz"
+	"github.com/bengutow1/csc4330_project5/packages/go/handlers/scan"
 	"github.com/bengutow1/csc4330_project5/packages/go/logging"
 	"github.com/bengutow1/csc4330_project5/packages/go/places"
 	"github.com/bengutow1/csc4330_project5/packages/go/repository"
@@ -80,7 +82,6 @@ func main() {
 	}
 	log.Info("vision mock is live", "serving", cmp.Or(visionPin, "every fridge in turn"),
 		"plates", cmp.Or(platePin, "every plate passes"))
-	_ = visionMock // nothing calls the model until the scan (#17) and cook (#21) services mount
 
 	// The places provider. Without a key the API serves the mock's made-up spots, except in
 	// production, where a missing key stops the boot: a real deployment never lists fake spots.
@@ -132,6 +133,13 @@ func main() {
 		Limits: account.DefaultLimits(),
 		Log:    log,
 	})
+	scanSvc := scan.NewScan(scan.Config{
+		Repo:   repo,
+		Auth:   authn,
+		Vision: visionMock,
+		Limit:  scan.DefaultLimit(),
+		Log:    log,
+	})
 
 	// Every service reads request bodies under the same cap.
 	readCap := connect.WithReadMaxBytes(4 << 20)
@@ -143,6 +151,7 @@ func main() {
 
 	r.Mount(healthv1connect.NewHealthServiceHandler(healthz.NewHealth(log, repo.Ping), readCap))
 	r.Mount(accountv1connect.NewAccountServiceHandler(accountSvc, readCap))
+	r.Mount(scanv1connect.NewScanServiceHandler(scanSvc, readCap))
 
 	srv := &http.Server{
 		Addr:              addr,

@@ -9,6 +9,8 @@ require (
 	github.com/bengutow1/csc4330_project5/packages/go/apigen v0.0.0
 	github.com/bengutow1/csc4330_project5/packages/go/auth v0.0.0
 	github.com/bengutow1/csc4330_project5/packages/go/repository v0.0.0
+	github.com/bengutow1/csc4330_project5/packages/go/scoring v0.0.0
+	github.com/bengutow1/csc4330_project5/packages/go/vision v0.0.0
 	github.com/go-playground/validator/v10 v10.30.5
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/peterldowns/pgtestdb v0.1.1
@@ -88,4 +90,6 @@ replace (
 	github.com/bengutow1/csc4330_project5/packages/go/apigen => ../apigen
 	github.com/bengutow1/csc4330_project5/packages/go/auth => ../auth
 	github.com/bengutow1/csc4330_project5/packages/go/repository => ../repository
+	github.com/bengutow1/csc4330_project5/packages/go/scoring => ../scoring
+	github.com/bengutow1/csc4330_project5/packages/go/vision => ../vision
 )

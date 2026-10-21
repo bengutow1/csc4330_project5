@@ -15,6 +15,8 @@ import (
 	"testing"
 
 	"connectrpc.com/connect"
+	"github.com/alexedwards/scs/pgxstore"
+	"github.com/alexedwards/scs/v2"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib" // the database/sql driver "pgx", which pgtestdb opens
 	"github.com/peterldowns/pgtestdb"
@@ -23,6 +25,7 @@ import (
 	tcpostgres "github.com/testcontainers/testcontainers-go/modules/postgres"
 
 	errorv1 "github.com/bengutow1/csc4330_project5/packages/go/apigen/error/v1"
+	"github.com/bengutow1/csc4330_project5/packages/go/auth"
 	"github.com/bengutow1/csc4330_project5/packages/go/repository"
 )
 
@@ -108,6 +111,33 @@ func serve(t *testing.T, path string, h http.Handler) string {
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
 	return srv.URL
+}
+
+// stack is services served the way main.go serves them.
+type stack struct {
+	url  string
+	pool *pgxpool.Pool
+}
+
+// sessionStack serves what mount adds behind the session middleware, over the test's own
+// database, which holds the sessions too.
+func sessionStack(
+	t *testing.T, mount func(mux *http.ServeMux, repo *repository.Repository, authn *auth.Auth),
+) stack {
+	t.Helper()
+	pool := newPool(t)
+	repo := repository.New(pool)
+	sessions := scs.New()
+	// The cleanup goroutine is off: the test's database is gone before it would first run.
+	sessions.Store = pgxstore.NewWithCleanupInterval(pool, 0)
+	sessions.Lifetime = auth.Lifetime
+	// httptest serves plain http, which a Secure cookie never comes back over.
+	sessions.Cookie.Secure = false
+	mux := http.NewServeMux()
+	mount(mux, repo, auth.New(sessions, repo))
+	srv := httptest.NewServer(sessions.LoadAndSave(mux))
+	t.Cleanup(srv.Close)
+	return stack{url: srv.URL, pool: pool}
 }
 
 // asConnectErr fails the test unless err is a Connect error, and returns it.

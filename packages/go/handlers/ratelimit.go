@@ -9,9 +9,9 @@ import (
 	"connectrpc.com/connect"
 )
 
-// Limiter caps how often one key (a client IP) may call: at most n calls in each window. It
-// counts in memory, which holds because one API process serves every request. A nil Limiter
-// allows everything, which is how test fixtures turn limits off.
+// Limiter caps how often one key (a client IP, or an account) may call: at most n calls in each
+// window. It counts in memory, which holds because one API process serves every request. A nil
+// Limiter allows everything, which is how test fixtures turn limits off.
 type Limiter struct {
 	n      int
 	window time.Duration
