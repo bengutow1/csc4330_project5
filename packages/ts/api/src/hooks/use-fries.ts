@@ -11,11 +11,16 @@ import {
   type SpotFilter,
 } from "@fries-in-the-bag/apigen/fries/v1/fries_pb";
 import { keepPreviousData, useQueryClient } from "@tanstack/react-query";
-import { useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { settleAfter } from "../settle.ts";
 
 // The services whose queries count fry runs, so a new one stales them. None does yet: the board
 // (#28) and the profile (#30) join this list, and useLogFryRun picks them up from here.
 const FRY_RUN_COUNTERS: readonly DescService[] = [];
+
+// How long typing must pause before the words become a request. Each request spends one of the
+// player's ListSpots calls, so a search typed key by key must not spend one a key.
+const SEARCH_SETTLE_MS = 300;
 
 /** SpotsSearch is what the spots screen asks for: where the player is, what they typed, and which chips are on. */
 export type SpotsSearch = {
@@ -29,12 +34,14 @@ export type SpotsSearch = {
 
 /**
  * useSpots lists the spots for a search a page at a time, in the server's order and narrowed by
- * the server's filters. A new search keeps the last list on screen, marked isPlaceholderData,
- * until its own answer lands. Retry is off: every call spends a places request, and the player
- * taps again instead.
+ * the server's filters. The words wait until typing pauses for SEARCH_SETTLE_MS; a point or a chip
+ * applies at once. A new search keeps the last list on screen, marked isPlaceholderData, until
+ * its own answer lands. Retry is off: every call spends a places request, and the player taps
+ * again instead.
  */
 export function useSpots(search: SpotsSearch) {
-  return useInfiniteQuery(FriesService.method.listSpots, spotsInput(search), {
+  const query = useSettled(search.query ?? "", SEARCH_SETTLE_MS);
+  return useInfiniteQuery(FriesService.method.listSpots, spotsInput({ ...search, query }), {
     pageParamKey: "cursor",
     getNextPageParam: nextSpotsCursor,
     placeholderData: keepPreviousData,
@@ -63,6 +70,18 @@ export function spotsInput(search: SpotsSearch) {
 /** nextSpotsCursor is the cursor for the page after this one; undefined ends the list. */
 export function nextSpotsCursor(page: ListSpotsResponse) {
   return page.nextCursor === "" ? undefined : page.nextCursor;
+}
+
+/** useSettled is value once it has stopped changing for wait milliseconds. */
+function useSettled<T>(value: T, wait: number) {
+  const [settled, setSettled] = useState(value);
+  // One settler for the hook's life, so each change cancels the one before it.
+  const settler = useMemo(() => settleAfter<T>(wait, setSettled), [wait]);
+  useEffect(() => {
+    settler.push(value);
+  }, [settler, value]);
+  useEffect(() => settler.cancel, [settler]);
+  return settled;
 }
 
 /** useLogFryRun logs that the player went to a spot. It earns no points; it stales what counts fry runs. */
