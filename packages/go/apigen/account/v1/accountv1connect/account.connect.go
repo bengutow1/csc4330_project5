@@ -45,6 +45,9 @@ const (
 	AccountServiceCheckHandleProcedure = "/account.v1.AccountService/CheckHandle"
 	// AccountServiceWhoAmIProcedure is the fully-qualified name of the AccountService's WhoAmI RPC.
 	AccountServiceWhoAmIProcedure = "/account.v1.AccountService/WhoAmI"
+	// AccountServiceUpdateKitchenProcedure is the fully-qualified name of the AccountService's
+	// UpdateKitchen RPC.
+	AccountServiceUpdateKitchenProcedure = "/account.v1.AccountService/UpdateKitchen"
 )
 
 // AccountServiceClient is a client for the account.v1.AccountService service.
@@ -57,6 +60,9 @@ type AccountServiceClient interface {
 	CheckHandle(context.Context, *connect.Request[v1.CheckHandleRequest]) (*connect.Response[v1.CheckHandleResponse], error)
 	// WhoAmI reads the session's account; unauthenticated when there is none.
 	WhoAmI(context.Context, *connect.Request[v1.WhoAmIRequest]) (*connect.Response[v1.WhoAmIResponse], error)
+	// UpdateKitchen replaces the caller's kitchen with the one sent. A value outside its closed set,
+	// unspecified included, is invalid_argument on its field, naming the valid values.
+	UpdateKitchen(context.Context, *connect.Request[v1.UpdateKitchenRequest]) (*connect.Response[v1.UpdateKitchenResponse], error)
 }
 
 // NewAccountServiceClient constructs a client for the account.v1.AccountService service. By
@@ -88,6 +94,12 @@ func NewAccountServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			connect.WithSchema(accountServiceMethods.ByName("WhoAmI")),
 			connect.WithClientOptions(opts...),
 		),
+		updateKitchen: connect.NewClient[v1.UpdateKitchenRequest, v1.UpdateKitchenResponse](
+			httpClient,
+			baseURL+AccountServiceUpdateKitchenProcedure,
+			connect.WithSchema(accountServiceMethods.ByName("UpdateKitchen")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -96,6 +108,7 @@ type accountServiceClient struct {
 	createAccount *connect.Client[v1.CreateAccountRequest, v1.CreateAccountResponse]
 	checkHandle   *connect.Client[v1.CheckHandleRequest, v1.CheckHandleResponse]
 	whoAmI        *connect.Client[v1.WhoAmIRequest, v1.WhoAmIResponse]
+	updateKitchen *connect.Client[v1.UpdateKitchenRequest, v1.UpdateKitchenResponse]
 }
 
 // CreateAccount calls account.v1.AccountService.CreateAccount.
@@ -113,6 +126,11 @@ func (c *accountServiceClient) WhoAmI(ctx context.Context, req *connect.Request[
 	return c.whoAmI.CallUnary(ctx, req)
 }
 
+// UpdateKitchen calls account.v1.AccountService.UpdateKitchen.
+func (c *accountServiceClient) UpdateKitchen(ctx context.Context, req *connect.Request[v1.UpdateKitchenRequest]) (*connect.Response[v1.UpdateKitchenResponse], error) {
+	return c.updateKitchen.CallUnary(ctx, req)
+}
+
 // AccountServiceHandler is an implementation of the account.v1.AccountService service.
 type AccountServiceHandler interface {
 	// CreateAccount makes the device account and signs the session in. Public; a malformed or
@@ -123,6 +141,9 @@ type AccountServiceHandler interface {
 	CheckHandle(context.Context, *connect.Request[v1.CheckHandleRequest]) (*connect.Response[v1.CheckHandleResponse], error)
 	// WhoAmI reads the session's account; unauthenticated when there is none.
 	WhoAmI(context.Context, *connect.Request[v1.WhoAmIRequest]) (*connect.Response[v1.WhoAmIResponse], error)
+	// UpdateKitchen replaces the caller's kitchen with the one sent. A value outside its closed set,
+	// unspecified included, is invalid_argument on its field, naming the valid values.
+	UpdateKitchen(context.Context, *connect.Request[v1.UpdateKitchenRequest]) (*connect.Response[v1.UpdateKitchenResponse], error)
 }
 
 // NewAccountServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -150,6 +171,12 @@ func NewAccountServiceHandler(svc AccountServiceHandler, opts ...connect.Handler
 		connect.WithSchema(accountServiceMethods.ByName("WhoAmI")),
 		connect.WithHandlerOptions(opts...),
 	)
+	accountServiceUpdateKitchenHandler := connect.NewUnaryHandler(
+		AccountServiceUpdateKitchenProcedure,
+		svc.UpdateKitchen,
+		connect.WithSchema(accountServiceMethods.ByName("UpdateKitchen")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/account.v1.AccountService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case AccountServiceCreateAccountProcedure:
@@ -158,6 +185,8 @@ func NewAccountServiceHandler(svc AccountServiceHandler, opts ...connect.Handler
 			accountServiceCheckHandleHandler.ServeHTTP(w, r)
 		case AccountServiceWhoAmIProcedure:
 			accountServiceWhoAmIHandler.ServeHTTP(w, r)
+		case AccountServiceUpdateKitchenProcedure:
+			accountServiceUpdateKitchenHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -177,4 +206,8 @@ func (UnimplementedAccountServiceHandler) CheckHandle(context.Context, *connect.
 
 func (UnimplementedAccountServiceHandler) WhoAmI(context.Context, *connect.Request[v1.WhoAmIRequest]) (*connect.Response[v1.WhoAmIResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("account.v1.AccountService.WhoAmI is not implemented"))
+}
+
+func (UnimplementedAccountServiceHandler) UpdateKitchen(context.Context, *connect.Request[v1.UpdateKitchenRequest]) (*connect.Response[v1.UpdateKitchenResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("account.v1.AccountService.UpdateKitchen is not implemented"))
 }

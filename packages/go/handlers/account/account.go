@@ -1,6 +1,6 @@
 // Author: Caden Lund
-// Package account serves account.v1 AccountService: making the device account and saying whose
-// session a request carries.
+// Package account serves account.v1 AccountService: making the device account, saying whose
+// session a request carries, and saving the player's kitchen.
 package account
 
 import (
@@ -165,6 +165,45 @@ func (h *Account) CheckHandle(
 		return nil, h.fail(op, err)
 	}
 	return connect.NewResponse(&accountv1.CheckHandleResponse{Available: !taken}), nil
+}
+
+// UpdateKitchen replaces the caller's kitchen.
+func (h *Account) UpdateKitchen(
+	ctx context.Context, req *connect.Request[accountv1.UpdateKitchenRequest],
+) (*connect.Response[accountv1.UpdateKitchenResponse], error) {
+	const op = "update kitchen"
+
+	// 1. Who is asking: the account comes from the session
+	me, err := h.gate.Account(ctx)
+	if err != nil {
+		return nil, h.fail(op, err)
+	}
+
+	// 2. Every value back to its stored word, refusing each one outside its closed set
+	edit, invalid := fromProtoKitchen(req.Msg.GetKitchen())
+	if invalid != nil {
+		return nil, h.fail(op, invalid)
+	}
+
+	// 3. The write, on the caller's own row
+	updated, err := h.repo.UpdateKitchen(ctx, me.AccountID, edit)
+	if err != nil {
+		return nil, h.fail(op, err)
+	}
+	if !updated {
+		return nil, h.fail(op, repository.ErrNotFound)
+	}
+
+	// 4. Re-read, so the app sees what was stored
+	stored, err := h.repo.AccountByID(ctx, me.AccountID)
+	if err != nil {
+		return nil, h.fail(op, err)
+	}
+	account, err := toProtoAccount(stored)
+	if err != nil {
+		return nil, h.fail(op, err)
+	}
+	return connect.NewResponse(&accountv1.UpdateKitchenResponse{Account: account}), nil
 }
 
 // WhoAmI reads the session's account.

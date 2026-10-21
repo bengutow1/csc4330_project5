@@ -238,6 +238,181 @@ func TestAMalformedHandleOrAvatarIsRefusedFieldByField(t *testing.T) {
 	}
 }
 
+// TestAPlayerSavesTheirKitchenAndWhoAmIReadsItBack: onboarding's kitchen screen saves the whole
+// kitchen, and what comes back is what was stored: each list in the closed set's order, each value
+// once. Another player's kitchen never moves.
+func TestAPlayerSavesTheirKitchenAndWhoAmIReadsItBack(t *testing.T) {
+	t.Parallel()
+	srv := accountStack(t, account.Limits{})
+	maya := player(t, srv.url, "test_maya")
+	ben := player(t, srv.url, "test_ben")
+
+	saved, err := maya.UpdateKitchen(t.Context(), connect.NewRequest(&accountv1.UpdateKitchenRequest{
+		Kitchen: &accountv1.Kitchen{
+			RoastLevel: accountv1.RoastLevel_ROAST_LEVEL_EXTRA_CRISPY,
+			// Out of the closed set's order, and one of them twice.
+			Equipment: []accountv1.Equipment{
+				accountv1.Equipment_EQUIPMENT_AIR_FRYER,
+				accountv1.Equipment_EQUIPMENT_STOVETOP,
+				accountv1.Equipment_EQUIPMENT_AIR_FRYER,
+			},
+			Diet: accountv1.Diet_DIET_VEGETARIAN,
+			Allergies: []accountv1.Allergy{
+				accountv1.Allergy_ALLERGY_SESAME, accountv1.Allergy_ALLERGY_PEANUTS,
+			},
+			Staples: []accountv1.Staple{accountv1.Staple_STAPLE_RICE, accountv1.Staple_STAPLE_SALT},
+		},
+	}))
+	if err != nil {
+		t.Fatalf("update kitchen: %v", err)
+	}
+	me, err := maya.WhoAmI(t.Context(), connect.NewRequest(&accountv1.WhoAmIRequest{}))
+	if err != nil {
+		t.Fatalf("who am i: %v", err)
+	}
+	theirs, err := ben.WhoAmI(t.Context(), connect.NewRequest(&accountv1.WhoAmIRequest{}))
+	if err != nil {
+		t.Fatalf("who am i, another player: %v", err)
+	}
+
+	want := &accountv1.Kitchen{
+		RoastLevel: accountv1.RoastLevel_ROAST_LEVEL_EXTRA_CRISPY,
+		Equipment: []accountv1.Equipment{
+			accountv1.Equipment_EQUIPMENT_STOVETOP, accountv1.Equipment_EQUIPMENT_AIR_FRYER,
+		},
+		Diet:      accountv1.Diet_DIET_VEGETARIAN,
+		Allergies: []accountv1.Allergy{accountv1.Allergy_ALLERGY_PEANUTS, accountv1.Allergy_ALLERGY_SESAME},
+		Staples:   []accountv1.Staple{accountv1.Staple_STAPLE_SALT, accountv1.Staple_STAPLE_RICE},
+	}
+	if saved.Msg.GetAccount().GetHandle() != "test_maya" {
+		t.Errorf("saved account's handle = %q, want test_maya", saved.Msg.GetAccount().GetHandle())
+	}
+	assertKitchen(t, "the saved account", saved.Msg.GetAccount().GetKitchen(), want)
+	assertKitchen(t, "WhoAmI after the save", me.Msg.GetAccount().GetKitchen(), want)
+	assertDefaultKitchen(t, "another player", theirs.Msg.GetAccount().GetKitchen())
+}
+
+// TestAKitchenValueOutsideItsSetIsRefusedOnItsField: a client on a newer enum, or a broken one, has
+// to hear which field is wrong and what it may hold, every problem at once, and the stored
+// kitchen must not move.
+func TestAKitchenValueOutsideItsSetIsRefusedOnItsField(t *testing.T) {
+	t.Parallel()
+	srv := accountStack(t, account.Limits{})
+	maya := player(t, srv.url, "test_maya")
+	const (
+		roastLevels = "roast level must be one of mild, medium, extra_crispy"
+		diets       = "diet must be one of none, vegetarian, vegan, pescatarian"
+	)
+	cases := []struct {
+		name    string
+		kitchen *accountv1.Kitchen
+		want    map[string]string
+	}{
+		{
+			name:    "an unspecified roast level",
+			kitchen: &accountv1.Kitchen{Diet: accountv1.Diet_DIET_NONE},
+			want:    map[string]string{"kitchen.roast_level": roastLevels},
+		},
+		{
+			name: "a roast level from a newer client",
+			kitchen: &accountv1.Kitchen{
+				RoastLevel: accountv1.RoastLevel(42), Diet: accountv1.Diet_DIET_NONE,
+			},
+			want: map[string]string{"kitchen.roast_level": roastLevels},
+		},
+		{
+			name: "unknown equipment",
+			kitchen: &accountv1.Kitchen{
+				RoastLevel: accountv1.RoastLevel_ROAST_LEVEL_MEDIUM,
+				Equipment: []accountv1.Equipment{
+					accountv1.Equipment_EQUIPMENT_OVEN, accountv1.Equipment(9),
+				},
+				Diet: accountv1.Diet_DIET_NONE,
+			},
+			want: map[string]string{
+				"kitchen.equipment[1]": "equipment must be one of microwave, stovetop, oven, air_fryer",
+			},
+		},
+		{
+			name:    "an unspecified diet",
+			kitchen: &accountv1.Kitchen{RoastLevel: accountv1.RoastLevel_ROAST_LEVEL_MEDIUM},
+			want:    map[string]string{"kitchen.diet": diets},
+		},
+		{
+			name: "an unspecified allergy",
+			kitchen: &accountv1.Kitchen{
+				RoastLevel: accountv1.RoastLevel_ROAST_LEVEL_MEDIUM,
+				Diet:       accountv1.Diet_DIET_NONE,
+				Allergies:  []accountv1.Allergy{accountv1.Allergy_ALLERGY_UNSPECIFIED},
+			},
+			want: map[string]string{
+				"kitchen.allergies[0]": "allergies must be one of peanuts, tree_nuts, milk, eggs, " +
+					"wheat, soy, fish, shellfish, sesame",
+			},
+		},
+		{
+			name: "an unknown staple",
+			kitchen: &accountv1.Kitchen{
+				RoastLevel: accountv1.RoastLevel_ROAST_LEVEL_MEDIUM,
+				Diet:       accountv1.Diet_DIET_NONE,
+				Staples:    []accountv1.Staple{accountv1.Staple_STAPLE_SALT, accountv1.Staple(77)},
+			},
+			want: map[string]string{
+				"kitchen.staples[1]": "staples must be one of salt, pepper, oil, butter, rice, pasta, " +
+					"flour, sugar, spices",
+			},
+		},
+		{
+			name:    "no kitchen at all",
+			kitchen: nil,
+			want:    map[string]string{"kitchen.roast_level": roastLevels, "kitchen.diet": diets},
+		},
+	}
+	// Grouped, so the check after it runs once every parallel case is done.
+	t.Run("cases", func(t *testing.T) {
+		for _, c := range cases {
+			t.Run(c.name, func(t *testing.T) {
+				t.Parallel()
+				_, err := maya.UpdateKitchen(t.Context(), connect.NewRequest(&accountv1.UpdateKitchenRequest{
+					Kitchen: c.kitchen,
+				}))
+				if connect.CodeOf(err) != connect.CodeInvalidArgument {
+					t.Fatalf("got code %v (%v), want invalid_argument", connect.CodeOf(err), err)
+				}
+				got := fieldViolations(t, err)
+				if !maps.Equal(got, c.want) {
+					t.Errorf("violations = %v, want %v", got, c.want)
+				}
+			})
+		}
+	})
+
+	me, err := maya.WhoAmI(t.Context(), connect.NewRequest(&accountv1.WhoAmIRequest{}))
+	if err != nil {
+		t.Fatalf("who am i: %v", err)
+	}
+	assertDefaultKitchen(t, "after every refusal", me.Msg.GetAccount().GetKitchen())
+}
+
+// TestUpdateKitchenWithoutASessionIsUnauthenticated: only a player has a kitchen, and the app reads
+// unauthenticated as "back to onboarding".
+func TestUpdateKitchenWithoutASessionIsUnauthenticated(t *testing.T) {
+	t.Parallel()
+	srv := accountStack(t, account.Limits{})
+	stranger := newcomer(t, srv.url)
+
+	_, err := stranger.UpdateKitchen(t.Context(), connect.NewRequest(&accountv1.UpdateKitchenRequest{
+		Kitchen: &accountv1.Kitchen{
+			RoastLevel: accountv1.RoastLevel_ROAST_LEVEL_MILD,
+			Diet:       accountv1.Diet_DIET_NONE,
+		},
+	}))
+
+	if connect.CodeOf(err) != connect.CodeUnauthenticated {
+		t.Fatalf("got code %v (%v), want unauthenticated", connect.CodeOf(err), err)
+	}
+}
+
 // TestCheckHandleSaysWhetherAHandleIsFree: the answer onboarding shows while the player types,
 // on the same rule CreateAccount holds them to.
 func TestCheckHandleSaysWhetherAHandleIsFree(t *testing.T) {
@@ -316,6 +491,16 @@ func assertTooManyRequests(t *testing.T, what string, err error) {
 	}
 	if cerr.Message() != handlers.ErrTooManyRequests.Error() {
 		t.Errorf("%s: message = %q, want %q", what, cerr.Message(), handlers.ErrTooManyRequests.Error())
+	}
+}
+
+func assertKitchen(t *testing.T, name string, got, want *accountv1.Kitchen) {
+	t.Helper()
+	if got.GetRoastLevel() != want.GetRoastLevel() || got.GetDiet() != want.GetDiet() ||
+		!slices.Equal(got.GetEquipment(), want.GetEquipment()) ||
+		!slices.Equal(got.GetAllergies(), want.GetAllergies()) ||
+		!slices.Equal(got.GetStaples(), want.GetStaples()) {
+		t.Errorf("%s: kitchen = %v, want %v", name, got, want)
 	}
 }
 

@@ -1,13 +1,6 @@
-import { createConnectQueryKey } from "@connectrpc/connect-query";
-import { AccountService } from "@fries-in-the-bag/apigen/account/v1/account_pb";
 import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
 import { isUnauthenticated } from "./errors.ts";
-
-// Every cached WhoAmI, whichever transport asked it.
-const WHO_AM_I = createConnectQueryKey({
-  schema: AccountService.method.whoAmI,
-  cardinality: undefined,
-});
+import { WHO_AM_I_FAMILY } from "./hooks/use-account.ts";
 
 /**
  * The toast seam. The data layer decides WHEN something is worth saying (a call failed, a
@@ -44,10 +37,10 @@ export function makeQueryClient(toast: ToastHandlers = {}): QueryClient {
       return;
     }
     const holdsAccount = client
-      .getQueriesData({ queryKey: WHO_AM_I })
+      .getQueriesData({ queryKey: WHO_AM_I_FAMILY })
       .some(([, data]) => data !== undefined);
     if (holdsAccount) {
-      void client.resetQueries({ queryKey: WHO_AM_I });
+      void client.resetQueries({ queryKey: WHO_AM_I_FAMILY });
     }
   };
   const client = new QueryClient({

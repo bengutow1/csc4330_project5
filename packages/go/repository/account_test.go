@@ -113,6 +113,90 @@ func TestDeleteAccountFreesTheHandle(t *testing.T) {
 	}
 }
 
+// TestUpdateKitchenStoresExactlyWhatWasSent: onboarding and settings send the whole kitchen, so
+// the row ends up holding just that, a nil list stored as empty, and nobody else's row moves.
+func TestUpdateKitchenStoresExactlyWhatWasSent(t *testing.T) {
+	t.Parallel()
+	repo := newRepo(t)
+	maya := createAccount(t, repo, "test_maya")
+	ben := createAccount(t, repo, "test_ben")
+	edit := repository.KitchenEdit{
+		RoastLevel: repository.RoastExtraCrispy,
+		Equipment:  []string{repository.EquipmentStovetop, repository.EquipmentAirFryer},
+		Diet:       repository.DietVegetarian,
+		Allergies:  nil,
+		Staples:    []string{repository.StapleSalt, repository.StapleRice},
+	}
+
+	updated, err := repo.UpdateKitchen(t.Context(), maya.AccountID, edit)
+	if err != nil {
+		t.Fatalf("update kitchen: %v", err)
+	}
+	got, err := repo.AccountByID(t.Context(), maya.AccountID)
+	if err != nil {
+		t.Fatalf("account by id: %v", err)
+	}
+	untouched, err := repo.AccountByID(t.Context(), ben.AccountID)
+	if err != nil {
+		t.Fatalf("account by id: %v", err)
+	}
+
+	if !updated {
+		t.Error("updated = false, want true")
+	}
+	if got.RoastLevel != edit.RoastLevel || got.Diet != edit.Diet {
+		t.Errorf("roast level, diet = %q, %q, want %q, %q", got.RoastLevel, got.Diet,
+			edit.RoastLevel, edit.Diet)
+	}
+	if !slices.Equal(got.Equipment, edit.Equipment) || !slices.Equal(got.Staples, edit.Staples) {
+		t.Errorf("equipment, staples = %v, %v, want %v, %v", got.Equipment, got.Staples,
+			edit.Equipment, edit.Staples)
+	}
+	if got.Allergies == nil || len(got.Allergies) != 0 {
+		t.Errorf("allergies = %#v, want an empty list", got.Allergies)
+	}
+	if untouched.RoastLevel != ben.RoastLevel || !slices.Equal(untouched.Staples, ben.Staples) {
+		t.Errorf("another player's kitchen = %+v, want it as made, %+v", untouched, ben)
+	}
+}
+
+// TestUpdateKitchenOnAMissingAccountSaysSo: a session can outlive its account, and the handler
+// turns false into not_found rather than a quiet success.
+func TestUpdateKitchenOnAMissingAccountSaysSo(t *testing.T) {
+	t.Parallel()
+	repo := newRepo(t)
+	maya := createAccount(t, repo, "test_maya")
+	edit := repository.KitchenEdit{RoastLevel: repository.RoastMild, Diet: repository.DietVegan}
+
+	updated, err := repo.UpdateKitchen(t.Context(), maya.AccountID+1, edit)
+
+	if err != nil {
+		t.Fatalf("update kitchen: %v", err)
+	}
+	if updated {
+		t.Error("updated = true for an account that does not exist")
+	}
+}
+
+// TestUpdateKitchenCannotStoreAWordOutsideItsSet: the handler maps from the wire first, and the
+// check constraints are what still hold if one day it does not.
+func TestUpdateKitchenCannotStoreAWordOutsideItsSet(t *testing.T) {
+	t.Parallel()
+	repo := newRepo(t)
+	maya := createAccount(t, repo, "test_maya")
+	edit := repository.KitchenEdit{
+		RoastLevel: repository.RoastMedium,
+		Equipment:  []string{"toaster"},
+		Diet:       repository.DietNone,
+	}
+
+	_, err := repo.UpdateKitchen(t.Context(), maya.AccountID, edit)
+
+	if !isCheckViolation(err) {
+		t.Fatalf("err = %v, want a check violation", err)
+	}
+}
+
 // TestHandleTakenSeesOnlyAHeldHandle: onboarding says "taken" only when someone has it.
 func TestHandleTakenSeesOnlyAHeldHandle(t *testing.T) {
 	t.Parallel()
