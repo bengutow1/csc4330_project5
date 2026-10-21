@@ -208,7 +208,11 @@ func TestAnotherPlayersScanTakesNoRecipesAndShowsNone(t *testing.T) {
 	if err != nil || stored {
 		t.Errorf("sam's set on maya's scan = %v, %v; want not stored", stored, err)
 	}
-	has, err := repo.HasRecipes(t.Context(), sam.AccountID, mine.ScanID, 1)
+	has, err := repo.HasRecipes(t.Context(), maya.AccountID, freshScan.ScanID, 1)
+	if err != nil || has {
+		t.Errorf("maya's fresh scan has recipes = %v, %v after sam's try; want false", has, err)
+	}
+	has, err = repo.HasRecipes(t.Context(), sam.AccountID, mine.ScanID, 1)
 	if err != nil || has {
 		t.Errorf("sam's has recipes = %v, %v; want false", has, err)
 	}
@@ -333,9 +337,9 @@ func TestAnAllergyHidesARecipeEvenOneMadeBeforeIt(t *testing.T) {
 	}
 }
 
-// TestAnEmptySetStoresNothing: a list the model found nothing for has no set to store, and the
-// call must not pretend it stored one.
-func TestAnEmptySetStoresNothing(t *testing.T) {
+// TestAnEmptySetIsMadeOnce: a list the model found nothing for still has its set, an empty one, so
+// later requests read it instead of asking the model again and spending the player's sets.
+func TestAnEmptySetIsMadeOnce(t *testing.T) {
 	t.Parallel()
 	pool := newPool(t)
 	repo := repository.New(pool)
@@ -343,9 +347,17 @@ func TestAnEmptySetStoresNothing(t *testing.T) {
 	scan := createScan(t, repo, maya.AccountID, fridge)
 
 	stored, err := repo.CreateRecipes(t.Context(), maya.AccountID, scan.ScanID, 1, nil)
+	if err != nil || !stored {
+		t.Fatalf("empty set = %v, %v; want stored", stored, err)
+	}
 
-	if err != nil || stored {
-		t.Errorf("empty set = %v, %v; want not stored", stored, err)
+	has, err := repo.HasRecipes(t.Context(), maya.AccountID, scan.ScanID, 1)
+	if err != nil || !has {
+		t.Errorf("has recipes = %v, %v; want true for the empty set", has, err)
+	}
+	again, err := repo.CreateRecipes(t.Context(), maya.AccountID, scan.ScanID, 1, set)
+	if err != nil || again {
+		t.Errorf("a set after the empty one = %v, %v; want not stored", again, err)
 	}
 	n := rows(t, pool, `select count(*) from app.recipe`)
 	if n != 0 {

@@ -8,10 +8,10 @@ import (
 	"fmt"
 )
 
-// recipe.go owns app.recipe: the dishes kept for one version of a scan's list, written once as a
-// set and never updated. A recipe has no account of its own, so every query reaches the owner
-// through the recipe's scan, and every read also hides a recipe holding one of the owner's
-// allergies, which can have changed since the set was made.
+// recipe.go owns app.recipe_set and app.recipe: one set per version of a scan's list, recorded
+// even when it is empty, and the dishes kept in it, written once and never updated. Neither has an
+// account of its own, so every query reaches the owner through the scan, and every read also hides
+// a recipe holding one of the owner's allergies, which can have changed since the set was made.
 
 // The difficulties, mirroring app.recipe's check.
 const (
@@ -53,7 +53,8 @@ type RecipeFilter struct {
 	Diet       string   // keep recipes that fit this Diet const; "" and none are any
 }
 
-// HasRecipes reports whether one of the account's scans already has a set for itemsVersion.
+// HasRecipes reports whether one of the account's scans already has its set for itemsVersion,
+// an empty one included.
 func (r *Repository) HasRecipes(
 	ctx context.Context, accountID, scanID int64, itemsVersion int,
 ) (bool, error) {
@@ -61,11 +62,11 @@ func (r *Repository) HasRecipes(
 	err := r.db.QueryRow(ctx, `
 		select exists (
 		       select 1
-		         from app.recipe r
-		         join app.scan s on s.scan_id = r.scan_id
+		         from app.recipe_set rs
+		         join app.scan s on s.scan_id = rs.scan_id
 		        where s.account_id = $1
-		          and r.scan_id = $2
-		          and r.items_version = $3)`, accountID, scanID, itemsVersion).Scan(&has)
+		          and rs.scan_id = $2
+		          and rs.items_version = $3)`, accountID, scanID, itemsVersion).Scan(&has)
 	if err != nil {
 		return false, known(fmt.Sprintf("has recipes account=%d scan=%d version=%d",
 			accountID, scanID, itemsVersion), err)
@@ -89,16 +90,17 @@ type recipeRow struct {
 	Steps      []string `json:"steps"`
 }
 
-// CreateRecipes stores the set for one version of one of the account's scans, numbered in the
-// order given, in one statement. stored is false when there is nothing to store, when the scan is
-// not the account's, or when the version already has its set: the unique key on the position
-// decides, so of two requests that raced, one stores its whole set and the other stores nothing.
+// errSetTaken unwinds CreateRecipes' transaction when the version already has its set.
+var errSetTaken = errors.New("repository: the version already has its set")
+
+// CreateRecipes makes the set for one version of one of the account's scans and stores its
+// recipes, numbered in the order given. An empty set is made too, so the version is never asked
+// for again. stored is false when the scan is not the account's, or when the version already has
+// its set: the unique key on app.recipe_set decides, so of two requests that raced, one stores its
+// whole set and the other stores nothing.
 func (r *Repository) CreateRecipes(
 	ctx context.Context, accountID, scanID int64, itemsVersion int, set []NewRecipe,
 ) (stored bool, err error) {
-	if len(set) == 0 {
-		return false, nil
-	}
 	op := fmt.Sprintf("create recipes account=%d scan=%d version=%d", accountID, scanID, itemsVersion)
 	rows := make([]recipeRow, len(set))
 	for i, n := range set {
@@ -113,29 +115,51 @@ func (r *Repository) CreateRecipes(
 		return false, fmt.Errorf("%s: encode the set: %w", op, err)
 	}
 
-	// The join to app.scan is the fence: it cannot add to another player's scan. An empty list
-	// arrives as JSON null, so the optional ones fall back to empty; uses and steps stay null,
-	// which the table refuses.
-	tag, err := r.db.Exec(ctx, `
-		insert into app.recipe (scan_id, items_version, position, title, minutes, difficulty,
-		                        equipment, uses, missing, allergens, diets, steps)
-		select s.scan_id, $3, x.position, x.title, x.minutes, x.difficulty,
-		       coalesce(x.equipment, '{}'), x.uses, coalesce(x.missing, '{}'),
-		       coalesce(x.allergens, '{}'), coalesce(x.diets, '{}'), x.steps
-		  from app.scan s
-		 cross join jsonb_to_recordset($4::jsonb)
-		       as x (position int, title text, minutes int, difficulty text, equipment text[],
-		             uses text[], missing text[], allergens text[], diets text[], steps text[])
-		 where s.account_id = $1
-		   and s.scan_id = $2`, accountID, scanID, itemsVersion, payload)
-	if err != nil {
-		err = known(op, err)
-		if errors.Is(err, ErrDuplicate) {
-			return false, nil
+	err = r.InTx(ctx, func(tx *Repository) error {
+		// 1. The set itself. The join to app.scan is the fence: it cannot make a set on another
+		// player's scan
+		tag, err := tx.db.Exec(ctx, `
+			insert into app.recipe_set (scan_id, items_version)
+			select s.scan_id, $3
+			  from app.scan s
+			 where s.account_id = $1
+			   and s.scan_id = $2`, accountID, scanID, itemsVersion)
+		if err != nil {
+			err = known(op, err)
+			if errors.Is(err, ErrDuplicate) {
+				return errSetTaken
+			}
+			return err
 		}
+		if tag.RowsAffected() == 0 {
+			return nil
+		}
+
+		// 2. Its recipes, in one statement. An empty list arrives as JSON null, so the optional
+		// ones fall back to empty; uses and steps stay null, which the table refuses
+		_, err = tx.db.Exec(ctx, `
+			insert into app.recipe (scan_id, items_version, position, title, minutes, difficulty,
+			                        equipment, uses, missing, allergens, diets, steps)
+			select $1, $2, x.position, x.title, x.minutes, x.difficulty,
+			       coalesce(x.equipment, '{}'), x.uses, coalesce(x.missing, '{}'),
+			       coalesce(x.allergens, '{}'), coalesce(x.diets, '{}'), x.steps
+			  from jsonb_to_recordset($3::jsonb)
+			       as x (position int, title text, minutes int, difficulty text, equipment text[],
+			             uses text[], missing text[], allergens text[], diets text[], steps text[])`,
+			scanID, itemsVersion, payload)
+		if err != nil {
+			return known(op, err)
+		}
+		stored = true
+		return nil
+	})
+	if errors.Is(err, errSetTaken) {
+		return false, nil
+	}
+	if err != nil {
 		return false, err
 	}
-	return tag.RowsAffected() > 0, nil
+	return stored, nil
 }
 
 // ListRecipes reads the set for one version of one of the account's scans, in the model's order,
