@@ -1,5 +1,5 @@
-import { PlaceholderScreen } from "@/screens/placeholder-screen";
+import { BoardScreen } from "@/screens/board/board-screen";
 
 export default function BoardRoute() {
-  return <PlaceholderScreen title="Board" issue={29} />;
+  return <BoardScreen />;
 }
