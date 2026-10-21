@@ -231,6 +231,12 @@ func TestAllergensAreCaughtAnywhereTheRecipeNamesThem(t *testing.T) {
 			recipe: recipes.Recipe{Title: "Burger Sauce", Uses: []string{"Worcestershire sauce"}},
 			want:   []string{"fish"},
 		},
+		// Dishes that name no ingredient still give theirs away.
+		{name: "a frittata is eggs", recipe: recipes.Recipe{Title: "Veggie Frittata", Uses: []string{"Spinach"}}, want: []string{"eggs"}},
+		{name: "pizza dough is wheat", recipe: recipes.Recipe{Title: "Flatbread", Uses: []string{"Pizza dough"}}, want: []string{"wheat"}},
+		{name: "barley counts as wheat", recipe: recipes.Recipe{Title: "Barley Soup", Uses: []string{"Barley"}}, want: []string{"wheat"}},
+		{name: "calamari is shellfish", recipe: recipes.Recipe{Title: "Fried Calamari", Uses: []string{"Squid"}}, want: []string{"shellfish"}},
+		{name: "lox is fish", recipe: recipes.Recipe{Title: "Lox Bowl", Uses: []string{"Lox"}}, want: []string{"fish"}},
 		// The lookalikes: food that reads like an allergen and is not one.
 		{
 			name:   "peanut butter is peanuts and not milk",
@@ -296,6 +302,9 @@ func TestDietsComeFromWhatTheDishContains(t *testing.T) {
 		{name: "chicken fits none", recipe: recipes.Recipe{Title: "Fajita Bowl", Uses: []string{"Chicken", "Rice"}}, want: nil},
 		{name: "ground beef fits none", recipe: recipes.Recipe{Title: "Tacos", Uses: []string{"Ground beef"}}, want: nil},
 		{name: "meat in the title fits none", recipe: recipes.Recipe{Title: "Bacon Pasta", Uses: []string{"Pasta"}}, want: nil},
+		{name: "pastrami fits none", recipe: recipes.Recipe{Title: "Deli Plate", Uses: []string{"Pastrami"}}, want: nil},
+		{name: "bratwurst fits none", recipe: recipes.Recipe{Title: "Brats", Uses: []string{"Bratwursts"}}, want: nil},
+		{name: "liver fits none", recipe: recipes.Recipe{Title: "Pate", Uses: []string{"Chicken livers"}}, want: nil},
 		{name: "gelatin is meat", recipe: recipes.Recipe{Title: "Jello", Uses: []string{"Gelatin", "Sugar"}}, want: nil},
 		{name: "salmon is pescatarian", recipe: recipes.Recipe{Title: "Salmon Rice", Uses: []string{"Salmon", "Rice"}}, want: []string{"pescatarian"}},
 		{name: "shrimp is pescatarian", recipe: recipes.Recipe{Title: "Shrimp Rice", Uses: []string{"Shrimp", "Rice"}}, want: []string{"pescatarian"}},

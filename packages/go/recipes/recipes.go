@@ -71,21 +71,32 @@ var allergenWords = map[string]words{
 			"cashew milk", "cocoa butter", "coconut cream", "coconut milk", "cream of tartar",
 			"nut butter", "oat milk", "peanut butter", "rice milk", "soy milk"},
 	},
-	eggs: {phrases: []string{"aioli", "egg", "mayo", "mayonnaise", "meringue"}},
+	eggs: {
+		phrases: []string{"aioli", "brioche", "carbonara", "custard", "egg", "eggnog",
+			"french toast", "frittata", "hollandaise", "mayo", "mayonnaise", "meringue", "omelet",
+			"omelette", "quiche"},
+	},
+	// Barley and rye are not wheat, but a reaction to one can come with the others, so they count.
 	wheat: {
-		phrases: []string{"bagel", "bread", "breadcrumb", "bun", "couscous", "cracker",
-			"croissant", "flour", "noodle", "panko", "pasta", "pita", "ramen", "seitan", "semolina",
-			"soy sauce", "spaghetti", "toast", "tortilla", "udon", "wheat"},
+		phrases: []string{"bagel", "barley", "biscuit", "bread", "breadcrumb", "brioche", "bun",
+			"burrito", "cake", "cookie", "couscous", "cracker", "croissant", "crouton", "crust",
+			"dough", "dumpling", "fettuccine", "flour", "gnocchi", "lasagna", "linguine", "macaroni",
+			"muffin", "noodle", "pancake", "panko", "pasta", "pastries", "pastry", "penne", "pie",
+			"pita", "pizza", "pretzel", "ramen", "ravioli", "rye", "sandwich", "seitan", "semolina",
+			"soy sauce", "spaghetti", "toast", "tortellini", "tortilla", "udon", "waffle", "wheat"},
 		lookalikes: []string{"corn tortilla", "glass noodle", "rice noodle"},
 	},
 	soy: {phrases: []string{"edamame", "miso", "soy", "soya", "tamari", "tempeh", "tofu"}},
 	fish: {
-		phrases: []string{"anchovies", "anchovy", "catfish", "cod", "fish", "halibut", "mackerel",
-			"salmon", "sardine", "swordfish", "tilapia", "trout", "tuna", "worcestershire"},
+		phrases: []string{"anchovies", "anchovy", "catfish", "caviar", "cod", "eel", "fish",
+			"haddock", "halibut", "herring", "lox", "mackerel", "mahi", "pollock", "salmon",
+			"sardine", "sashimi", "snapper", "swordfish", "tilapia", "trout", "tuna",
+			"worcestershire"},
 	},
+	// Squid and octopus are molluscs, which a shellfish allergy often takes in.
 	shellfish: {
-		phrases: []string{"clam", "crab", "crawfish", "crayfish", "lobster", "mussel", "oyster",
-			"prawn", "scallop", "shrimp"},
+		phrases: []string{"calamari", "clam", "crab", "crawfish", "crayfish", "lobster", "mussel",
+			"octopus", "oyster", "prawn", "scallop", "shrimp", "squid"},
 	},
 	sesame: {phrases: []string{"halva", "sesame", "tahini"}},
 }
@@ -93,10 +104,13 @@ var allergenWords = map[string]words{
 // meatWords rule out every diet but none. Fish and shellfish are not here: as allergens, they
 // already rule out vegetarian and vegan.
 var meatWords = words{
-	phrases: []string{"bacon", "beef", "bison", "brisket", "burger", "chicken", "chorizo", "duck",
-		"gelatin", "gelatine", "goose", "ham", "hamburger", "hot dog", "jerky", "lamb", "lard",
-		"meat", "meatball", "mutton", "pancetta", "pepperoni", "pork", "prosciutto", "salami",
-		"sausage", "steak", "turkey", "veal", "venison"},
+	phrases: []string{"bacon", "barbacoa", "beef", "birria", "bison", "bologna", "bratwurst",
+		"brisket", "burger", "carne", "carnitas", "chicken", "chorizo", "duck", "frankfurter",
+		"gelatin", "gelatine", "goose", "gyro", "ham", "hamburger", "hot dog", "jerky", "kebab",
+		"kielbasa", "lamb", "lard", "liver", "meat", "meatball", "meatloaf", "mutton", "oxtail",
+		"pancetta", "pastrami", "pepperoni", "pollo", "pork", "prosciutto", "rib", "ribeye",
+		"salami", "sausage", "shawarma", "sirloin", "spam", "steak", "tenderloin", "turkey",
+		"veal", "venison"},
 	lookalikes: []string{"bean burger", "veggie burger"},
 }
 
