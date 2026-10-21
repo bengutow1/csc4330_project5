@@ -1,4 +1,6 @@
+import type { DescService } from "@bufbuild/protobuf";
 import { createConnectQueryKey, skipToken, useMutation, useQuery } from "@connectrpc/connect-query";
+import { BoardService } from "@fries-in-the-bag/apigen/board/v1/board_pb";
 import { ScanService } from "@fries-in-the-bag/apigen/scan/v1/scan_pb";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -7,6 +9,16 @@ const LAST_SCAN_INPUT = {};
 
 /** SCANS is every scan read, finite or infinite: the one key the scan family invalidates. */
 export const SCANS = createConnectQueryKey({ schema: ScanService, cardinality: undefined });
+
+// The other services whose queries read the player's scans, so a new or fixed scan stales them
+// too: the board's Fridge of the Week. The profile (#30) joins it.
+const SCAN_READERS: readonly DescService[] = [BoardService];
+
+/** SCANNED is the family key of every query a scan changes: the scans' own, then each reader's. */
+export const SCANNED = [
+  SCANS,
+  ...SCAN_READERS.map((schema) => createConnectQueryKey({ schema, cardinality: undefined })),
+];
 
 /** useScan reads one of the player's verdicts, and waits until there is a scan to ask about. */
 export function useScan(scanId: bigint | undefined) {
@@ -44,8 +56,8 @@ export function useEditIngredients() {
   return useMutation(ScanService.method.editIngredients, { onSettled: invalidateScans });
 }
 
-/** useInvalidateScans marks every scan read stale, after a write changed one. */
+/** useInvalidateScans marks every read a scan changes stale (SCANNED), after a write changed one. */
 export function useInvalidateScans() {
   const queryClient = useQueryClient();
-  return () => queryClient.invalidateQueries({ queryKey: SCANS });
+  return () => Promise.all(SCANNED.map((queryKey) => queryClient.invalidateQueries({ queryKey })));
 }

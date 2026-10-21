@@ -8,9 +8,10 @@ import (
 )
 
 // board.go reads the boards. A board ranks every player at once, so these queries read across
-// accounts by design: a row is a handle, an avatar and a count, which every player may see. Ranks
-// come from a window function over the whole board, so ties share a rank and a page never
-// renumbers them. A page resumes after its last row with a keyset over (value, handle).
+// accounts by design: a row is a handle, an avatar and a count, and the Fridge of the Week is one
+// scan's score and roast, which every player may see. Ranks come from a window function over the
+// whole board, so ties share a rank and a page never renumbers them. A page resumes after its last
+// row with a keyset over (value, handle).
 
 // BoardRow is one player's place on a board.
 type BoardRow struct {
@@ -93,4 +94,33 @@ func (r *Repository) HallOfFriesRow(ctx context.Context, accountID int64, since 
 		return BoardRow{}, false, known(fmt.Sprintf("hall of fries row account=%d", accountID), err)
 	}
 	return b, true, nil
+}
+
+// FridgeRow is the scan the Fridge of the Week shows, and whose it was.
+type FridgeRow struct {
+	Handle string
+	Avatar string
+	Score  int // 0 to 100
+	Roast  string
+}
+
+// FridgeOfTheWeek is the best scan made since since: the highest score, and the first made of the
+// scans tied on it, so matching a score later never takes the fridge. False when nobody has
+// scanned since since.
+func (r *Repository) FridgeOfTheWeek(ctx context.Context, since time.Time) (FridgeRow, bool, error) {
+	var f FridgeRow
+	err := r.db.QueryRow(ctx, `
+		select a.handle, a.avatar, s.score, s.roast
+		  from app.scan s
+		  join app.account a on a.account_id = s.account_id
+		 where s.created_at >= $1
+		 order by s.score desc, s.created_at, s.scan_id
+		 limit 1`, since).Scan(&f.Handle, &f.Avatar, &f.Score, &f.Roast)
+	if isNoRows(err) {
+		return FridgeRow{}, false, nil
+	}
+	if err != nil {
+		return FridgeRow{}, false, known("fridge of the week", err)
+	}
+	return f, true, nil
 }

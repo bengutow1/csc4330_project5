@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/bengutow1/csc4330_project5/packages/go/repository"
 )
 
@@ -130,6 +132,65 @@ func TestTheHallOfFriesCountsFromItsStart(t *testing.T) {
 	}
 }
 
+// TestTheFridgeOfTheWeekIsTheBestScanSinceItsStart: the highest score since the week started wins,
+// a scan made the moment the week starts counts, and a better one from the minute before does not.
+func TestTheFridgeOfTheWeekIsTheBestScanSinceItsStart(t *testing.T) {
+	t.Parallel()
+	pool := newPool(t)
+	repo := repository.New(pool)
+	fridgeAt(t, pool, repo, createAccount(t, repo, "test_cal"), 99, monday.Add(-time.Minute))
+	fridgeAt(t, pool, repo, createAccount(t, repo, "test_maya"), 95, monday)
+	fridgeAt(t, pool, repo, createAccount(t, repo, "test_ben"), 91, monday.Add(time.Hour))
+
+	got, found, err := repo.FridgeOfTheWeek(t.Context(), monday)
+	if err != nil {
+		t.Fatalf("fridge of the week: %v", err)
+	}
+
+	want := repository.FridgeRow{Handle: "test_maya", Avatar: "🍟", Score: 95, Roast: "a 95 fridge"}
+	if !found || got != want {
+		t.Errorf("fridge = %+v (found %v), want %+v", got, found, want)
+	}
+}
+
+// TestTheFridgeOfTheWeekGoesToTheFirstOnATie: of two scans with the best score, the one made first
+// keeps the fridge, so matching a score later never takes it.
+func TestTheFridgeOfTheWeekGoesToTheFirstOnATie(t *testing.T) {
+	t.Parallel()
+	pool := newPool(t)
+	repo := repository.New(pool)
+	// test_ben's scan is stored first and sorts first by handle, but test_maya's was made earlier.
+	fridgeAt(t, pool, repo, createAccount(t, repo, "test_ben"), 80, monday.Add(2*time.Hour))
+	fridgeAt(t, pool, repo, createAccount(t, repo, "test_maya"), 80, monday.Add(time.Hour))
+
+	got, found, err := repo.FridgeOfTheWeek(t.Context(), monday)
+	if err != nil {
+		t.Fatalf("fridge of the week: %v", err)
+	}
+
+	if !found || got.Handle != "test_maya" {
+		t.Errorf("fridge = %+v (found %v), want test_maya's, the first 80", got, found)
+	}
+}
+
+// TestNoFridgeOfTheWeekBeforeAnyoneScans: a week nobody has scanned in has no fridge, even when
+// last week had one.
+func TestNoFridgeOfTheWeekBeforeAnyoneScans(t *testing.T) {
+	t.Parallel()
+	pool := newPool(t)
+	repo := repository.New(pool)
+	fridgeAt(t, pool, repo, createAccount(t, repo, "test_cal"), 99, monday.AddDate(0, 0, -3))
+
+	got, found, err := repo.FridgeOfTheWeek(t.Context(), monday)
+	if err != nil {
+		t.Fatalf("fridge of the week: %v", err)
+	}
+
+	if found {
+		t.Errorf("fridge = %+v, want none: nobody has scanned this week", got)
+	}
+}
+
 // runs logs n fry runs for a, one a day at noon from the day start falls on, so each is in a meal
 // window of its own.
 func runs(t *testing.T, repo *repository.Repository, a repository.Account, n int, start time.Time) {
@@ -153,4 +214,17 @@ func describe(rows []repository.BoardRow) []string {
 		out = append(out, fmt.Sprintf("%d %s %d", r.Rank, r.Handle, r.Value))
 	}
 	return out
+}
+
+// fridgeAt stores a scan of score for a, with a roast that names the score, made at at.
+func fridgeAt(t *testing.T, pool *pgxpool.Pool, repo *repository.Repository, a repository.Account, score int, at time.Time) {
+	t.Helper()
+	s, err := repo.CreateScan(t.Context(), a.AccountID, score, fmt.Sprintf("a %d fridge", score), nil)
+	if err != nil {
+		t.Fatalf("create scan for %s: %v", a.Handle, err)
+	}
+	_, err = pool.Exec(t.Context(), `update app.scan set created_at = $2 where scan_id = $1`, s.ScanID, at)
+	if err != nil {
+		t.Fatalf("stamp scan %d: %v", s.ScanID, err)
+	}
 }

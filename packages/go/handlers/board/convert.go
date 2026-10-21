@@ -36,3 +36,16 @@ func toProtoRow(board boardv1.Board, r repository.BoardRow) *boardv1.Row {
 		Crown:  board == boardv1.Board_BOARD_HALL_OF_FRIES && r.Rank == 1,
 	}
 }
+
+// toProtoFridge maps the week's best scan, and leaves the fridge unset when there is none.
+func toProtoFridge(f repository.FridgeRow, found bool) *boardv1.GetFridgeOfTheWeekResponse {
+	if !found {
+		return &boardv1.GetFridgeOfTheWeekResponse{}
+	}
+	return &boardv1.GetFridgeOfTheWeekResponse{Fridge: &boardv1.FridgeOfTheWeek{
+		Handle: f.Handle,
+		Avatar: f.Avatar,
+		Score:  int32(f.Score), // 0 to 100, held there by app.scan's check
+		Roast:  f.Roast,
+	}}
+}

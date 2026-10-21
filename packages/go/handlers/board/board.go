@@ -99,10 +99,23 @@ func (h *Board) GetBoard(
 	return connect.NewResponse(toProtoBoard(in, rows, mine, ranked)), nil
 }
 
-// GetFridgeOfTheWeek is still to come: it reads #17's scans, which this branch lacks until it
-// meets main.
+// GetFridgeOfTheWeek returns the week's best scan and whose it was, or no fridge before anyone
+// scans this week.
 func (h *Board) GetFridgeOfTheWeek(
-	ctx context.Context, req *connect.Request[boardv1.GetFridgeOfTheWeekRequest],
+	ctx context.Context, _ *connect.Request[boardv1.GetFridgeOfTheWeekRequest],
 ) (*connect.Response[boardv1.GetFridgeOfTheWeekResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("the fridge of the week is still to come"))
+	const op = "get fridge of the week"
+
+	// 1. Who is asking: the board is for players
+	_, err := h.gate.Account(ctx)
+	if err != nil {
+		return nil, h.fail(op, err)
+	}
+
+	// 2. The best scan since Monday 00:00, campus time
+	fridge, found, err := h.repo.FridgeOfTheWeek(ctx, points.WeekStart(h.now()))
+	if err != nil {
+		return nil, h.fail(op, err)
+	}
+	return connect.NewResponse(toProtoFridge(fridge, found)), nil
 }

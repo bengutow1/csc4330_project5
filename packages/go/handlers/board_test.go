@@ -219,17 +219,75 @@ func TestABadBoardRequestIsRefusedFieldByField(t *testing.T) {
 	}
 }
 
-// TestTheBoardNeedsAnAccount: a fresh install gets unauthenticated, which the app reads as
-// "back to onboarding".
+// TestTheFridgeOfTheWeekIsTheWeeksBestScan: the week's highest score comes back with whose it was
+// and its roast, and last week's better scan does not count.
+func TestTheFridgeOfTheWeekIsTheWeeksBestScan(t *testing.T) {
+	t.Parallel()
+	srv := boardStack(t, wednesday)
+	maya := boardPlayer(t, srv, "test_maya")
+	srv.scan(t, "test_cal", 99, wednesday.AddDate(0, 0, -7))
+	srv.scan(t, "test_ben", 91, wednesday.AddDate(0, 0, -1))
+	srv.scan(t, "test_dee", 64, wednesday.Add(-time.Hour))
+
+	got := getFridge(t, maya)
+
+	if got.Fridge == nil || fridgeLine(got.Fridge) != "test_ben 🍟 91 a 91 fridge" {
+		t.Errorf("fridge = %v, want test_ben's 91 with its roast", got.Fridge)
+	}
+}
+
+// TestTheFridgeOfTheWeekStartsFreshMondayAtMidnight: a scan at Sunday 23:59 campus time is the
+// fridge until the week ends, and from Monday 00:00 there is none until someone scans.
+func TestTheFridgeOfTheWeekStartsFreshMondayAtMidnight(t *testing.T) {
+	t.Parallel()
+	sunday := time.Date(2026, 10, 25, 23, 59, 0, 0, points.Campus())
+	monday := time.Date(2026, 10, 26, 0, 0, 0, 0, points.Campus())
+	cases := []struct {
+		name string
+		now  time.Time
+		want string // "" for no fridge
+	}{
+		{"Sunday night", sunday.Add(30 * time.Second), "test_sun 🍟 70 a 70 fridge"},
+		{"Monday morning", monday.Add(time.Minute), ""},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			t.Parallel()
+			srv := boardStack(t, c.now)
+			maya := boardPlayer(t, srv, "test_maya")
+			srv.scan(t, "test_sun", 70, sunday)
+
+			got := getFridge(t, maya)
+
+			if fridgeLine(got.Fridge) != c.want {
+				t.Errorf("fridge = %v, want %q", got.Fridge, c.want)
+			}
+		})
+	}
+}
+
+// TestTheBoardNeedsAnAccount: a fresh install gets unauthenticated from every board RPC, which the
+// app reads as "back to onboarding".
 func TestTheBoardNeedsAnAccount(t *testing.T) {
 	t.Parallel()
 	srv := boardStack(t, wednesday)
 	stranger := boardNewcomer(t, srv)
+	calls := map[string]func() error{
+		"GetBoard": func() error {
+			_, err := stranger.GetBoard(t.Context(), connect.NewRequest(&boardv1.GetBoardRequest{Board: hallOfFries, Range: thisWeek}))
+			return err
+		},
+		"GetFridgeOfTheWeek": func() error {
+			_, err := stranger.GetFridgeOfTheWeek(t.Context(), connect.NewRequest(&boardv1.GetFridgeOfTheWeekRequest{}))
+			return err
+		},
+	}
 
-	_, err := stranger.GetBoard(t.Context(), connect.NewRequest(&boardv1.GetBoardRequest{Board: hallOfFries, Range: thisWeek}))
-
-	if connect.CodeOf(err) != connect.CodeUnauthenticated {
-		t.Errorf("got code %v (%v), want unauthenticated", connect.CodeOf(err), err)
+	for name, call := range calls {
+		err := call()
+		if connect.CodeOf(err) != connect.CodeUnauthenticated {
+			t.Errorf("%s: got code %v (%v), want unauthenticated", name, connect.CodeOf(err), err)
+		}
 	}
 }
 
@@ -268,19 +326,11 @@ func boardStack(t *testing.T, now time.Time) boardServer {
 // falls in its own meal window, so each one counts.
 func (s boardServer) runs(t *testing.T, handle string, n int, start time.Time) {
 	t.Helper()
-	var accountID int64
-	err := s.pool.QueryRow(t.Context(), `select account_id from app.account where handle = $1`, handle).Scan(&accountID)
-	if err != nil {
-		created, cerr := s.repo.CreateAccount(t.Context(), handle, "🍟")
-		if cerr != nil {
-			t.Fatalf("create account %s: %v", handle, cerr)
-		}
-		accountID = created.AccountID
-	}
+	accountID := s.account(t, handle)
 	for i := range n {
 		at := start.AddDate(0, 0, i)
 		window, day := points.MealWindow(at)
-		_, err = s.repo.LogFryRun(t.Context(), accountID, repository.FryRun{
+		_, err := s.repo.LogFryRun(t.Context(), accountID, repository.FryRun{
 			SpotID:     "mock-03",
 			SpotName:   "Night Owl Fries",
 			MealDay:    day,
@@ -291,6 +341,36 @@ func (s boardServer) runs(t *testing.T, handle string, n int, start time.Time) {
 			t.Fatalf("log fry run %d for %s: %v", i, handle, err)
 		}
 	}
+}
+
+// scan stores a scan of score for handle, with a roast that names the score, made at at. It makes
+// the account if it is new.
+func (s boardServer) scan(t *testing.T, handle string, score int, at time.Time) {
+	t.Helper()
+	accountID := s.account(t, handle)
+	created, err := s.repo.CreateScan(t.Context(), accountID, score, fmt.Sprintf("a %d fridge", score), nil)
+	if err != nil {
+		t.Fatalf("create scan for %s: %v", handle, err)
+	}
+	_, err = s.pool.Exec(t.Context(), `update app.scan set created_at = $2 where scan_id = $1`, created.ScanID, at)
+	if err != nil {
+		t.Fatalf("stamp scan %d: %v", created.ScanID, err)
+	}
+}
+
+// account is handle's account id, making the account if it is new.
+func (s boardServer) account(t *testing.T, handle string) int64 {
+	t.Helper()
+	var accountID int64
+	err := s.pool.QueryRow(t.Context(), `select account_id from app.account where handle = $1`, handle).Scan(&accountID)
+	if err == nil {
+		return accountID
+	}
+	created, err := s.repo.CreateAccount(t.Context(), handle, "🍟")
+	if err != nil {
+		t.Fatalf("create account %s: %v", handle, err)
+	}
+	return created.AccountID
 }
 
 func boardPlayer(t *testing.T, srv boardServer, handle string) boardv1connect.BoardServiceClient {
@@ -325,4 +405,21 @@ func boardRows(rows []*boardv1.Row) []string {
 		out = append(out, line)
 	}
 	return out
+}
+
+func getFridge(t *testing.T, c boardv1connect.BoardServiceClient) *boardv1.GetFridgeOfTheWeekResponse {
+	t.Helper()
+	resp, err := c.GetFridgeOfTheWeek(t.Context(), connect.NewRequest(&boardv1.GetFridgeOfTheWeekRequest{}))
+	if err != nil {
+		t.Fatalf("get fridge of the week: %v", err)
+	}
+	return resp.Msg
+}
+
+// fridgeLine writes a fridge as "handle avatar score roast", and no fridge as "".
+func fridgeLine(f *boardv1.FridgeOfTheWeek) string {
+	if f == nil {
+		return ""
+	}
+	return fmt.Sprintf("%s %s %d %s", f.GetHandle(), f.GetAvatar(), f.GetScore(), f.GetRoast())
 }
