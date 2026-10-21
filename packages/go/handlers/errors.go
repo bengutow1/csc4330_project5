@@ -1,7 +1,7 @@
 // Author: Caden Lund
 // Package handlers holds what every Connect service shares: the one error boundary, field
-// violations and validation. Each product surface is a subpackage (healthz now, then scan, cook,
-// fries, combo and board).
+// violations, validation, the gate and the per-IP limiter. Each product surface is a subpackage
+// (healthz and account now, then scan, cook, fries, combo and board).
 package handlers
 
 import (
@@ -12,6 +12,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/bengutow1/csc4330_project5/packages/go/auth"
 	"github.com/bengutow1/csc4330_project5/packages/go/repository"
 )
 
@@ -19,6 +20,8 @@ var (
 	// ErrNotReady fires when a readiness check fails. The probe is public, so the real failure
 	// stays in the server log.
 	ErrNotReady = errors.New("not ready")
+	// ErrTooManyRequests fires when one client IP has spent a public rpc's limit for now.
+	ErrTooManyRequests = errors.New("too many tries, wait a few minutes and try again")
 )
 
 // ConnectErr is the only place an error becomes a wire code; each service reaches it through its
@@ -48,11 +51,21 @@ func ConnectErr(log *slog.Logger, op string, err error) error {
 	case errors.Is(err, repository.ErrDuplicate):
 		return connect.NewError(connect.CodeAlreadyExists, repository.ErrDuplicate)
 
+	// auth
+	// The app reads Unauthenticated as "back to onboarding", with no toast.
+	case errors.Is(err, auth.ErrNotAuthenticated):
+		return connect.NewError(connect.CodeUnauthenticated, auth.ErrNotAuthenticated)
+	// PermissionDenied, not NotFound: the caller can see the thing, they just may not do this.
+	case errors.Is(err, auth.ErrForbidden):
+		return connect.NewError(connect.CodePermissionDenied, auth.ErrForbidden)
+
 	// handlers
 	// Unavailable, not Internal: the process is fine and a dependency is not, so a probe and a
 	// retrying client both read it as "try again".
 	case errors.Is(err, ErrNotReady):
 		return connect.NewError(connect.CodeUnavailable, ErrNotReady)
+	case errors.Is(err, ErrTooManyRequests):
+		return connect.NewError(connect.CodeResourceExhausted, ErrTooManyRequests)
 
 	default:
 		log.Error(op, "err", err)

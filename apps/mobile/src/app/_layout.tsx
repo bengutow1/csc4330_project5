@@ -1,10 +1,17 @@
 import { LilitaOne_400Regular } from "@expo-google-fonts/lilita-one";
-import { ApiProvider, createApiTransport, makeQueryClient } from "@fries-in-the-bag/api";
+import {
+  ApiProvider,
+  createApiTransport,
+  isUnauthenticated,
+  makeQueryClient,
+  useWhoAmI,
+} from "@fries-in-the-bag/api";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import { useMemo } from "react";
 import { AppState } from "react-native";
 import { API_URL } from "@/lib/api-url";
+import { LaunchCover } from "@/screens/launch-cover";
 import { COLORS, FONTS } from "@/theme";
 
 // A deep link straight to a screen still gets the tabs behind it to go back to.
@@ -20,6 +27,26 @@ export default function RootLayout() {
 
   return (
     <ApiProvider transport={transport} queryClient={queryClient} appState={AppState}>
+      <RootStack />
+    </ApiProvider>
+  );
+}
+
+/**
+ * RootStack sits inside ApiProvider so it can ask whose phone this is, and opens each route only
+ * on the right side of the answer: onboarding without an account, everything else with one.
+ */
+function RootStack() {
+  const whoAmI = useWhoAmI();
+  // A failed refetch keeps the account it had, so a dropped connection signs nobody out. A dead
+  // session does: the query client resets WhoAmI when any call comes back unauthenticated.
+  const signedIn = whoAmI.data !== undefined;
+  // Only the server saying "no session" means onboarding. Still asking, or never reaching it, is
+  // neither answer, so the cover stays up.
+  const unsure = !signedIn && !isUnauthenticated(whoAmI.error);
+
+  return (
+    <>
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: COLORS.bg },
@@ -29,8 +56,31 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: COLORS.bg },
         }}
       >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        {/* First, so a guard that turns the tabs away lands here. */}
+        <Stack.Protected guard={!signedIn}>
+          <Stack.Screen name="onboarding/index" />
+          <Stack.Screen name="onboarding/handle" />
+          <Stack.Screen name="onboarding/kitchen" />
+        </Stack.Protected>
+        {/* Every route that needs an account. A route left out of this list is open to anyone. */}
+        <Stack.Protected guard={signedIn}>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="scan/[id]" />
+          <Stack.Screen name="cook/[scanId]" />
+          <Stack.Screen name="recipe/[id]" />
+          <Stack.Screen name="plate/[recipeId]" />
+          <Stack.Screen name="fries/index" />
+          <Stack.Screen name="fries/spots" />
+          <Stack.Screen name="settings" />
+        </Stack.Protected>
       </Stack>
-    </ApiProvider>
+      {unsure ? (
+        <LaunchCover
+          failed={whoAmI.isError}
+          retrying={whoAmI.isFetching}
+          onRetry={() => void whoAmI.refetch()}
+        />
+      ) : null}
+    </>
   );
 }

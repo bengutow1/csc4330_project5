@@ -5,13 +5,15 @@ If there isn't one, it tells you to put the fries in the bag and finds food near
 points on a campus leaderboard, and Combo mode lets two friends merge their fridges to cook
 together. `apps/` holds deployables, `packages/` holds shared code.
 
-Status: scaffolded, no features yet. The API serves only the health probes. The Go packages hold
-what every feature builds on (the error boundary, validation, the repository, logging), and the
-schema holds only the `app` schema and its shared trigger: copy their shape. `packages/ts/api`
-holds the transport, the query client, the foreground refetch, error decoding and one hook
-(`useReady`). `apps/mobile` is the shell: three tabs and a placeholder for every Core route, with
-one screen (`/status`) wired to the API end to end. Each issue builds its screen from the design
-in `docs/design.md`.
+Status: device accounts, and no game yet. The API serves the health probes and `AccountService`
+(make a device account, check a handle, who am I), with sessions in Postgres. The Go packages hold
+what every feature builds on (the error boundary, validation, the gate, the per-IP limiter, the
+session, the repository, logging), and the schema holds the `app` schema, its shared trigger,
+`app.account` and the sessions table: copy their shape. `packages/ts/api` holds the transport, the
+query client, the foreground refetch, error decoding and the health and account hooks.
+`apps/mobile` is the shell: a first launch picks a handle on a plain screen, then three tabs and a
+placeholder for every Core route, with `/status` wired to the API end to end. Each issue builds
+its screen from the design in `docs/design.md`.
 
 ## Words we use
 

@@ -4,7 +4,10 @@ go 1.26.4
 
 require (
 	connectrpc.com/connect v1.21.0
+	github.com/alexedwards/scs/pgxstore v0.0.0-20251002162104-209de6e426de
+	github.com/alexedwards/scs/v2 v2.9.0
 	github.com/bengutow1/csc4330_project5/packages/go/apigen v0.0.0
+	github.com/bengutow1/csc4330_project5/packages/go/auth v0.0.0
 	github.com/bengutow1/csc4330_project5/packages/go/repository v0.0.0
 	github.com/go-playground/validator/v10 v10.30.5
 	github.com/jackc/pgx/v5 v5.11.0
@@ -12,6 +15,7 @@ require (
 	github.com/peterldowns/pgtestdb/migrators/goosemigrator v0.1.1
 	github.com/testcontainers/testcontainers-go v0.44.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.44.0
+	google.golang.org/protobuf v1.36.12
 )
 
 require (
@@ -77,11 +81,11 @@ require (
 	golang.org/x/sync v0.23.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
-	google.golang.org/protobuf v1.36.12 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 replace (
 	github.com/bengutow1/csc4330_project5/packages/go/apigen => ../apigen
+	github.com/bengutow1/csc4330_project5/packages/go/auth => ../auth
 	github.com/bengutow1/csc4330_project5/packages/go/repository => ../repository
 )

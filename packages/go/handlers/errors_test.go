@@ -12,6 +12,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/bengutow1/csc4330_project5/packages/go/auth"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers"
 	"github.com/bengutow1/csc4330_project5/packages/go/repository"
 )
@@ -28,6 +29,9 @@ func TestConnectErrMapsEverySentinelToItsCode(t *testing.T) {
 		{name: "not found", sentinel: repository.ErrNotFound, code: connect.CodeNotFound},
 		{name: "duplicate", sentinel: repository.ErrDuplicate, code: connect.CodeAlreadyExists},
 		{name: "not ready", sentinel: handlers.ErrNotReady, code: connect.CodeUnavailable},
+		{name: "too many requests", sentinel: handlers.ErrTooManyRequests, code: connect.CodeResourceExhausted},
+		{name: "not authenticated", sentinel: auth.ErrNotAuthenticated, code: connect.CodeUnauthenticated},
+		{name: "forbidden", sentinel: auth.ErrForbidden, code: connect.CodePermissionDenied},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

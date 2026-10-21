@@ -13,6 +13,7 @@ export {
   isUnavailable,
 } from "./errors.ts";
 export type { AppStateEvents } from "./focus.ts";
+export { useCheckHandle, useCreateAccount, useWhoAmI } from "./hooks/use-account.ts";
 export { useReady } from "./hooks/use-health.ts";
 export { ApiProvider } from "./provider.tsx";
 export { makeQueryClient, type ToastHandlers } from "./query-client.ts";

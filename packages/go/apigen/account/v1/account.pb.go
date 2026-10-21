@@ -332,12 +332,449 @@ func (Staple) EnumDescriptor() ([]byte, []int) {
 	return file_account_v1_account_proto_rawDescGZIP(), []int{4}
 }
 
+// Account is the caller as they see themselves: their public name and their kitchen.
+type Account struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// 3 to 20 lowercase letters, digits and underscores, unique. Public on the board.
+	Handle string `protobuf:"bytes,1,opt,name=handle,proto3" json:"handle,omitempty"`
+	// One emoji.
+	Avatar        string   `protobuf:"bytes,2,opt,name=avatar,proto3" json:"avatar,omitempty"`
+	Kitchen       *Kitchen `protobuf:"bytes,3,opt,name=kitchen,proto3" json:"kitchen,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Account) Reset() {
+	*x = Account{}
+	mi := &file_account_v1_account_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Account) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Account) ProtoMessage() {}
+
+func (x *Account) ProtoReflect() protoreflect.Message {
+	mi := &file_account_v1_account_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Account.ProtoReflect.Descriptor instead.
+func (*Account) Descriptor() ([]byte, []int) {
+	return file_account_v1_account_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *Account) GetHandle() string {
+	if x != nil {
+		return x.Handle
+	}
+	return ""
+}
+
+func (x *Account) GetAvatar() string {
+	if x != nil {
+		return x.Avatar
+	}
+	return ""
+}
+
+func (x *Account) GetKitchen() *Kitchen {
+	if x != nil {
+		return x.Kitchen
+	}
+	return nil
+}
+
+// Kitchen is what the player cooks with and around, which shapes every roast and recipe.
+type Kitchen struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Medium for a new account.
+	RoastLevel RoastLevel `protobuf:"varint,1,opt,name=roast_level,json=roastLevel,proto3,enum=account.v1.RoastLevel" json:"roast_level,omitempty"`
+	// What the kitchen can cook with. Empty for a new account, until onboarding asks.
+	Equipment []Equipment `protobuf:"varint,2,rep,packed,name=equipment,proto3,enum=account.v1.Equipment" json:"equipment,omitempty"`
+	// None for a new account.
+	Diet Diet `protobuf:"varint,3,opt,name=diet,proto3,enum=account.v1.Diet" json:"diet,omitempty"`
+	// Empty means none.
+	Allergies []Allergy `protobuf:"varint,4,rep,packed,name=allergies,proto3,enum=account.v1.Allergy" json:"allergies,omitempty"`
+	// What the player always has on hand. Every staple for a new account.
+	Staples       []Staple `protobuf:"varint,5,rep,packed,name=staples,proto3,enum=account.v1.Staple" json:"staples,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Kitchen) Reset() {
+	*x = Kitchen{}
+	mi := &file_account_v1_account_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Kitchen) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Kitchen) ProtoMessage() {}
+
+func (x *Kitchen) ProtoReflect() protoreflect.Message {
+	mi := &file_account_v1_account_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Kitchen.ProtoReflect.Descriptor instead.
+func (*Kitchen) Descriptor() ([]byte, []int) {
+	return file_account_v1_account_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *Kitchen) GetRoastLevel() RoastLevel {
+	if x != nil {
+		return x.RoastLevel
+	}
+	return RoastLevel_ROAST_LEVEL_UNSPECIFIED
+}
+
+func (x *Kitchen) GetEquipment() []Equipment {
+	if x != nil {
+		return x.Equipment
+	}
+	return nil
+}
+
+func (x *Kitchen) GetDiet() Diet {
+	if x != nil {
+		return x.Diet
+	}
+	return Diet_DIET_UNSPECIFIED
+}
+
+func (x *Kitchen) GetAllergies() []Allergy {
+	if x != nil {
+		return x.Allergies
+	}
+	return nil
+}
+
+func (x *Kitchen) GetStaples() []Staple {
+	if x != nil {
+		return x.Staples
+	}
+	return nil
+}
+
+type CreateAccountRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Trimmed and lowercased, then 3 to 20 lowercase letters, digits and underscores.
+	Handle string `protobuf:"bytes,1,opt,name=handle,proto3" json:"handle,omitempty"`
+	// One emoji.
+	Avatar        string `protobuf:"bytes,2,opt,name=avatar,proto3" json:"avatar,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateAccountRequest) Reset() {
+	*x = CreateAccountRequest{}
+	mi := &file_account_v1_account_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateAccountRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateAccountRequest) ProtoMessage() {}
+
+func (x *CreateAccountRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_account_v1_account_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateAccountRequest.ProtoReflect.Descriptor instead.
+func (*CreateAccountRequest) Descriptor() ([]byte, []int) {
+	return file_account_v1_account_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *CreateAccountRequest) GetHandle() string {
+	if x != nil {
+		return x.Handle
+	}
+	return ""
+}
+
+func (x *CreateAccountRequest) GetAvatar() string {
+	if x != nil {
+		return x.Avatar
+	}
+	return ""
+}
+
+type CreateAccountResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The account as stored, with the default kitchen.
+	Account       *Account `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateAccountResponse) Reset() {
+	*x = CreateAccountResponse{}
+	mi := &file_account_v1_account_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateAccountResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateAccountResponse) ProtoMessage() {}
+
+func (x *CreateAccountResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_account_v1_account_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateAccountResponse.ProtoReflect.Descriptor instead.
+func (*CreateAccountResponse) Descriptor() ([]byte, []int) {
+	return file_account_v1_account_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *CreateAccountResponse) GetAccount() *Account {
+	if x != nil {
+		return x.Account
+	}
+	return nil
+}
+
+type CheckHandleRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Trimmed and lowercased, then held to CreateAccount's rule.
+	Handle        string `protobuf:"bytes,1,opt,name=handle,proto3" json:"handle,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CheckHandleRequest) Reset() {
+	*x = CheckHandleRequest{}
+	mi := &file_account_v1_account_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CheckHandleRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CheckHandleRequest) ProtoMessage() {}
+
+func (x *CheckHandleRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_account_v1_account_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CheckHandleRequest.ProtoReflect.Descriptor instead.
+func (*CheckHandleRequest) Descriptor() ([]byte, []int) {
+	return file_account_v1_account_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *CheckHandleRequest) GetHandle() string {
+	if x != nil {
+		return x.Handle
+	}
+	return ""
+}
+
+type CheckHandleResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// False when another player has it.
+	Available     bool `protobuf:"varint,1,opt,name=available,proto3" json:"available,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CheckHandleResponse) Reset() {
+	*x = CheckHandleResponse{}
+	mi := &file_account_v1_account_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CheckHandleResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CheckHandleResponse) ProtoMessage() {}
+
+func (x *CheckHandleResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_account_v1_account_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CheckHandleResponse.ProtoReflect.Descriptor instead.
+func (*CheckHandleResponse) Descriptor() ([]byte, []int) {
+	return file_account_v1_account_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *CheckHandleResponse) GetAvailable() bool {
+	if x != nil {
+		return x.Available
+	}
+	return false
+}
+
+type WhoAmIRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WhoAmIRequest) Reset() {
+	*x = WhoAmIRequest{}
+	mi := &file_account_v1_account_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WhoAmIRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WhoAmIRequest) ProtoMessage() {}
+
+func (x *WhoAmIRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_account_v1_account_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WhoAmIRequest.ProtoReflect.Descriptor instead.
+func (*WhoAmIRequest) Descriptor() ([]byte, []int) {
+	return file_account_v1_account_proto_rawDescGZIP(), []int{6}
+}
+
+type WhoAmIResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Account       *Account               `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WhoAmIResponse) Reset() {
+	*x = WhoAmIResponse{}
+	mi := &file_account_v1_account_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WhoAmIResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WhoAmIResponse) ProtoMessage() {}
+
+func (x *WhoAmIResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_account_v1_account_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WhoAmIResponse.ProtoReflect.Descriptor instead.
+func (*WhoAmIResponse) Descriptor() ([]byte, []int) {
+	return file_account_v1_account_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *WhoAmIResponse) GetAccount() *Account {
+	if x != nil {
+		return x.Account
+	}
+	return nil
+}
+
 var File_account_v1_account_proto protoreflect.FileDescriptor
 
 const file_account_v1_account_proto_rawDesc = "" +
 	"\n" +
 	"\x18account/v1/account.proto\x12\n" +
-	"account.v1*u\n" +
+	"account.v1\"h\n" +
+	"\aAccount\x12\x16\n" +
+	"\x06handle\x18\x01 \x01(\tR\x06handle\x12\x16\n" +
+	"\x06avatar\x18\x02 \x01(\tR\x06avatar\x12-\n" +
+	"\akitchen\x18\x03 \x01(\v2\x13.account.v1.KitchenR\akitchen\"\xfe\x01\n" +
+	"\aKitchen\x127\n" +
+	"\vroast_level\x18\x01 \x01(\x0e2\x16.account.v1.RoastLevelR\n" +
+	"roastLevel\x123\n" +
+	"\tequipment\x18\x02 \x03(\x0e2\x15.account.v1.EquipmentR\tequipment\x12$\n" +
+	"\x04diet\x18\x03 \x01(\x0e2\x10.account.v1.DietR\x04diet\x121\n" +
+	"\tallergies\x18\x04 \x03(\x0e2\x13.account.v1.AllergyR\tallergies\x12,\n" +
+	"\astaples\x18\x05 \x03(\x0e2\x12.account.v1.StapleR\astaples\"F\n" +
+	"\x14CreateAccountRequest\x12\x16\n" +
+	"\x06handle\x18\x01 \x01(\tR\x06handle\x12\x16\n" +
+	"\x06avatar\x18\x02 \x01(\tR\x06avatar\"F\n" +
+	"\x15CreateAccountResponse\x12-\n" +
+	"\aaccount\x18\x01 \x01(\v2\x13.account.v1.AccountR\aaccount\",\n" +
+	"\x12CheckHandleRequest\x12\x16\n" +
+	"\x06handle\x18\x01 \x01(\tR\x06handle\"3\n" +
+	"\x13CheckHandleResponse\x12\x1c\n" +
+	"\tavailable\x18\x01 \x01(\bR\tavailable\"\x0f\n" +
+	"\rWhoAmIRequest\"?\n" +
+	"\x0eWhoAmIResponse\x12-\n" +
+	"\aaccount\x18\x01 \x01(\v2\x13.account.v1.AccountR\aaccount*u\n" +
 	"\n" +
 	"RoastLevel\x12\x1b\n" +
 	"\x17ROAST_LEVEL_UNSPECIFIED\x10\x00\x12\x14\n" +
@@ -379,7 +816,11 @@ const file_account_v1_account_proto_rawDesc = "" +
 	"\fSTAPLE_PASTA\x10\x06\x12\x10\n" +
 	"\fSTAPLE_FLOUR\x10\a\x12\x10\n" +
 	"\fSTAPLE_SUGAR\x10\b\x12\x11\n" +
-	"\rSTAPLE_SPICES\x10\tB\xb6\x01\n" +
+	"\rSTAPLE_SPICES\x10\t2\xf7\x01\n" +
+	"\x0eAccountService\x12T\n" +
+	"\rCreateAccount\x12 .account.v1.CreateAccountRequest\x1a!.account.v1.CreateAccountResponse\x12N\n" +
+	"\vCheckHandle\x12\x1e.account.v1.CheckHandleRequest\x1a\x1f.account.v1.CheckHandleResponse\x12?\n" +
+	"\x06WhoAmI\x12\x19.account.v1.WhoAmIRequest\x1a\x1a.account.v1.WhoAmIResponseB\xb6\x01\n" +
 	"\x0ecom.account.v1B\fAccountProtoP\x01ZMgithub.com/bengutow1/csc4330_project5/packages/go/apigen/account/v1;accountv1\xa2\x02\x03AXX\xaa\x02\n" +
 	"Account.V1\xca\x02\n" +
 	"Account\\V1\xe2\x02\x16Account\\V1\\GPBMetadata\xea\x02\vAccount::V1b\x06proto3"
@@ -397,19 +838,42 @@ func file_account_v1_account_proto_rawDescGZIP() []byte {
 }
 
 var file_account_v1_account_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
+var file_account_v1_account_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_account_v1_account_proto_goTypes = []any{
-	(RoastLevel)(0), // 0: account.v1.RoastLevel
-	(Equipment)(0),  // 1: account.v1.Equipment
-	(Diet)(0),       // 2: account.v1.Diet
-	(Allergy)(0),    // 3: account.v1.Allergy
-	(Staple)(0),     // 4: account.v1.Staple
+	(RoastLevel)(0),               // 0: account.v1.RoastLevel
+	(Equipment)(0),                // 1: account.v1.Equipment
+	(Diet)(0),                     // 2: account.v1.Diet
+	(Allergy)(0),                  // 3: account.v1.Allergy
+	(Staple)(0),                   // 4: account.v1.Staple
+	(*Account)(nil),               // 5: account.v1.Account
+	(*Kitchen)(nil),               // 6: account.v1.Kitchen
+	(*CreateAccountRequest)(nil),  // 7: account.v1.CreateAccountRequest
+	(*CreateAccountResponse)(nil), // 8: account.v1.CreateAccountResponse
+	(*CheckHandleRequest)(nil),    // 9: account.v1.CheckHandleRequest
+	(*CheckHandleResponse)(nil),   // 10: account.v1.CheckHandleResponse
+	(*WhoAmIRequest)(nil),         // 11: account.v1.WhoAmIRequest
+	(*WhoAmIResponse)(nil),        // 12: account.v1.WhoAmIResponse
 }
 var file_account_v1_account_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	6,  // 0: account.v1.Account.kitchen:type_name -> account.v1.Kitchen
+	0,  // 1: account.v1.Kitchen.roast_level:type_name -> account.v1.RoastLevel
+	1,  // 2: account.v1.Kitchen.equipment:type_name -> account.v1.Equipment
+	2,  // 3: account.v1.Kitchen.diet:type_name -> account.v1.Diet
+	3,  // 4: account.v1.Kitchen.allergies:type_name -> account.v1.Allergy
+	4,  // 5: account.v1.Kitchen.staples:type_name -> account.v1.Staple
+	5,  // 6: account.v1.CreateAccountResponse.account:type_name -> account.v1.Account
+	5,  // 7: account.v1.WhoAmIResponse.account:type_name -> account.v1.Account
+	7,  // 8: account.v1.AccountService.CreateAccount:input_type -> account.v1.CreateAccountRequest
+	9,  // 9: account.v1.AccountService.CheckHandle:input_type -> account.v1.CheckHandleRequest
+	11, // 10: account.v1.AccountService.WhoAmI:input_type -> account.v1.WhoAmIRequest
+	8,  // 11: account.v1.AccountService.CreateAccount:output_type -> account.v1.CreateAccountResponse
+	10, // 12: account.v1.AccountService.CheckHandle:output_type -> account.v1.CheckHandleResponse
+	12, // 13: account.v1.AccountService.WhoAmI:output_type -> account.v1.WhoAmIResponse
+	11, // [11:14] is the sub-list for method output_type
+	8,  // [8:11] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_account_v1_account_proto_init() }
@@ -423,13 +887,14 @@ func file_account_v1_account_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_account_v1_account_proto_rawDesc), len(file_account_v1_account_proto_rawDesc)),
 			NumEnums:      5,
-			NumMessages:   0,
+			NumMessages:   8,
 			NumExtensions: 0,
-			NumServices:   0,
+			NumServices:   1,
 		},
 		GoTypes:           file_account_v1_account_proto_goTypes,
 		DependencyIndexes: file_account_v1_account_proto_depIdxs,
 		EnumInfos:         file_account_v1_account_proto_enumTypes,
+		MessageInfos:      file_account_v1_account_proto_msgTypes,
 	}.Build()
 	File_account_v1_account_proto = out.File
 	file_account_v1_account_proto_goTypes = nil
