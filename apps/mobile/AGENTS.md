@@ -4,11 +4,12 @@ The Expo app. Everything in the root `AGENTS.md` applies here. The app's own con
 `.claude/rules/expo.md` (screens, data, UI, copy) and `.claude/rules/ts-api.md` (the data layer it
 calls); read both before editing anything in this folder.
 
-Status: `src/screens/home-screen.tsx` is the demo prototype, mounted at `/`. It runs on mock data,
-calls no server, and is replaced screen by screen from the design (`docs/design.md`): the tabs
-become Snap (the camera), Board and Me, with the verdict, cooking, Fries mode and Combo as flows
-over them. `src/app/status.tsx` (open it with `friesinthebag://status`) asks the API whether it
-can serve, and is the one screen wired to the server so far.
+Status: the shell. The tabs are Snap (the camera), Board and Me, with the verdict, cooking, Fries
+mode and Combo as flows over them, and every Core route in `docs/contracts.md` mounts
+`PlaceholderScreen`, which names the issue that builds it. Each issue replaces its route's mount
+with a screen from the design (`docs/design.md`). `src/app/status.tsx` (open it with
+`friesinthebag://status`) asks the API whether it can serve, and is the one screen wired to the
+server so far.
 
 ## Running it
 

@@ -1,0 +1,14 @@
+# The app opens on Snap, and each tab switches to its own screen. Assertions use each
+# placeholder's issue line, because the tab labels stay visible whichever tab is open. Needs the
+# app installed (moon run mobile:ios) and Metro running (moon run mobile:dev).
+appId: com.cadenlund.friesinthebag
+---
+- launchApp:
+    clearState: true
+- assertVisible: "Coming in #18."
+- tapOn: "Board"
+- assertVisible: "Coming in #29."
+- tapOn: "Me"
+- assertVisible: "Coming in #30."
+- tapOn: "Snap"
+- assertVisible: "Coming in #18."
