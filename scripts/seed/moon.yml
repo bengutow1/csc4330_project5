@@ -1,0 +1,69 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+# The demo seed (#31), which db:seed runs. It is its own module, kept out of go.work (tooling.md),
+# so every task here runs with GOWORK off: inside the workspace, Go refuses a module go.work does
+# not list.
+id: 'seed'
+layer: 'tool'
+language: 'go'
+
+project:
+  name: 'seed'
+  description: 'The demo week for building screens and for the demo, written through the repository.'
+
+env:
+  GOWORK: 'off'
+
+# moon's Go toolchain installs a project's modules with a bare `go mod download` that ignores the
+# env above, so inside the workspace it wrote a go.work.sum the repo does not keep. With it off,
+# the tasks below are spelled out as .moon/tasks/go.yml spells them, and so are the edges moon
+# would otherwise read from go.mod.
+toolchains:
+  go: false
+
+# The seed writes through these packages, and its tests run on a Postgres migrated with
+# db/migrations, so a change to any of them marks it affected.
+dependsOn:
+  - 'go-logging'
+  - 'go-points'
+  - 'go-repository'
+  - 'go-scoring'
+  - id: 'db'
+    scope: 'development'
+
+# The local modules the seed builds against (its go.mod replaces them). They sit outside this
+# project, so its tasks name them as inputs, or a change to one would replay a cached pass.
+fileGroups:
+  modules:
+    - '/packages/go/logging/**/*'
+    - '/packages/go/points/**/*'
+    - '/packages/go/repository/**/*'
+    - '/packages/go/scoring/**/*'
+
+tasks:
+  format:
+    command: 'gofmt -w .'
+  tidy:
+    command: 'go mod tidy'
+    options:
+      cache: false
+      runInCI: false
+  lint:
+    command: 'golangci-lint run --allow-parallel-runners'
+    inputs:
+      - '**/*'
+      - '@group(modules)'
+  # Editing a migration must re-run these tests instead of replaying a cached pass: moon sees the
+  # migrations as an input, and -count=1 stops Go's own test cache answering for it (#68).
+  test:
+    command: 'go test ./...'
+    args: ['-count=1']
+    inputs:
+      - '**/*'
+      - '@group(modules)'
+      - '/db/migrations/**/*'
+  build:
+    command: 'go build ./...'
+    inputs:
+      - '**/*'
+      - '@group(modules)'

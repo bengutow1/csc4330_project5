@@ -36,6 +36,19 @@ tasks:
   status:
     command: 'goose status'
     options: { cache: false, runInCI: false }
+  # Fill the local database with the demo week (scripts/seed): fifteen players, their scans and fry
+  # runs, and a clear Fridge of the Week. A database that already holds the demo is left alone, so
+  # run db:fresh first to lay it down again. Local only: never in CI, at boot or from a migration.
+  seed:
+    command: 'go -C ../scripts/seed run .'
+    deps: ['db:migrate']
+    env:
+      # The same local database api:dev opens, and the same local-only credentials.
+      DATABASE_URL: 'postgres://fries:fries@localhost:5432/fries?sslmode=disable'
+      LOG_FORMAT: 'text'
+      # scripts/seed is kept out of go.work (tooling.md).
+      GOWORK: 'off'
+    options: { cache: false, runInCI: false }
   # Scaffold the next migration in sequence:  moon run db:create -- add_scans sql
   create:
     command: 'goose -s create'
