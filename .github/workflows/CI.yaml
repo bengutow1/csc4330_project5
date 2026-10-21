@@ -37,18 +37,23 @@ jobs:
       # Build, lint and test the affected projects. A pull request compares against its base. A
       # push compares against the tip before it, so every commit it brings counts, not just the
       # last. A push with no earlier tip to compare against (a new branch sends all zeros) runs
-      # everything, and so does a manual run.
+      # everything, and so does a manual run, by counting every tracked file as changed. Not
+      # `--force`: it makes moon's cache write-only, and then moon skips `pnpm install`, so every
+      # TypeScript task fails for want of its tools.
       - name: moon ci
+        # Naming bash adds pipefail, which the default shell lacks. Without it, a failed
+        # `git ls-files` would hand moon an empty list, and moon would check the last commit only.
+        shell: bash
         env:
           EVENT: ${{ github.event_name }}
           BEFORE: ${{ github.event.before }}
         run: |
           if [ "$EVENT" = "workflow_dispatch" ]; then
-            moon ci --force
+            git ls-files | moon ci --stdin
           elif [ "$EVENT" != "push" ]; then
             moon ci
           elif git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
             moon ci --base "$BEFORE"
           else
-            moon ci --force
+            git ls-files | moon ci --stdin
           fi
