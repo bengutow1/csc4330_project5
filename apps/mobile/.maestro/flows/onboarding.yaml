@@ -13,7 +13,7 @@ appId: com.cadenlund.friesinthebag
 - inputText: ${output.taken}
 - tapOn: "Next"
 - tapOn: "Save my kitchen"
-- assertVisible: "Coming in #18."
+- assertVisible: "See what you have. Cook something great."
 
 # A fresh install from here on.
 - launchApp:
@@ -63,7 +63,7 @@ appId: com.cadenlund.friesinthebag
 - tapOn: "Extra crispy"
 - tapOn: "Save my kitchen"
 - assertVisible:
-    text: "Coming in #18."
+    text: "See what you have. Cook something great."
     label: "Saving the kitchen lands on the Snap tab"
 - assertNotVisible: "Your kitchen"
 # Leave the app first, as a person does. iOS writes its cookies to disk lazily, so killing the app
@@ -72,7 +72,7 @@ appId: com.cadenlund.friesinthebag
 - stopApp
 - launchApp
 - extendedWaitUntil:
-    visible: "Coming in #18."
+    visible: "See what you have. Cook something great."
     timeout: 10000
     label: "The session survives the app being killed"
 - assertNotVisible: "Get started"
