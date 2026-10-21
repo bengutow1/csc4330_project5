@@ -49,7 +49,8 @@ type FriesServiceClient interface {
 	// ListSpots finds spots near the player, filtered the way they asked, closest first. Not
 	// NO_SIDE_EFFECTS, so the player's location never rides in a GET's URL.
 	ListSpots(context.Context, *connect.Request[v1.ListSpotsRequest]) (*connect.Response[v1.ListSpotsResponse], error)
-	// LogFryRun records that the caller went to a spot. It earns no points.
+	// LogFryRun records that the caller went to a spot. It earns no points, and one run counts per
+	// meal window: a second in the same window answers with the first run's id.
 	LogFryRun(context.Context, *connect.Request[v1.LogFryRunRequest]) (*connect.Response[v1.LogFryRunResponse], error)
 }
 
@@ -100,7 +101,8 @@ type FriesServiceHandler interface {
 	// ListSpots finds spots near the player, filtered the way they asked, closest first. Not
 	// NO_SIDE_EFFECTS, so the player's location never rides in a GET's URL.
 	ListSpots(context.Context, *connect.Request[v1.ListSpotsRequest]) (*connect.Response[v1.ListSpotsResponse], error)
-	// LogFryRun records that the caller went to a spot. It earns no points.
+	// LogFryRun records that the caller went to a spot. It earns no points, and one run counts per
+	// meal window: a second in the same window answers with the first run's id.
 	LogFryRun(context.Context, *connect.Request[v1.LogFryRunRequest]) (*connect.Response[v1.LogFryRunResponse], error)
 }
 

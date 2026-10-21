@@ -10,6 +10,7 @@ require (
 	github.com/bengutow1/csc4330_project5/packages/go/auth v0.0.0
 	github.com/bengutow1/csc4330_project5/packages/go/logging v0.0.0
 	github.com/bengutow1/csc4330_project5/packages/go/places v0.0.0
+	github.com/bengutow1/csc4330_project5/packages/go/points v0.0.0
 	github.com/bengutow1/csc4330_project5/packages/go/repository v0.0.0
 	github.com/go-playground/validator/v10 v10.30.5
 	github.com/jackc/pgx/v5 v5.11.0
@@ -91,5 +92,6 @@ replace (
 	github.com/bengutow1/csc4330_project5/packages/go/auth => ../auth
 	github.com/bengutow1/csc4330_project5/packages/go/logging => ../logging
 	github.com/bengutow1/csc4330_project5/packages/go/places => ../places
+	github.com/bengutow1/csc4330_project5/packages/go/points => ../points
 	github.com/bengutow1/csc4330_project5/packages/go/repository => ../repository
 )

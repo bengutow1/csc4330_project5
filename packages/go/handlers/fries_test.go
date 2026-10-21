@@ -30,6 +30,7 @@ import (
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/fries"
 	"github.com/bengutow1/csc4330_project5/packages/go/logging"
 	"github.com/bengutow1/csc4330_project5/packages/go/places"
+	"github.com/bengutow1/csc4330_project5/packages/go/points"
 	"github.com/bengutow1/csc4330_project5/packages/go/repository"
 )
 
@@ -518,7 +519,8 @@ func TestNoCoordinateReachesALogLine(t *testing.T) {
 }
 
 // TestAFryRunIsStoredForTheCallerAlone: identity comes from the session. The run belongs to the
-// player whose cookie sent it, under the trimmed name, and nobody else's runs move.
+// player whose cookie sent it, under the trimmed name, a second tap in the same meal window is the
+// same run, and nobody else's runs move.
 func TestAFryRunIsStoredForTheCallerAlone(t *testing.T) {
 	t.Parallel()
 	srv := friesStack(t, usualStreet(t), fries.Limits{}, nil)
@@ -526,10 +528,14 @@ func TestAFryRunIsStoredForTheCallerAlone(t *testing.T) {
 	ben := friesPlayer(t, srv, "test_ben")
 
 	first := logFryRun(t, maya, &friesv1.LogFryRunRequest{SpotId: "mock-03", SpotName: "  Night Owl Fries "})
-	second := logFryRun(t, maya, nightOwlRun())
+	again := logFryRun(t, maya, nightOwlRun())
 
-	if first <= 0 || second <= first {
-		t.Errorf("fry run ids %d then %d, want two new rows in order", first, second)
+	if first <= 0 || again != first {
+		t.Errorf("fry run ids %d then %d, want one run for both taps", first, again)
+	}
+	runs := fryRunsOf(t, srv.pool, maya.handle)
+	if runs != 1 {
+		t.Errorf("maya has %d fry runs, want 1", runs)
 	}
 	var handle, spotID, spotName string
 	err := srv.pool.QueryRow(t.Context(), `
@@ -546,6 +552,69 @@ func TestAFryRunIsStoredForTheCallerAlone(t *testing.T) {
 	n := fryRunsOf(t, srv.pool, ben.handle)
 	if n != 0 {
 		t.Errorf("ben has %d fry runs, want 0", n)
+	}
+}
+
+// TestTheMealWindowComesFromCampusTime: the server's clock decides the window, in campus time.
+// Half past midnight is still the night before's late-night run, and five in the morning starts
+// a new day's run.
+func TestTheMealWindowComesFromCampusTime(t *testing.T) {
+	t.Parallel()
+	clock := &testClock{at: time.Date(2026, 10, 20, 22, 30, 0, 0, points.Campus())}
+	srv := friesStackWith(t, fries.Config{Spots: usualStreet(t), Now: clock.now})
+	maya := friesPlayer(t, srv, "test_maya")
+
+	lateNight := logFryRun(t, maya, nightOwlRun())
+	clock.set(time.Date(2026, 10, 21, 0, 30, 0, 0, points.Campus()))
+	afterMidnight := logFryRun(t, maya, nightOwlRun())
+	clock.set(time.Date(2026, 10, 21, 5, 0, 0, 0, points.Campus()))
+	breakfast := logFryRun(t, maya, nightOwlRun())
+
+	if afterMidnight != lateNight {
+		t.Errorf("00:30 got run %d, want 22:30's %d: both are Tuesday's late night", afterMidnight, lateNight)
+	}
+	if breakfast == lateNight {
+		t.Errorf("05:00 got late night's run %d, want a new one", breakfast)
+	}
+	for id, want := range map[int64]string{lateNight: "2026-10-20 late_night", breakfast: "2026-10-21 morning"} {
+		var got string
+		err := srv.pool.QueryRow(t.Context(), `
+			select f.meal_day::text || ' ' || f.meal_window
+			  from app.fry_run f
+			 where f.fry_run_id = $1`, id).Scan(&got)
+		if err != nil {
+			t.Fatalf("read fry run %d back: %v", id, err)
+		}
+		if got != want {
+			t.Errorf("run %d fell in %s, want %s", id, got, want)
+		}
+	}
+}
+
+// TestLogFryRunIsLimitedPerAccount: a run counts once a window anyway, so the limit only stops a
+// loop from hammering the table. It is the caller's alone.
+func TestLogFryRunIsLimitedPerAccount(t *testing.T) {
+	t.Parallel()
+	srv := friesStackWith(t, fries.Config{
+		Spots:  usualStreet(t),
+		Limits: fries.Limits{FryRuns: handlers.NewLimiter(2, time.Hour)},
+	})
+	maya := friesPlayer(t, srv, "test_maya")
+	ben := friesPlayer(t, srv, "test_ben")
+
+	var errs []error
+	for range 3 {
+		_, err := maya.LogFryRun(t.Context(), connect.NewRequest(nightOwlRun()))
+		errs = append(errs, err)
+	}
+	_, bensFirst := ben.LogFryRun(t.Context(), connect.NewRequest(nightOwlRun()))
+
+	if errs[0] != nil || errs[1] != nil {
+		t.Fatalf("the first two runs: %v, %v, want both logged", errs[0], errs[1])
+	}
+	assertTooManyRequests(t, "maya's third run", errs[2])
+	if bensFirst != nil {
+		t.Errorf("ben's first run: %v, want it logged (the limit is per account)", bensFirst)
 	}
 }
 
@@ -650,6 +719,24 @@ func (f *fakeSpots) calls() []string {
 	return slices.Clone(f.asked)
 }
 
+// testClock is the service's clock, moved by hand, so a test can stand in any meal window.
+type testClock struct {
+	mu sync.Mutex
+	at time.Time
+}
+
+func (c *testClock) now() time.Time {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.at
+}
+
+func (c *testClock) set(at time.Time) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.at = at
+}
+
 func usualStreet(t *testing.T) *fakeSpots {
 	t.Helper()
 	return &fakeSpots{street: newPlacesMock(t, "")}
@@ -699,6 +786,14 @@ type friesServer struct {
 // AccountService is the session FriesService reads. A nil log discards.
 func friesStack(t *testing.T, spots fries.Spots, limits fries.Limits, log *slog.Logger) friesServer {
 	t.Helper()
+	return friesStackWith(t, fries.Config{Spots: spots, Limits: limits, Log: log})
+}
+
+// friesStackWith is friesStack for a test that sets more of the service's Config, such as its
+// clock. The stack fills in Repo and Auth.
+func friesStackWith(t *testing.T, cfg fries.Config) friesServer {
+	t.Helper()
+	log := cfg.Log
 	if log == nil {
 		log = discard()
 	}
@@ -716,13 +811,8 @@ func friesStack(t *testing.T, spots fries.Spots, limits fries.Limits, log *slog.
 		Repo: repo,
 		Auth: authn,
 	})))
-	mux.Handle(friesv1connect.NewFriesServiceHandler(fries.NewFries(fries.Config{
-		Repo:   repo,
-		Auth:   authn,
-		Spots:  spots,
-		Limits: limits,
-		Log:    log,
-	})))
+	cfg.Repo, cfg.Auth, cfg.Log = repo, authn, log
+	mux.Handle(friesv1connect.NewFriesServiceHandler(fries.NewFries(cfg)))
 	srv := httptest.NewServer(logging.RequestLogger(log)(sessions.LoadAndSave(mux)))
 	t.Cleanup(srv.Close)
 	return friesServer{url: srv.URL, pool: pool, srv: srv}

@@ -18,6 +18,7 @@ import (
 	"github.com/bengutow1/csc4330_project5/packages/go/auth"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers"
 	"github.com/bengutow1/csc4330_project5/packages/go/places"
+	"github.com/bengutow1/csc4330_project5/packages/go/points"
 	"github.com/bengutow1/csc4330_project5/packages/go/repository"
 )
 
@@ -26,6 +27,13 @@ import (
 const (
 	spotsPerAccount = 30
 	spotsWindow     = time.Minute
+)
+
+// The LogFryRun limit per account. A run counts once a meal window whatever the player taps, so
+// this only stops a loop from hammering the table to find that out.
+const (
+	fryRunsPerAccount = 10
+	fryRunWindow      = time.Minute
 )
 
 // Spots is the places provider as this service uses it: places.Mock until a key exists, the real
@@ -43,6 +51,7 @@ type Fries struct {
 	gate   handlers.Gate
 	spots  Spots
 	limits Limits
+	now    func() time.Time
 	log    *slog.Logger
 }
 
@@ -51,21 +60,27 @@ type Config struct {
 	Repo  *repository.Repository
 	Auth  *auth.Auth
 	Spots Spots
-	// Limits caps ListSpots per account. main.go passes DefaultLimits; the zero value limits
+	// Limits caps both rpcs per account. main.go passes DefaultLimits; the zero value limits
 	// nothing.
 	Limits Limits
-	Log    *slog.Logger
+	// Now is the clock that decides a fry run's meal window. Nil means time.Now.
+	Now func() time.Time
+	Log *slog.Logger
 }
 
-// Limits holds the ListSpots limiter, keyed by account. A nil one limits nothing, which is how
+// Limits holds a limiter per rpc, each keyed by account. A nil one limits nothing, which is how
 // test fixtures turn limits off.
 type Limits struct {
-	Spots *handlers.Limiter
+	Spots   *handlers.Limiter
+	FryRuns *handlers.Limiter
 }
 
 // DefaultLimits are the limits the API serves with.
 func DefaultLimits() Limits {
-	return Limits{Spots: handlers.NewLimiter(spotsPerAccount, spotsWindow)}
+	return Limits{
+		Spots:   handlers.NewLimiter(spotsPerAccount, spotsWindow),
+		FryRuns: handlers.NewLimiter(fryRunsPerAccount, fryRunWindow),
+	}
 }
 
 // NewFries builds the service. A nil Log discards.
@@ -74,11 +89,16 @@ func NewFries(cfg Config) *Fries {
 	if log == nil {
 		log = slog.New(slog.DiscardHandler)
 	}
+	now := cfg.Now
+	if now == nil {
+		now = time.Now
+	}
 	return &Fries{
 		repo:   cfg.Repo,
 		gate:   handlers.Gate{Auth: cfg.Auth},
 		spots:  cfg.Spots,
 		limits: cfg.Limits,
+		now:    now,
 		log:    log,
 	}
 }
@@ -135,7 +155,7 @@ func (h *Fries) find(ctx context.Context, in listSpotsInput) ([]places.Place, er
 }
 
 // LogFryRun records that the caller went to a spot. It earns no points: the Hall of Fries counts
-// it.
+// it, once per meal window.
 func (h *Fries) LogFryRun(
 	ctx context.Context, req *connect.Request[friesv1.LogFryRunRequest],
 ) (*connect.Response[friesv1.LogFryRunResponse], error) {
@@ -157,8 +177,23 @@ func (h *Fries) LogFryRun(
 		return nil, h.fail(op, invalid)
 	}
 
-	// 3. The write
-	id, err := h.repo.CreateFryRun(ctx, me.AccountID, run.SpotID, run.SpotName)
+	// 3. Each player has a limit, so a loop cannot hammer the table
+	err = h.limits.FryRuns.Allow(strconv.FormatInt(me.AccountID, 10))
+	if err != nil {
+		return nil, h.fail(op, err)
+	}
+
+	// 4. The write. One run counts per meal window, in campus time: tapping again, or logging a
+	// second spot over the same lunch, returns the run already logged
+	at := h.now()
+	window, day := points.MealWindow(at)
+	id, err := h.repo.LogFryRun(ctx, me.AccountID, repository.FryRun{
+		SpotID:     run.SpotID,
+		SpotName:   run.SpotName,
+		MealDay:    day,
+		MealWindow: string(window),
+		At:         at,
+	})
 	if err != nil {
 		return nil, h.fail(op, err)
 	}

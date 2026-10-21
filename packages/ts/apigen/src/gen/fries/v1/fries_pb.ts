@@ -247,7 +247,7 @@ export const LogFryRunRequestSchema: GenMessage<LogFryRunRequest> = /*@__PURE__*
  */
 export type LogFryRunResponse = Message<"fries.v1.LogFryRunResponse"> & {
   /**
-   * The id of the fry run just logged.
+   * The id of the fry run just logged, or of the one already logged in this meal window.
    *
    * @generated from field: int64 fry_run_id = 1;
    */
@@ -332,7 +332,8 @@ export const FriesService: GenService<{
     output: typeof ListSpotsResponseSchema;
   },
   /**
-   * LogFryRun records that the caller went to a spot. It earns no points.
+   * LogFryRun records that the caller went to a spot. It earns no points, and one run counts per
+   * meal window: a second in the same window answers with the first run's id.
    *
    * @generated from rpc fries.v1.FriesService.LogFryRun
    */

@@ -461,7 +461,7 @@ func (x *LogFryRunRequest) GetSpotName() string {
 
 type LogFryRunResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The id of the fry run just logged.
+	// The id of the fry run just logged, or of the one already logged in this meal window.
 	FryRunId      int64 `protobuf:"varint,1,opt,name=fry_run_id,json=fryRunId,proto3" json:"fry_run_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

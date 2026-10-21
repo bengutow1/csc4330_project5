@@ -11,7 +11,8 @@ service FriesService {
   // ListSpots finds spots near the player, filtered the way they asked, closest first. Not
   // NO_SIDE_EFFECTS, so the player's location never rides in a GET's URL.
   rpc ListSpots(ListSpotsRequest) returns (ListSpotsResponse);
-  // LogFryRun records that the caller went to a spot. It earns no points.
+  // LogFryRun records that the caller went to a spot. It earns no points, and one run counts per
+  // meal window: a second in the same window answers with the first run's id.
   rpc LogFryRun(LogFryRunRequest) returns (LogFryRunResponse);
 }
 
@@ -100,6 +101,6 @@ message LogFryRunRequest {
 }
 
 message LogFryRunResponse {
-  // The id of the fry run just logged.
+  // The id of the fry run just logged, or of the one already logged in this meal window.
   int64 fry_run_id = 1;
 }
