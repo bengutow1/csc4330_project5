@@ -226,6 +226,9 @@ func TestTheEmojiTagTakesOneEmojiAndNothingElse(t *testing.T) {
 		{name: "a digit", avatar: "7", want: refused},
 		{name: "a space between", avatar: "🍟 🍟", want: refused},
 		{name: "punctuation", avatar: "!", want: refused},
+		{name: "a caret", avatar: "^", want: refused},
+		{name: "two backticks", avatar: "``", want: refused},
+		{name: "a diaeresis", avatar: "¨", want: refused},
 		{name: "eleven code points", avatar: strings.Repeat("🍟", 11), want: refused},
 	}
 	for _, c := range cases {

@@ -47,7 +47,8 @@ func isEmoji(fl validator.FieldLevel) bool {
 		runes++
 		switch {
 		case unicode.Is(unicode.So, r): // the pictures, flags' regional indicators included
-		case unicode.Is(unicode.Sk, r): // skin tones
+		// The five skin tones, not all of Sk, which also holds ASCII ^ and `.
+		case r >= '\U0001f3fb' && r <= '\U0001f3ff':
 		case r == '\u200d', r == '\ufe0f', r == '\u20e3': // the joiner, emoji style, a keycap
 		case r >= '\U000e0020' && r <= '\U000e007f': // the tags that spell a subdivision flag
 		default:
