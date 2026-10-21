@@ -587,6 +587,31 @@ func TestJunkFromTheModelWritingRecipesIsDropped(t *testing.T) {
 	}
 }
 
+// TestASetTheCheckEmptiedIsMadeOnce: when every recipe the model wrote is dropped, the empty set
+// still stands, so a changed chip rereads it and spends nothing, rather than asking the model again
+// until the player runs out of sets.
+func TestASetTheCheckEmptiedIsMadeOnce(t *testing.T) {
+	t.Parallel()
+	chef := &fakeChef{recipes: []vision.Recipe{steakRecipe}}
+	f := cookFixture{eyes: newFakeVision(kitchenFridge), chef: chef, limit: handlers.NewLimiter(1, time.Hour)}
+	srv := cookStack(t, f)
+	maya := cookPlayerFor(t, srv, "test_maya")
+	verdict := scanFridge(t, maya)
+
+	for _, minutes := range []int32{0, 10, 20} {
+		got := listRecipes(t, maya, &cookv1.ListRecipesRequest{ScanId: verdict.GetScanId(), MaxMinutes: minutes})
+		if len(got.GetMakeItNow()) != 0 || len(got.GetOneItemAway()) != 0 {
+			t.Errorf("%d minutes: shelves = %v and %v, want both empty", minutes,
+				titlesOf(got.GetMakeItNow()), titlesOf(got.GetOneItemAway()))
+		}
+	}
+
+	asked := len(chef.calls())
+	if asked != 1 {
+		t.Errorf("the model was asked %d times, want once for the version", asked)
+	}
+}
+
 // TestASetKeepsAHandful: the model is asked for a handful, and a reply that runs long must not
 // fill a shelf past what the screen was built for.
 func TestASetKeepsAHandful(t *testing.T) {

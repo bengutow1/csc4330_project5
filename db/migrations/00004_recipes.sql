@@ -1,14 +1,26 @@
 -- A recipe is one dish the model suggested for one version of a scan's list, stored only after
 -- packages/go/recipes held it to that list, the player's staples and their allergies. Each version
--- gets its set once: editing the list bumps the scan's items_version, and the next ListRecipes
--- makes a new set. Older sets stay, because a plate (#23) names the recipe it cooked. Rows are
--- written once and never updated, so the table has no updated_at.
+-- gets its set once, recorded in app.recipe_set even when every recipe was dropped, so an empty
+-- set is never asked for again: editing the list bumps the scan's items_version, and the next
+-- ListRecipes makes a new set. Older sets stay, because a plate (#23) names the recipe it cooked.
+-- Rows are written once and never updated, so neither table has an updated_at.
 --
 -- These checks are restated as validator tags in packages/go/handlers/cook/validate.go, which
 -- also bounds each name and step: keep the two in step. Each closed set is spelled as
 -- docs/contracts.md spells it.
 
 -- +goose Up
+-- One row per version of a scan's list whose set was made, empty or not.
+create table app.recipe_set (
+    recipe_set_id bigint      generated always as identity primary key,
+    scan_id       bigint      not null references app.scan (scan_id) on delete cascade,
+    items_version int         not null check (items_version >= 1),
+    created_at    timestamptz not null default now(),
+    -- One set per version: a second ListRecipes that raced the first is this constraint firing,
+    -- never a check before the insert.
+    constraint recipe_set_scan_id_items_version_key unique (scan_id, items_version)
+);
+
 create table app.recipe (
     recipe_id     bigint      generated always as identity primary key,
     scan_id       bigint      not null references app.scan (scan_id) on delete cascade,
@@ -38,10 +50,12 @@ create table app.recipe (
                               check (diets <@ array['vegetarian', 'vegan', 'pescatarian']),
     steps         text[]      not null check (cardinality(steps) between 1 and 20),
     created_at    timestamptz not null default now(),
-    -- One set per version: a second ListRecipes that raced the first is this constraint firing,
-    -- never a check before the insert.
+    -- Every recipe belongs to a set that was made.
+    constraint recipe_scan_id_items_version_fkey foreign key (scan_id, items_version)
+        references app.recipe_set (scan_id, items_version) on delete cascade,
     constraint recipe_scan_id_items_version_position_key unique (scan_id, items_version, position)
 );
 
 -- +goose Down
 drop table app.recipe;
+drop table app.recipe_set;
