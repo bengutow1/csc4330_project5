@@ -10,7 +10,7 @@ what every feature builds on (the error boundary, validation, the repository, lo
 schema holds only the `app` schema and its shared trigger: copy their shape. `packages/ts/api`
 holds the transport, the query client, error decoding and one hook (`useReady`). `apps/mobile` is
 the demo prototype on mock data, with one screen (`/status`) wired to the API end to end. Its UI
-is rebuilt from the mockups, screen by screen.
+is rebuilt from the design in `docs/design.md`, screen by screen.
 
 ## Words we use
 
