@@ -1,0 +1,60 @@
+// account.v1: a player's device account and the kitchen settings it carries, which shape every
+// roast and recipe. The closed sets below are spelled as docs/contracts.md spells them; values
+// are append-only.
+syntax = "proto3";
+
+package account.v1;
+
+// RoastLevel is how hard the roast hits. Medium is the default.
+enum RoastLevel {
+  ROAST_LEVEL_UNSPECIFIED = 0;
+  ROAST_LEVEL_MILD = 1;
+  ROAST_LEVEL_MEDIUM = 2;
+  ROAST_LEVEL_EXTRA_CRISPY = 3;
+}
+
+// Equipment is a way to cook that a kitchen has and a recipe needs.
+enum Equipment {
+  EQUIPMENT_UNSPECIFIED = 0;
+  EQUIPMENT_MICROWAVE = 1;
+  EQUIPMENT_STOVETOP = 2;
+  EQUIPMENT_OVEN = 3;
+  EQUIPMENT_AIR_FRYER = 4;
+}
+
+// Diet is a way of eating that recipes respect. None means no restriction.
+enum Diet {
+  DIET_UNSPECIFIED = 0;
+  DIET_NONE = 1;
+  DIET_VEGETARIAN = 2;
+  DIET_VEGAN = 3;
+  DIET_PESCATARIAN = 4;
+}
+
+// Allergy is a hard filter: a recipe that contains one never reaches the player.
+enum Allergy {
+  ALLERGY_UNSPECIFIED = 0;
+  ALLERGY_PEANUTS = 1;
+  ALLERGY_TREE_NUTS = 2;
+  ALLERGY_MILK = 3;
+  ALLERGY_EGGS = 4;
+  ALLERGY_WHEAT = 5;
+  ALLERGY_SOY = 6;
+  ALLERGY_FISH = 7;
+  ALLERGY_SHELLFISH = 8;
+  ALLERGY_SESAME = 9;
+}
+
+// Staple is a basic the player sets once in their profile and never scans. All are on by default.
+enum Staple {
+  STAPLE_UNSPECIFIED = 0;
+  STAPLE_SALT = 1;
+  STAPLE_PEPPER = 2;
+  STAPLE_OIL = 3;
+  STAPLE_BUTTER = 4;
+  STAPLE_RICE = 5;
+  STAPLE_PASTA = 6;
+  STAPLE_FLOUR = 7;
+  STAPLE_SUGAR = 8;
+  STAPLE_SPICES = 9;
+}
