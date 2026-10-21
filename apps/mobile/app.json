@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.cadenlund.friesinthebag"
@@ -23,8 +23,31 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "backgroundColor": "#140F0A",
-    "plugins": ["expo-router", "expo-status-bar"],
+    "backgroundColor": "#FBF8F4",
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-image",
+      "expo-font",
+      "expo-system-ui",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Fries in the Bag uses the camera to judge your fridge and check your plates.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Fries in the Bag uses your location to find food near you. It is never stored.",
+          "locationAlwaysAndWhenInUsePermission": false,
+          "locationAlwaysPermission": false,
+          "motionUsagePermission": false
+        }
+      ]
+    ],
     "scheme": "friesinthebag",
     "experiments": {
       "typedRoutes": true
