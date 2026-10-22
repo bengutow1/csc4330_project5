@@ -169,6 +169,51 @@ func TestCurrentAccountReadsTheRowAfresh(t *testing.T) {
 	}
 }
 
+// TestEndSessionsEndsEverySessionOfTheAccountAndNoOther: deleting an account has to sign out every
+// session that held it, this request's with its cookie, while another player's stays signed in.
+func TestEndSessionsEndsEverySessionOfTheAccountAndNoOther(t *testing.T) {
+	t.Parallel()
+	pool := newPool(t)
+	repo := repository.New(pool)
+	sessions := newSessions(pool)
+	a := auth.New(sessions, repo)
+	maya := createAccount(t, repo, "test_maya")
+	ben := createAccount(t, repo, "test_ben")
+	here := signIn(t, a, sessions, "", maya.AccountID)
+	// A second session holding maya, as a copied cookie would be.
+	elsewhere := signIn(t, a, sessions, "", maya.AccountID)
+	bens := signIn(t, a, sessions, "", ben.AccountID)
+	ctx := request(t, sessions, here)
+
+	err := a.EndSessions(ctx, maya.AccountID)
+
+	if err != nil {
+		t.Fatalf("end sessions: %v", err)
+	}
+	if sessions.Status(ctx) != scs.Destroyed {
+		t.Errorf("this request's session status = %v, want destroyed, so the response clears its cookie",
+			sessions.Status(ctx))
+	}
+	// Maya's account still exists here, so signed out means the session itself is gone.
+	cases := []struct {
+		name, token string
+		want        int64 // the account the session still names, 0 for none
+	}{
+		{"this request's session", here, 0},
+		{"maya's other session", elsewhere, 0},
+		{"ben's session", bens, ben.AccountID},
+	}
+	for _, c := range cases {
+		got, err := a.CurrentAccount(request(t, sessions, c.token))
+		switch {
+		case c.want == 0 && !errors.Is(err, auth.ErrNotAuthenticated):
+			t.Errorf("%s: current account = %d, %v, want signed out", c.name, got.AccountID, err)
+		case c.want != 0 && (err != nil || got.AccountID != c.want):
+			t.Errorf("%s: current account = %d, %v, want %d", c.name, got.AccountID, err, c.want)
+		}
+	}
+}
+
 // request loads the session a token names, the way LoadAndSave does when a request arrives. ""
 // is a request with no cookie.
 func request(t *testing.T, sessions *scs.SessionManager, token string) context.Context {

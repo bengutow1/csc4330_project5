@@ -51,6 +51,28 @@ func (a *Auth) SignIn(ctx context.Context, accountID int64) error {
 	return nil
 }
 
+// EndSessions ends every session that holds accountID: this request's, so the response clears its
+// cookie, then any other, found through sessions.Iterate. Iterate reads every session in the
+// store, which deleting an account is rare enough to afford.
+func (a *Auth) EndSessions(ctx context.Context, accountID int64) error {
+	if a.sessions.GetInt64(ctx, keyAccountID) == accountID {
+		err := a.sessions.Destroy(ctx)
+		if err != nil {
+			return fmt.Errorf("auth: end this session account=%d: %w", accountID, err)
+		}
+	}
+	err := a.sessions.Iterate(ctx, func(ctx context.Context) error {
+		if a.sessions.GetInt64(ctx, keyAccountID) != accountID {
+			return nil
+		}
+		return a.sessions.Destroy(ctx)
+	})
+	if err != nil {
+		return fmt.Errorf("auth: end sessions account=%d: %w", accountID, err)
+	}
+	return nil
+}
+
 // CurrentAccount is the session's account, read from the database on every call, so an account
 // deleted a moment ago is gone on the next request. No session, or a session whose account no
 // longer exists, is ErrNotAuthenticated.

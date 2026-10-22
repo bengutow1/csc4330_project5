@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/bengutow1/csc4330_project5/packages/go/repository"
@@ -280,6 +281,67 @@ func TestTheSchemaRefusesAValueOutsideEachClosedSet(t *testing.T) {
 				t.Errorf("err = %v, want a check violation", err)
 			}
 		})
+	}
+}
+
+// TestDeletingAnAccountCascadesThroughEveryTableThatHangsOffIt: DeleteAccount is one statement, so
+// a table that names an account without on delete cascade, or one that blocks the delete further
+// down (a scan's items), would fail delete my data for every player with a row in it. The catalog
+// is read, so tables that land later are held to it too.
+func TestDeletingAnAccountCascadesThroughEveryTableThatHangsOffIt(t *testing.T) {
+	t.Parallel()
+	pool := newPool(t)
+	// owned is app.account and every table its delete cascades into, directly or through another.
+	// confdeltype: c is cascade. r (restrict) refuses at once, partway down the cascade. a (no
+	// action) is checked once the whole delete is done, so it refuses only when its rows outlive
+	// the cascade, from a table the account doesn't own.
+	rows, err := pool.Query(t.Context(), `
+		with recursive owned(rel) as (
+		       select 'app.account'::regclass
+		        union
+		       select con.conrelid
+		         from pg_constraint con
+		         join owned o on con.confrelid = o.rel
+		        where con.contype = 'f'
+		          and con.confdeltype = 'c')
+		select con.conrelid::regclass::text || ' ' || con.conname,
+		       con.confrelid = 'app.account'::regclass,
+		       con.confdeltype,
+		       con.conrelid in (select rel from owned)
+		  from pg_constraint con
+		  join owned o on con.confrelid = o.rel
+		 where con.contype = 'f'`)
+	if err != nil {
+		t.Fatalf("foreign keys under app.account: %v", err)
+	}
+	type key struct {
+		name         string
+		toAccount    bool
+		onDeleteRule string
+		fromOwned    bool
+	}
+	keys, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (key, error) {
+		var k key
+		err := row.Scan(&k.name, &k.toAccount, &k.onDeleteRule, &k.fromOwned)
+		return k, err
+	})
+	if err != nil {
+		t.Fatalf("foreign keys under app.account: %v", err)
+	}
+
+	// app.scan references the account today, so an empty result would mean the query is broken.
+	if len(keys) == 0 {
+		t.Fatal("no foreign key references app.account, which proves nothing")
+	}
+	for _, k := range keys {
+		switch {
+		case k.toAccount && k.onDeleteRule != "c":
+			t.Errorf("%s references app.account without on delete cascade (docs/contracts.md)", k.name)
+		case k.onDeleteRule == "r":
+			t.Errorf("%s would refuse an account's delete as it cascades down", k.name)
+		case k.onDeleteRule == "a" && !k.fromOwned:
+			t.Errorf("%s would refuse an account's delete: its rows outlive the cascade", k.name)
+		}
 	}
 }
 
