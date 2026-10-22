@@ -45,6 +45,19 @@ export function RemovableChip(props: { label: string; onRemove: () => void }) {
   );
 }
 
+/**
+ * OnChip is a food that always counts and isn't changed where it shows (the staples in the edit
+ * sheet). It wears the selected pill's tint and a tick, and isn't a button.
+ */
+export function OnChip(props: { label: string }) {
+  return (
+    <View accessible accessibilityLabel={`${props.label}, on`} style={[styles.chip, styles.always]}>
+      <Ionicons name="checkmark" size={TICK} color={COLORS.ketchupInk} />
+      <Text style={styles.alwaysText}>{props.label}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   chip: {
     flexDirection: "row",
@@ -60,6 +73,8 @@ const styles = StyleSheet.create({
   off: { backgroundColor: COLORS.surface, borderColor: COLORS.lineStrong },
   // The cross sits closer to the edge than the words do.
   removable: { paddingRight: SPACE.sm },
+  always: { backgroundColor: COLORS.ketchupTint, borderColor: COLORS.ketchupTint },
   onText: { ...TYPE.small, fontWeight: TYPE.bodyStrong.fontWeight, color: COLORS.surface },
   offText: { ...TYPE.small, color: COLORS.ink },
+  alwaysText: { ...TYPE.small, fontWeight: TYPE.bodyStrong.fontWeight, color: COLORS.ketchupInk },
 });

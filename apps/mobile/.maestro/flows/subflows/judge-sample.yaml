@@ -1,0 +1,11 @@
+# Judges the development build's sample photo from the Snap tab and waits for its verdict, for the
+# verdict flows. Run it signed in and on Snap. The tier is whichever fridge the api's VISION_MOCK
+# names. It lives in a subfolder so a folder run of flows/ does not run it on its own.
+appId: com.cadenlund.friesinthebag
+---
+- tapOn: "Use a sample photo"
+- assertVisible: "Photo 1, Fridge"
+- tapOn: "Judge my fridge"
+- extendedWaitUntil:
+    visible: "Here's what we found"
+    timeout: 15000

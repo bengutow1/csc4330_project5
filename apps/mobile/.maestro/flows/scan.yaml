@@ -21,9 +21,8 @@ appId: com.cadenlund.friesinthebag
 - assertVisible: "Photo 1, Pantry"
 - assertNotVisible: "Photo 2, .*"
 
-# Judging ends on the verdict, the placeholder until #19 builds it.
+# Judging ends on the verdict.
 - tapOn: "Judge my fridge"
 - extendedWaitUntil:
-    visible: "Coming in #19."
+    visible: "Here's what we found"
     timeout: 15000
-- assertVisible: "Verdict"
