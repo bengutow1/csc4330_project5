@@ -1,0 +1,21 @@
+# A plate the check turns down says why, pays nothing and offers another photo. Start the api
+# with VISION_MOCK=scrappy and VISION_MOCK_PLATE=reject (VISION_MOCK=scrappy
+# VISION_MOCK_PLATE=reject moon run api:dev). Needs the app installed (moon run mobile:ios), Metro
+# (moon run mobile:dev) and #22's recipe screens.
+appId: com.cadenlund.friesinthebag
+---
+- launchApp:
+    clearState: true
+- runFlow: subflows/sign-up.yaml
+- runFlow: subflows/judge-sample.yaml
+- runFlow: subflows/open-plate.yaml
+- tapOn: "Use a sample photo"
+- extendedWaitUntil:
+    visible: "That doesn't look like Spicy Pea Ramen\\. Try another angle\\."
+    timeout: 15000
+- assertNotVisible: "points earned"
+# Another go is another photo.
+- tapOn: "Try again"
+- assertVisible: "Snap what you made."
+- tapOn: "Skip \\(no points\\)"
+- assertVisible: "See what you have. Cook something great."

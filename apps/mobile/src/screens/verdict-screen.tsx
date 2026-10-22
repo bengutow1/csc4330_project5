@@ -16,7 +16,8 @@ import { Skeleton } from "@/components/skeleton";
 import { TierPill } from "@/components/tier-pill";
 import { categoryLook, groupByCategory } from "@/lib/categories";
 import type { Item } from "@/lib/ingredients";
-import { buttonsFor, parseScanId, showing, type Way } from "@/lib/verdict";
+import { parseId } from "@/lib/route-id";
+import { buttonsFor, showing, type Way } from "@/lib/verdict";
 import { COLORS, RADII, SPACE, TYPE } from "@/theme";
 
 // The design's ingredient tile (screen 2): a picture this tall, three to a row.
@@ -32,7 +33,7 @@ const BAR_HEIGHT = 44;
  * the recipes and never the score.
  */
 export function VerdictScreen(props: { id: string | undefined }) {
-  const scanId = parseScanId(props.id);
+  const scanId = parseId(props.id);
   const scan = useScan(scanId);
   const router = useRouter();
   const insets = useSafeAreaInsets();

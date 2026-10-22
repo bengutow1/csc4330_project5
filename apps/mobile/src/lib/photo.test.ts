@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fitLongEdge, jpegBytes } from "./photo.ts";
+import { fitLongEdge, jpegBytes, sampleCut } from "./photo.ts";
 
 describe("fitLongEdge", () => {
   it("brings a landscape photo down by its width", () => {
@@ -31,5 +31,52 @@ describe("jpegBytes", () => {
     const base64 = btoa(String.fromCharCode(...all));
 
     expect(jpegBytes(base64)).toEqual(all);
+  });
+});
+
+describe("sampleCut", () => {
+  // The bundled sample photo's size.
+  const sample = { width: 384, height: 444 };
+
+  /** draws hands out these numbers in turn, as Math.random would. */
+  function draws(...numbers: number[]) {
+    let i = 0;
+    return () => numbers[i++ % numbers.length] ?? 0;
+  }
+
+  it("keeps the whole photo when every draw is zero", () => {
+    expect(sampleCut(sample, draws(0))).toEqual({
+      originX: 0,
+      originY: 0,
+      width: 384,
+      height: 444,
+    });
+  });
+
+  it("takes at most 32 px off each edge", () => {
+    expect(sampleCut(sample, draws(0.9999))).toEqual({
+      originX: 32,
+      originY: 32,
+      width: 320,
+      height: 380,
+    });
+  });
+
+  it("draws once for each edge: left, top, right, then bottom", () => {
+    expect(sampleCut(sample, draws(0.5, 0.25, 0, 0.75))).toEqual({
+      originX: 16,
+      originY: 8,
+      width: 368,
+      height: 412,
+    });
+  });
+
+  it("leaves something of a photo too small to lose 32 px a side", () => {
+    expect(sampleCut({ width: 3, height: 40 }, draws(0.9999))).toEqual({
+      originX: 1,
+      originY: 1,
+      width: 1,
+      height: 38,
+    });
   });
 });
