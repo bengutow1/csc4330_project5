@@ -87,22 +87,31 @@ func main() {
 	// production, where a missing key stops the boot: a real deployment never lists fake spots.
 	placesKey := os.Getenv("PLACES_API_KEY")
 	placesMock := os.Getenv("PLACES_MOCK")
+	var spots interface {
+		Nearby(ctx context.Context, lat, lng float64, query string) ([]places.Place, error)
+	}
 	switch {
-	case placesKey != "":
-		// The real client is still to come (#32), and serving the mock anyway would ignore the key
-		// without a word.
-		log.Error("PLACES_API_KEY is set, but there is no places client yet; unset it to serve the mock")
+	case placesKey != "" && placesMock != "":
+		// Serving real spots would ignore the mock mode without a word, and the closed screen
+		// someone is building would never show.
+		log.Error("PLACES_API_KEY and PLACES_MOCK are both set; unset one")
 		os.Exit(1)
+	case placesKey != "":
+		spots = places.New(placesKey, os.Getenv("PLACES_BASE_URL"))
+		log.Info("places client is live", "provider", "google")
 	case appEnv == "production":
 		log.Error("PLACES_API_KEY is required in production")
 		os.Exit(1)
+	default:
+		var mock *places.Mock
+		mock, err = places.NewMock(placesMock)
+		if err != nil {
+			log.Error("PLACES_MOCK names no mock mode", "err", err)
+			os.Exit(1)
+		}
+		spots = mock
+		log.Info("places mock is live", "mode", cmp.Or(placesMock, "default"))
 	}
-	spots, err := places.NewMock(placesMock)
-	if err != nil {
-		log.Error("PLACES_MOCK names no mock mode", "err", err)
-		os.Exit(1)
-	}
-	log.Info("places mock is live", "mode", cmp.Or(placesMock, "default"))
 	_ = spots // nothing lists spots until the fries service (#26) mounts
 
 	pool, err := pgxpool.New(ctx, dsn)
