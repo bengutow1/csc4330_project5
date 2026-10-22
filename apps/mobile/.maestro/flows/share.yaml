@@ -1,0 +1,26 @@
+# Share cards (C6): the verdict's Share previews a roast card, and a passed plate's Share previews a
+# plate card, each in a sheet with its own Share button. Start the api with VISION_MOCK=scrappy and
+# no VISION_MOCK_PLATE (VISION_MOCK=scrappy moon run api:dev). Needs the app installed (moon run
+# mobile:ios), Metro (moon run mobile:dev) and #22's recipe screens. The phone's own share sheet is
+# not the app's, so the flow stops at the preview and screenshots show the rest.
+appId: com.cadenlund.friesinthebag
+---
+- launchApp:
+    clearState: true
+- runFlow: subflows/sign-up.yaml
+- runFlow: subflows/judge-sample.yaml
+- tapOn: "Share"
+- assertVisible: "Share your verdict"
+- assertVisible: "Your verdict card"
+- tapOn: "Close"
+- assertNotVisible: "Share your verdict"
+- runFlow: subflows/open-plate.yaml
+- tapOn: "Use a sample photo"
+- extendedWaitUntil:
+    visible: "Total, \\+160"
+    timeout: 15000
+- tapOn: "Share"
+- assertVisible: "Share your plate"
+- assertVisible: "Your plate card"
+- tapOn: "Close"
+- assertVisible: "Done"
