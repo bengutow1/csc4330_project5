@@ -36,7 +36,7 @@ import {
   withEquipment,
   withTime,
 } from "@/lib/recipes";
-import { parseScanId } from "@/lib/verdict";
+import { parseId } from "@/lib/route-id";
 import { COLORS, RADII, SPACE, TYPE } from "@/theme";
 
 // The design's recipe card (screen 3): this tall, with the picture this wide on its left.
@@ -53,7 +53,7 @@ const BAR_HEIGHT = 44;
  * the request, and the shelves show what it sends back, in its order.
  */
 export function RecipesScreen(props: { scanId: string | undefined }) {
-  const scanId = parseScanId(props.scanId);
+  const scanId = parseId(props.scanId);
   const [filters, setFilters] = useState<RecipeFilters>(NO_FILTERS);
   const recipes = useRecipes(scanId, filters);
   const scan = useScan(scanId);

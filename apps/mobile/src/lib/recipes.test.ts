@@ -11,7 +11,6 @@ import {
   minutesLabel,
   NO_FILTERS,
   numbered,
-  parseRecipeId,
   pointsLabel,
   recipeLabel,
   stepsLabel,
@@ -189,19 +188,6 @@ describe("numbered", () => {
       { n: 3, text: "Stir." },
     ]);
     expect(numbered([])).toEqual([]);
-  });
-});
-
-describe("parseRecipeId", () => {
-  it("reads a whole number above zero", () => {
-    expect(parseRecipeId("7")).toBe(7n);
-    expect(parseRecipeId("9007199254740993")).toBe(9007199254740993n);
-  });
-
-  it("reads anything else as no recipe, so the screen never asks about one that can't exist", () => {
-    for (const param of [undefined, "", "0", "-3", "1.5", "7a", " 7", "abc"]) {
-      expect(parseRecipeId(param)).toBeUndefined();
-    }
   });
 });
 

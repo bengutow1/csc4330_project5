@@ -17,9 +17,9 @@ import {
   equipmentLabel,
   minutesLabel,
   numbered,
-  parseRecipeId,
   stepsLabel,
 } from "@/lib/recipes";
+import { parseId } from "@/lib/route-id";
 import { COLORS, RADII, SPACE, TYPE } from "@/theme";
 
 // The design's recipe header (screen 5): a square picture this big beside the title.
@@ -35,7 +35,7 @@ const BAR_HEIGHT = 44;
  * what the player has and what they need, the steps, and I made it, which goes to plate it.
  */
 export function RecipeScreen(props: { id: string | undefined }) {
-  const recipeId = parseRecipeId(props.id);
+  const recipeId = parseId(props.id);
   const recipe = useRecipe(recipeId);
   const router = useRouter();
   const insets = useSafeAreaInsets();

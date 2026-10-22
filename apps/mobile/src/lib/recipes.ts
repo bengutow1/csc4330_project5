@@ -132,18 +132,6 @@ export function numbered(list: readonly string[]): { n: number; text: string }[]
   return list.map((text, i) => ({ n: i + 1, text }));
 }
 
-/**
- * parseRecipeId reads a recipe's id from its route: a whole number above zero, or undefined for
- * anything else, so the screen never asks the api about a recipe that can't exist.
- */
-export function parseRecipeId(param: string | undefined): bigint | undefined {
-  if (param === undefined || !/^\d+$/.test(param)) {
-    return undefined;
-  }
-  const id = BigInt(param);
-  return id > 0n ? id : undefined;
-}
-
 /** What C1 or C2 shows. */
 export type CookShowing = "not-found" | "error" | "loading" | "answer";
 
