@@ -1,0 +1,87 @@
+{
+  "places": [
+    {
+      "id": "test-fries",
+      "displayName": { "text": "Midnight Fry Shack", "languageCode": "en" },
+      "location": { "latitude": 30.424092, "longitude": -91.18 },
+      "shortFormattedAddress": "77 Maple Dr, Baton Rouge",
+      "types": ["fast_food_restaurant", "restaurant", "food", "point_of_interest", "establishment"],
+      "priceLevel": "PRICE_LEVEL_INEXPENSIVE",
+      "utcOffsetMinutes": -300,
+      "currentOpeningHours": {
+        "openNow": true,
+        "periods": [
+          {
+            "open": { "day": 3, "hour": 10, "minute": 30, "date": { "year": 2026, "month": 10, "day": 21 } },
+            "close": { "day": 4, "hour": 2, "date": { "year": 2026, "month": 10, "day": 22 } }
+          }
+        ],
+        "weekdayDescriptions": ["Wednesday: 10:30 AM to 2:00 AM"],
+        "nextCloseTime": "2026-10-22T07:00:00Z"
+      }
+    },
+    {
+      "id": "test-noodles",
+      "displayName": { "text": "Corner Noodle Bar", "languageCode": "en" },
+      "location": { "latitude": 30.407454, "longitude": -91.18 },
+      "shortFormattedAddress": "402 Oak Ave, Baton Rouge",
+      "types": ["ramen_restaurant", "restaurant", "food", "point_of_interest", "establishment"],
+      "priceLevel": "PRICE_LEVEL_MODERATE",
+      "utcOffsetMinutes": -300,
+      "currentOpeningHours": {
+        "openNow": true,
+        "periods": [
+          {
+            "open": { "day": 3, "hour": 11, "date": { "year": 2026, "month": 10, "day": 21 } },
+            "close": { "day": 3, "hour": 14, "minute": 30, "date": { "year": 2026, "month": 10, "day": 21 } }
+          },
+          {
+            "open": { "day": 3, "hour": 17, "date": { "year": 2026, "month": 10, "day": 21 } },
+            "close": { "day": 3, "hour": 22, "date": { "year": 2026, "month": 10, "day": 21 } }
+          }
+        ],
+        "nextCloseTime": "2026-10-22T03:00:00Z"
+      }
+    },
+    {
+      "id": "test-diner",
+      "displayName": { "text": "Early Bird Diner", "languageCode": "en" },
+      "location": { "latitude": 30.415998, "longitude": -91.18 },
+      "shortFormattedAddress": "18 Elm St, Baton Rouge",
+      "types": ["breakfast_restaurant", "restaurant", "food", "point_of_interest", "establishment"],
+      "utcOffsetMinutes": -300,
+      "currentOpeningHours": {
+        "openNow": false,
+        "periods": [
+          {
+            "open": { "day": 3, "hour": 6, "date": { "year": 2026, "month": 10, "day": 21 } },
+            "close": { "day": 3, "hour": 14, "date": { "year": 2026, "month": 10, "day": 21 } }
+          }
+        ],
+        "nextOpenTime": "2026-10-22T11:00:00Z"
+      }
+    },
+    {
+      "id": "test-grill",
+      "displayName": { "text": "Round The Clock Grill", "languageCode": "en" },
+      "location": { "latitude": 30.391716, "longitude": -91.18 },
+      "shortFormattedAddress": "560 Main St, Baton Rouge",
+      "types": ["american_restaurant", "restaurant", "food", "point_of_interest", "establishment"],
+      "priceLevel": "PRICE_LEVEL_EXPENSIVE",
+      "utcOffsetMinutes": -300,
+      "currentOpeningHours": {
+        "openNow": true,
+        "periods": [{ "open": {} }],
+        "weekdayDescriptions": ["Wednesday: Open 24 hours"]
+      }
+    },
+    {
+      "id": "test-cart",
+      "displayName": { "text": "Sunny Taco Cart", "languageCode": "en" },
+      "location": { "latitude": 30.42679, "longitude": -91.18 },
+      "types": ["mexican_restaurant", "restaurant", "food", "point_of_interest", "establishment"],
+      "priceLevel": "PRICE_LEVEL_INEXPENSIVE",
+      "utcOffsetMinutes": -300
+    }
+  ]
+}
