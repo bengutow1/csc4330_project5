@@ -18,6 +18,7 @@
     "expo-linking": "~57.0.12",
     "expo-location": "~57.0.21",
     "expo-router": "~57.0.25",
+    "expo-sharing": "~57.0.24",
     "expo-status-bar": "~57.0.1",
     "expo-system-ui": "~57.0.4",
     "react": "19.2.3",
@@ -25,6 +26,7 @@
     "react-native-reanimated": "4.5.1",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.2",
+    "react-native-view-shot": "5.1.0",
     "react-native-worklets": "0.10.1"
   },
   "devDependencies": {

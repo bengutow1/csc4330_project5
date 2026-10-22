@@ -4,6 +4,8 @@ import {
   isNotFound,
   isUnreachable,
   usePlateMeal,
+  useRecipe,
+  useWhoAmI,
 } from "@fries-in-the-bag/api";
 import { Image } from "expo-image";
 import { Stack, useRouter } from "expo-router";
@@ -18,6 +20,8 @@ import { Header } from "@/components/header";
 import { IconButton } from "@/components/icon-button";
 import { PhotoCard } from "@/components/photo-card";
 import { Receipt } from "@/components/receipt";
+import { PlateCard } from "@/components/share-card";
+import { ShareSheet } from "@/components/share-sheet";
 import { type Cut, jpegBytes, type Size, sampleCut } from "@/lib/photo";
 import { takenCaption } from "@/lib/receipt";
 import { parseId } from "@/lib/route-id";
@@ -41,7 +45,7 @@ interface PlatePhoto {
 /**
  * PlateScreen is plate it, then the receipt (C4, C5): one photo of the dish, which the server
  * checks against the recipe, then what the plate paid. A plate the check turns down says why and
- * offers another photo. One refused because its meal window already paid offers only Done, since
+ * offers another photo, and a passed one can be shared as a plate card. One refused because its meal window already paid offers only Done, since
  * no photo would do better. Skip, Done and the close cross all end on Snap, the app's kitchen
  * while the kitchen home is on hold (docs/design.md).
  */
@@ -60,6 +64,11 @@ function Plating(props: { recipeId: bigint }) {
   const [photo, setPhoto] = useState<PlatePhoto | null>(null);
   const [saving, setSaving] = useState(false);
   const [lost, setLost] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  // The plate card names the recipe and the player's handle, both already in the cache: the
+  // recipe from cooking it, the account from launch.
+  const recipe = useRecipe(props.recipeId);
+  const me = useWhoAmI();
 
   const leave = () => router.dismissTo("/");
 
@@ -136,9 +145,30 @@ function Plating(props: { recipeId: bigint }) {
           </View>
           <Receipt photo={photo} receipt={receipt} />
         </ScrollView>
+        {/* Share beside Done, as screen 6 draws them. */}
         <BottomBar>
+          <Button
+            label="Share"
+            variant="secondary"
+            icon="share-outline"
+            onPress={() => setSharing(true)}
+          />
           <Button label="Done" onPress={leave} />
         </BottomBar>
+        <ShareSheet
+          visible={sharing}
+          title="Share your plate"
+          label="Your plate card"
+          onClose={() => setSharing(false)}
+        >
+          <PlateCard
+            photo={{ uri: photo.uri }}
+            caption={takenCaption(photo.at)}
+            recipe={recipe.data?.recipe?.title}
+            total={receipt.total}
+            handle={me.data?.account?.handle}
+          />
+        </ShareSheet>
       </View>
     );
   }
