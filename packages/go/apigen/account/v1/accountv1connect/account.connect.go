@@ -48,6 +48,9 @@ const (
 	// AccountServiceUpdateKitchenProcedure is the fully-qualified name of the AccountService's
 	// UpdateKitchen RPC.
 	AccountServiceUpdateKitchenProcedure = "/account.v1.AccountService/UpdateKitchen"
+	// AccountServiceDeleteAccountProcedure is the fully-qualified name of the AccountService's
+	// DeleteAccount RPC.
+	AccountServiceDeleteAccountProcedure = "/account.v1.AccountService/DeleteAccount"
 )
 
 // AccountServiceClient is a client for the account.v1.AccountService service.
@@ -63,6 +66,9 @@ type AccountServiceClient interface {
 	// UpdateKitchen replaces the caller's kitchen with the one sent. A value outside its closed set,
 	// unspecified included, is invalid_argument on its field, naming the valid values.
 	UpdateKitchen(context.Context, *connect.Request[v1.UpdateKitchenRequest]) (*connect.Response[v1.UpdateKitchenResponse], error)
+	// DeleteAccount deletes the caller's account and everything of theirs, and ends every session
+	// that held it, this one included. Unauthenticated without a session.
+	DeleteAccount(context.Context, *connect.Request[v1.DeleteAccountRequest]) (*connect.Response[v1.DeleteAccountResponse], error)
 }
 
 // NewAccountServiceClient constructs a client for the account.v1.AccountService service. By
@@ -100,6 +106,12 @@ func NewAccountServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			connect.WithSchema(accountServiceMethods.ByName("UpdateKitchen")),
 			connect.WithClientOptions(opts...),
 		),
+		deleteAccount: connect.NewClient[v1.DeleteAccountRequest, v1.DeleteAccountResponse](
+			httpClient,
+			baseURL+AccountServiceDeleteAccountProcedure,
+			connect.WithSchema(accountServiceMethods.ByName("DeleteAccount")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -109,6 +121,7 @@ type accountServiceClient struct {
 	checkHandle   *connect.Client[v1.CheckHandleRequest, v1.CheckHandleResponse]
 	whoAmI        *connect.Client[v1.WhoAmIRequest, v1.WhoAmIResponse]
 	updateKitchen *connect.Client[v1.UpdateKitchenRequest, v1.UpdateKitchenResponse]
+	deleteAccount *connect.Client[v1.DeleteAccountRequest, v1.DeleteAccountResponse]
 }
 
 // CreateAccount calls account.v1.AccountService.CreateAccount.
@@ -131,6 +144,11 @@ func (c *accountServiceClient) UpdateKitchen(ctx context.Context, req *connect.R
 	return c.updateKitchen.CallUnary(ctx, req)
 }
 
+// DeleteAccount calls account.v1.AccountService.DeleteAccount.
+func (c *accountServiceClient) DeleteAccount(ctx context.Context, req *connect.Request[v1.DeleteAccountRequest]) (*connect.Response[v1.DeleteAccountResponse], error) {
+	return c.deleteAccount.CallUnary(ctx, req)
+}
+
 // AccountServiceHandler is an implementation of the account.v1.AccountService service.
 type AccountServiceHandler interface {
 	// CreateAccount makes the device account and signs the session in. Public; a malformed or
@@ -144,6 +162,9 @@ type AccountServiceHandler interface {
 	// UpdateKitchen replaces the caller's kitchen with the one sent. A value outside its closed set,
 	// unspecified included, is invalid_argument on its field, naming the valid values.
 	UpdateKitchen(context.Context, *connect.Request[v1.UpdateKitchenRequest]) (*connect.Response[v1.UpdateKitchenResponse], error)
+	// DeleteAccount deletes the caller's account and everything of theirs, and ends every session
+	// that held it, this one included. Unauthenticated without a session.
+	DeleteAccount(context.Context, *connect.Request[v1.DeleteAccountRequest]) (*connect.Response[v1.DeleteAccountResponse], error)
 }
 
 // NewAccountServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -177,6 +198,12 @@ func NewAccountServiceHandler(svc AccountServiceHandler, opts ...connect.Handler
 		connect.WithSchema(accountServiceMethods.ByName("UpdateKitchen")),
 		connect.WithHandlerOptions(opts...),
 	)
+	accountServiceDeleteAccountHandler := connect.NewUnaryHandler(
+		AccountServiceDeleteAccountProcedure,
+		svc.DeleteAccount,
+		connect.WithSchema(accountServiceMethods.ByName("DeleteAccount")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/account.v1.AccountService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case AccountServiceCreateAccountProcedure:
@@ -187,6 +214,8 @@ func NewAccountServiceHandler(svc AccountServiceHandler, opts ...connect.Handler
 			accountServiceWhoAmIHandler.ServeHTTP(w, r)
 		case AccountServiceUpdateKitchenProcedure:
 			accountServiceUpdateKitchenHandler.ServeHTTP(w, r)
+		case AccountServiceDeleteAccountProcedure:
+			accountServiceDeleteAccountHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -210,4 +239,8 @@ func (UnimplementedAccountServiceHandler) WhoAmI(context.Context, *connect.Reque
 
 func (UnimplementedAccountServiceHandler) UpdateKitchen(context.Context, *connect.Request[v1.UpdateKitchenRequest]) (*connect.Response[v1.UpdateKitchenResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("account.v1.AccountService.UpdateKitchen is not implemented"))
+}
+
+func (UnimplementedAccountServiceHandler) DeleteAccount(context.Context, *connect.Request[v1.DeleteAccountRequest]) (*connect.Response[v1.DeleteAccountResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("account.v1.AccountService.DeleteAccount is not implemented"))
 }
