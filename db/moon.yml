@@ -36,9 +36,10 @@ tasks:
   status:
     command: 'goose status'
     options: { cache: false, runInCI: false }
-  # Fill the local database with the demo week (scripts/seed): fifteen players, their scans and fry
-  # runs, and a clear Fridge of the Week. A database that already holds the demo is left alone, so
-  # run db:fresh first to lay it down again. Local only: never in CI, at boot or from a migration.
+  # Fill the local database with the demo week (scripts/seed): fifteen players, their scans, plates
+  # and fry runs, and a clear Fridge of the Week. A database that already holds the demo is left
+  # alone, so run db:fresh first to lay it down again. Local only: never in CI, at boot or from a
+  # migration.
   seed:
     command: 'go -C ../scripts/seed run .'
     deps: ['db:migrate']
