@@ -2,6 +2,7 @@ import { PhotoKind } from "@fries-in-the-bag/api";
 import { describe, expect, it } from "vitest";
 import {
   addShot,
+  isFull,
   KINDS,
   kindLabel,
   removeShot,
@@ -69,5 +70,19 @@ describe("scanPhotos", () => {
     const kinds = scanPhotos(KINDS.map((kind, i) => shot(i, kind.value))).map((p) => p.kind);
 
     expect(kinds).toEqual([PhotoKind.FRIDGE, PhotoKind.FREEZER, PhotoKind.PANTRY]);
+  });
+});
+
+describe("isFull", () => {
+  it("counts the photos still saving, so a fourth is never taken and then dropped", () => {
+    expect(isFull(2, 1)).toBe(true);
+    expect(isFull(0, 3)).toBe(true);
+    expect(isFull(3, 0)).toBe(true);
+  });
+
+  it("leaves room while fewer than three are taken", () => {
+    expect(isFull(2, 0)).toBe(false);
+    expect(isFull(1, 1)).toBe(false);
+    expect(isFull(0, 0)).toBe(false);
   });
 });

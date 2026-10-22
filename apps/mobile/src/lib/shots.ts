@@ -44,6 +44,14 @@ export function addShot(shots: readonly Shot[], shot: Shot): readonly Shot[] {
   return shots.length >= MAX_SHOTS ? shots : [...shots, shot];
 }
 
+/**
+ * isFull says the scan takes no more photos: the ones listed and the ones still saving already
+ * make three, so another would be dropped as it landed.
+ */
+export function isFull(listed: number, saving: number): boolean {
+  return listed + saving >= MAX_SHOTS;
+}
+
 /** removeShot takes out the shot at `index`, and the rest keep their order. */
 export function removeShot(shots: readonly Shot[], index: number): readonly Shot[] {
   return shots.filter((_, i) => i !== index);
