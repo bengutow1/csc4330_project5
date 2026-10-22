@@ -812,6 +812,38 @@ func TestARequestWaitingOnAFailedSetMakesItItself(t *testing.T) {
 	}
 }
 
+// TestAWaitingRequestAnswersInsideItsOneDeadline: when the model hangs, a chip that waited on the
+// first request's set must answer inside one set deadline, its wait included. A fresh deadline
+// for the set it makes once the wait ends runs it to two, past the server's WriteTimeout.
+func TestAWaitingRequestAnswersInsideItsOneDeadline(t *testing.T) {
+	t.Parallel()
+	f, chef := kitchenFixture()
+	chef.hold = make(chan struct{}) // the model hangs: nothing releases it before the test ends
+	f.setDeadline = time.Second
+	srv := cookStack(t, f)
+	releaseOnEnd(t, chef)
+	maya := cookPlayerFor(t, srv, "test_maya")
+	verdict := scanFridge(t, maya)
+
+	opened := listInBackground(t.Context(), maya, &cookv1.ListRecipesRequest{ScanId: verdict.GetScanId()})
+	waitForChef(t, chef, 1)
+	tappedAt := time.Now()
+	tapped := listInBackground(t.Context(), maya, &cookv1.ListRecipesRequest{ScanId: verdict.GetScanId(), MaxMinutes: 10})
+
+	chip := <-tapped
+	took := time.Since(tappedAt)
+	first := <-opened
+	if connect.CodeOf(first.err) != connect.CodeDeadlineExceeded {
+		t.Errorf("the shelves: %v (%v), want deadline_exceeded from the hung model", connect.CodeOf(first.err), first.err)
+	}
+	if connect.CodeOf(chip.err) != connect.CodeDeadlineExceeded {
+		t.Errorf("the chip: %v (%v), want deadline_exceeded", connect.CodeOf(chip.err), chip.err)
+	}
+	if took > f.setDeadline*3/2 {
+		t.Errorf("the chip answered %v after it was tapped, want inside its one deadline of %v", took, f.setDeadline)
+	}
+}
+
 // TestAnInvalidListRequestIsRefusedFieldByField: every problem arrives at once under its field,
 // and a refused request never reaches the model.
 func TestAnInvalidListRequestIsRefusedFieldByField(t *testing.T) {
@@ -893,15 +925,17 @@ func TestCookingNeedsAnAccount(t *testing.T) {
 }
 
 // cookFixture is what a cook stack runs with: the eyes that read fridges into scans, the chef
-// that writes recipes and checks plates, the limits on both (nil limits nothing), the clock (nil
-// is time.Now) and the cook service's log (nil discards).
+// that writes recipes and checks plates, the limits on both (nil limits nothing), the deadline
+// for one request's set (zero is the API's), the clock (nil is time.Now) and the cook service's
+// log (nil discards).
 type cookFixture struct {
-	eyes       scan.Vision
-	chef       cook.Vision
-	limit      *handlers.Limiter
-	plateLimit *handlers.Limiter
-	now        func() time.Time
-	log        *slog.Logger
+	eyes        scan.Vision
+	chef        cook.Vision
+	limit       *handlers.Limiter
+	plateLimit  *handlers.Limiter
+	setDeadline time.Duration
+	now         func() time.Time
+	log         *slog.Logger
 }
 
 // kitchenFixture reads every fridge as kitchenFridge and writes kitchenRecipes for it. The chef
@@ -922,7 +956,7 @@ func cookStack(t *testing.T, f cookFixture) stack {
 			scan.NewScan(scan.Config{Repo: repo, Auth: authn, Vision: f.eyes})))
 		svc := cook.NewCook(cook.Config{
 			Repo: repo, Auth: authn, Vision: f.chef, Limit: f.limit, PlateLimit: f.plateLimit,
-			Now: f.now, Log: f.log,
+			SetDeadline: f.setDeadline, Now: f.now, Log: f.log,
 		})
 		mux.Handle(cookv1connect.NewCookServiceHandler(svc, connect.WithReadMaxBytes(4<<20)))
 	})

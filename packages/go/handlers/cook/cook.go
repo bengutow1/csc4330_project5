@@ -53,14 +53,15 @@ type Vision interface {
 
 // Cook implements cook.v1 CookService.
 type Cook struct {
-	repo       *repository.Repository
-	gate       handlers.Gate
-	vision     Vision
-	limit      *handlers.Limiter
-	plateLimit *handlers.Limiter
-	making     *making
-	now        func() time.Time
-	log        *slog.Logger
+	repo        *repository.Repository
+	gate        handlers.Gate
+	vision      Vision
+	limit       *handlers.Limiter
+	plateLimit  *handlers.Limiter
+	making      *making
+	setDeadline time.Duration
+	now         func() time.Time
+	log         *slog.Logger
 }
 
 // Every rpc is served here, so a new one in cook.proto fails the build until it is.
@@ -75,8 +76,8 @@ type making struct {
 	sets map[setKey]chan struct{}
 }
 
-// setDeadline bounds a claimed set once its own caller hangs up: one model call and two writes, well
-// inside the server's 90 s WriteTimeout.
+// setDeadline bounds the time one request spends getting its set: a wait on another request's
+// claim, then one model call and two writes, well inside the server's 90 s WriteTimeout.
 const setDeadline = 60 * time.Second
 
 // setKey names one version of one scan's list, which gets one set.
@@ -116,6 +117,9 @@ type Config struct {
 	// PlateLimit caps how many plates each player has checked. main.go passes
 	// DefaultPlateLimit; nil limits nothing.
 	PlateLimit *handlers.Limiter
+	// SetDeadline bounds how long one request spends getting its set. main.go leaves it zero,
+	// which is setDeadline; a test shortens it to watch one pass.
+	SetDeadline time.Duration
 	// Now is the clock the meal windows are read from; nil is time.Now.
 	Now func() time.Time
 	Log *slog.Logger
@@ -141,15 +145,20 @@ func NewCook(cfg Config) *Cook {
 	if now == nil {
 		now = time.Now
 	}
+	deadline := cfg.SetDeadline
+	if deadline == 0 {
+		deadline = setDeadline
+	}
 	return &Cook{
-		repo:       cfg.Repo,
-		gate:       handlers.Gate{Auth: cfg.Auth},
-		vision:     cfg.Vision,
-		limit:      cfg.Limit,
-		plateLimit: cfg.PlateLimit,
-		making:     &making{sets: map[setKey]chan struct{}{}},
-		now:        now,
-		log:        log,
+		repo:        cfg.Repo,
+		gate:        handlers.Gate{Auth: cfg.Auth},
+		vision:      cfg.Vision,
+		limit:       cfg.Limit,
+		plateLimit:  cfg.PlateLimit,
+		making:      &making{sets: map[setKey]chan struct{}{}},
+		setDeadline: deadline,
+		now:         now,
+		log:         log,
 	}
 }
 
@@ -205,9 +214,11 @@ func (h *Cook) ListRecipes(
 
 // ensureSet sees that the scan's list has its set, making it if no request has. A request that
 // finds another making it waits for that one and spends nothing, and makes the set itself if that
-// one failed.
+// one failed. One deadline covers all of it, so a request that waited never starts a fresh one.
 func (h *Cook) ensureSet(ctx context.Context, me repository.Account, scan repository.Scan) error {
 	key := setKey{scanID: scan.ScanID, version: scan.ItemsVersion}
+	ctx, cancel := context.WithTimeout(ctx, h.setDeadline)
+	defer cancel()
 	for {
 		has, err := h.repo.HasRecipes(ctx, me.AccountID, scan.ScanID, scan.ItemsVersion)
 		if err != nil || has {
@@ -228,10 +239,11 @@ func (h *Cook) ensureSet(ctx context.Context, me repository.Account, scan reposi
 // makeClaimed makes the set this request claimed, unless another request stored it between the
 // look and the claim. It finishes even if this request's caller hangs up, which a chip tapped
 // while the shelves load makes the app do, because the requests waiting on the claim still need
-// the set.
+// the set. It keeps the request's deadline, which ensureSet set.
 func (h *Cook) makeClaimed(ctx context.Context, me repository.Account, scan repository.Scan, key setKey) error {
 	defer h.making.release(key)
-	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), setDeadline)
+	deadline, _ := ctx.Deadline()
+	ctx, cancel := context.WithDeadline(context.WithoutCancel(ctx), deadline)
 	defer cancel()
 	has, err := h.repo.HasRecipes(ctx, me.AccountID, scan.ScanID, scan.ItemsVersion)
 	if err != nil || has {
