@@ -1,5 +1,7 @@
-import { PlaceholderScreen } from "@/screens/placeholder-screen";
+import { useLocalSearchParams } from "expo-router";
+import { RecipesScreen } from "@/screens/recipes-screen";
 
 export default function RecipesRoute() {
-  return <PlaceholderScreen title="Recipes" issue={22} />;
+  const { scanId } = useLocalSearchParams<{ scanId: string }>();
+  return <RecipesScreen scanId={scanId} />;
 }

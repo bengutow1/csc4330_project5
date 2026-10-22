@@ -26,6 +26,7 @@ export {
   Difficulty,
   PointReason,
   type Rank,
+  type Recipe,
 } from "@fries-in-the-bag/apigen/cook/v1/cook_pb";
 export { type Spot, SpotFilter } from "@fries-in-the-bag/apigen/fries/v1/fries_pb";
 export type { Plate, Profile } from "@fries-in-the-bag/apigen/profile/v1/profile_pb";

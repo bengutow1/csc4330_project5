@@ -1,11 +1,13 @@
 import { createConnectQueryKey, skipToken } from "@connectrpc/connect-query";
-import { AccountService } from "@fries-in-the-bag/apigen/account/v1/account_pb";
+import { AccountService, Diet } from "@fries-in-the-bag/apigen/account/v1/account_pb";
 import { BoardService } from "@fries-in-the-bag/apigen/board/v1/board_pb";
+import { CookService } from "@fries-in-the-bag/apigen/cook/v1/cook_pb";
 import { ProfileService } from "@fries-in-the-bag/apigen/profile/v1/profile_pb";
 import { ScanService } from "@fries-in-the-bag/apigen/scan/v1/scan_pb";
 import { partialMatchKey } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
 import { createApiTransport } from "../transport.ts";
+import { recipeInput, recipesInput } from "./use-cook.ts";
 import { SCANNED, SCANS, scanInput } from "./use-scan.ts";
 
 describe("scanInput", () => {
@@ -81,6 +83,23 @@ describe("SCANNED", () => {
       cardinality: "finite",
     });
     expect(SCANNED.some((family) => partialMatchKey(profile, family))).toBe(true);
+  });
+
+  it("covers every recipe read, since the server makes the recipes from a scan's list", () => {
+    const shelves = createConnectQueryKey({
+      schema: CookService.method.listRecipes,
+      input: recipesInput(42n, { maxMinutes: 10, equipment: [], diet: Diet.NONE }),
+      transport,
+      cardinality: "finite",
+    });
+    const oneRecipe = createConnectQueryKey({
+      schema: CookService.method.getRecipe,
+      input: recipeInput(7n),
+      transport,
+      cardinality: "finite",
+    });
+    expect(SCANNED.some((family) => partialMatchKey(shelves, family))).toBe(true);
+    expect(SCANNED.some((family) => partialMatchKey(oneRecipe, family))).toBe(true);
   });
 
   it("leaves the account alone, which a scan does not change", () => {
