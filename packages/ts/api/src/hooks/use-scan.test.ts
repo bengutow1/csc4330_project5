@@ -1,5 +1,6 @@
 import { createConnectQueryKey, skipToken } from "@connectrpc/connect-query";
 import { AccountService } from "@fries-in-the-bag/apigen/account/v1/account_pb";
+import { BoardService } from "@fries-in-the-bag/apigen/board/v1/board_pb";
 import { ProfileService } from "@fries-in-the-bag/apigen/profile/v1/profile_pb";
 import { ScanService } from "@fries-in-the-bag/apigen/scan/v1/scan_pb";
 import { partialMatchKey } from "@tanstack/react-query";
@@ -54,21 +55,31 @@ describe("SCANS", () => {
 
 describe("SCANNED", () => {
   const transport = createApiTransport({ baseUrl: "http://api.test.invalid" });
+  const lastScan = createConnectQueryKey({
+    schema: ScanService.method.getLastScan,
+    input: {},
+    transport,
+    cardinality: "finite",
+  });
 
-  it("covers the scans and the profile, whose best score and badges a new scan can change", () => {
-    const lastScan = createConnectQueryKey({
-      schema: ScanService.method.getLastScan,
+  it("covers the scans and the board, whose fridge of the week a new scan can take", () => {
+    const fridge = createConnectQueryKey({
+      schema: BoardService.method.getFridgeOfTheWeek,
       input: {},
       transport,
       cardinality: "finite",
     });
+    expect(SCANNED.some((family) => partialMatchKey(lastScan, family))).toBe(true);
+    expect(SCANNED.some((family) => partialMatchKey(fridge, family))).toBe(true);
+  });
+
+  it("covers the profile, whose best score and badges a new scan can change", () => {
     const profile = createConnectQueryKey({
       schema: ProfileService.method.getProfile,
       input: {},
       transport,
       cardinality: "finite",
     });
-    expect(SCANNED.some((family) => partialMatchKey(lastScan, family))).toBe(true);
     expect(SCANNED.some((family) => partialMatchKey(profile, family))).toBe(true);
   });
 

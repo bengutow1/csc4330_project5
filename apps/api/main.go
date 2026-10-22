@@ -24,6 +24,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/account/v1/accountv1connect"
+	"github.com/bengutow1/csc4330_project5/packages/go/apigen/board/v1/boardv1connect"
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/cook/v1/cookv1connect"
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/fries/v1/friesv1connect"
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/health/v1/healthv1connect"
@@ -31,6 +32,7 @@ import (
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/scan/v1/scanv1connect"
 	"github.com/bengutow1/csc4330_project5/packages/go/auth"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/account"
+	"github.com/bengutow1/csc4330_project5/packages/go/handlers/board"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/cook"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/fries"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/healthz"
@@ -162,6 +164,7 @@ func main() {
 		Limits: fries.DefaultLimits(),
 		Log:    log,
 	})
+	boardSvc := board.NewBoard(board.Config{Repo: repo, Auth: authn, Log: log})
 	profileSvc := profile.NewProfile(profile.Config{Repo: repo, Auth: authn, Log: log})
 
 	// Every service reads request bodies under the same cap.
@@ -177,6 +180,7 @@ func main() {
 	r.Mount(scanv1connect.NewScanServiceHandler(scanSvc, readCap))
 	r.Mount(cookv1connect.NewCookServiceHandler(cookSvc, readCap))
 	r.Mount(friesv1connect.NewFriesServiceHandler(friesSvc, readCap))
+	r.Mount(boardv1connect.NewBoardServiceHandler(boardSvc, readCap))
 	r.Mount(profilev1connect.NewProfileServiceHandler(profileSvc, readCap))
 
 	srv := &http.Server{

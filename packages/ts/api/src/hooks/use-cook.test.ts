@@ -1,5 +1,6 @@
 import { createConnectQueryKey, skipToken } from "@connectrpc/connect-query";
 import { Diet, Equipment } from "@fries-in-the-bag/apigen/account/v1/account_pb";
+import { Board, BoardService, Range } from "@fries-in-the-bag/apigen/board/v1/board_pb";
 import { CookService } from "@fries-in-the-bag/apigen/cook/v1/cook_pb";
 import { ProfileService } from "@fries-in-the-bag/apigen/profile/v1/profile_pb";
 import { ScanService } from "@fries-in-the-bag/apigen/scan/v1/scan_pb";
@@ -108,6 +109,17 @@ describe("RECIPES", () => {
 
 describe("PLATED", () => {
   const transport = createApiTransport({ baseUrl: "http://api.test.invalid" });
+
+  it("covers the Chefs board at every page, so a new plate's points show on the next look", () => {
+    const chefs = createConnectQueryKey({
+      schema: BoardService.method.getBoard,
+      input: { board: Board.CHEFS, range: Range.THIS_WEEK, cursor: "" },
+      transport,
+      cardinality: "infinite",
+      pageParamKey: "cursor",
+    });
+    expect(PLATED.some((family) => partialMatchKey(chefs, family))).toBe(true);
+  });
 
   it("covers the profile and every page of its plates, so a new plate shows on the Me tab", () => {
     const profile = createConnectQueryKey({
