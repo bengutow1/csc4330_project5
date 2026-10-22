@@ -3,7 +3,7 @@ import { createConnectQueryKey, skipToken, useMutation, useQuery } from "@connec
 import type { Diet, Equipment } from "@fries-in-the-bag/apigen/account/v1/account_pb";
 import { BoardService } from "@fries-in-the-bag/apigen/board/v1/board_pb";
 import { CookService } from "@fries-in-the-bag/apigen/cook/v1/cook_pb";
-import { useQueryClient } from "@tanstack/react-query";
+import { type QueryClient, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef } from "react";
 
 /** RECIPES is every recipe read, finite or infinite: the one key the cook family invalidates. */
@@ -97,10 +97,17 @@ export function usePlateMeal() {
 /** useInvalidatePlated stales every query that counts plates or their points (PLATED). */
 export function useInvalidatePlated() {
   const queryClient = useQueryClient();
-  return useCallback(
-    () => Promise.all(PLATED.map((queryKey) => queryClient.invalidateQueries({ queryKey }))),
-    [queryClient],
-  );
+  return useCallback(() => invalidatePlated(queryClient), [queryClient]);
+}
+
+/**
+ * invalidatePlated stales PLATED without waiting for it. Those queries sit on other tabs and
+ * refetch behind the write, so a receipt never waits on the board's pages.
+ */
+export function invalidatePlated(queryClient: QueryClient) {
+  for (const queryKey of PLATED) {
+    void queryClient.invalidateQueries({ queryKey });
+  }
 }
 
 /**
