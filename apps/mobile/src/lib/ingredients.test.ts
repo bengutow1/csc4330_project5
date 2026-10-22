@@ -4,6 +4,7 @@ import {
   COMMON,
   type Item,
   listErrors,
+  listToSave,
   refusalOf,
   suggest,
   withIngredient,
@@ -107,6 +108,19 @@ describe("withIngredient", () => {
     withIngredient(list, "Lemons");
 
     expect(list).toEqual([item("Eggs", Category.PROTEIN)]);
+  });
+});
+
+describe("listToSave", () => {
+  const draft = [item("Eggs", Category.PROTEIN)];
+
+  it("sends a name still in the add field with the list, as return would have added it", () => {
+    expect(listToSave(draft, " Kimchi ")).toEqual([item("Eggs", Category.PROTEIN), item("Kimchi")]);
+  });
+
+  it("sends the draft itself when the field adds nothing, so a refusal still lines up with it", () => {
+    expect(listToSave(draft, "")).toBe(draft);
+    expect(listToSave(draft, "eggs")).toBe(draft);
   });
 });
 

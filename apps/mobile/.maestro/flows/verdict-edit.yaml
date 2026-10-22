@@ -1,6 +1,7 @@
-# Fixing a verdict's list: take one ingredient out, add another from the suggestions, save, and
-# the score stays put. Start the api with VISION_MOCK=certified_chef (VISION_MOCK=certified_chef
-# moon run api:dev). Needs the app installed (moon run mobile:ios) and Metro (moon run mobile:dev).
+# Fixing a verdict's list: take one ingredient out, add another from the suggestions, type a third
+# and save without pressing return, and the score stays put. Start the api with
+# VISION_MOCK=certified_chef (VISION_MOCK=certified_chef moon run api:dev). Needs the app installed
+# (moon run mobile:ios) and Metro (moon run mobile:dev).
 appId: com.cadenlund.friesinthebag
 ---
 - launchApp:
@@ -18,10 +19,15 @@ appId: com.cadenlund.friesinthebag
 - inputText: "lem"
 - tapOn: "Add Lemons"
 - assertVisible: "Remove Lemons"
+# No suggestion matches, and Save adds it all the same.
+- tapOn: "Add an ingredient"
+- inputText: "Kimchi"
 - tapOn: "Save"
 - assertNotVisible: "Fixing the list changes your recipes, not your score."
 - scrollUntilVisible:
     element: "Lemons"
+- scrollUntilVisible:
+    element: "Kimchi"
 - assertNotVisible: "Eggs, x12"
 - scrollUntilVisible:
     element: "91"

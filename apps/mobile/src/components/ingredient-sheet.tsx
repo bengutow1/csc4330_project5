@@ -9,6 +9,7 @@ import { categoryLook, groupByCategory } from "@/lib/categories";
 import {
   type Item,
   listErrors,
+  listToSave,
   refusalOf,
   suggest,
   withIngredient,
@@ -24,8 +25,8 @@ const LIST_HEIGHT = 280;
  * IngredientSheet fixes a verdict's list: every ingredient as a chip under its category, a cross
  * to take one out, and a field that suggests common ingredients as the player types. The kitchen's
  * staples show as on below the list, since they count without being scanned. Save sends the whole
- * list. The score never moves: the server judged the fridge once, and the list only shapes the
- * recipes.
+ * list, a name still in the field included. The score never moves: the server judged the fridge
+ * once, and the list only shapes the recipes.
  */
 export function IngredientSheet(props: {
   scanId: bigint;
@@ -51,8 +52,12 @@ export function IngredientSheet(props: {
     setTyped("");
   };
   const save = () => {
-    setSent(draft);
-    edit.mutate({ scanId: props.scanId, ingredients: [...draft] }, { onSuccess: props.onClose });
+    // The draft becomes what was sent, so a refusal lines up with the chips on screen.
+    const list = listToSave(draft, typed);
+    setDraft(list);
+    setTyped("");
+    setSent(list);
+    edit.mutate({ scanId: props.scanId, ingredients: [...list] }, { onSuccess: props.onClose });
   };
 
   return (
