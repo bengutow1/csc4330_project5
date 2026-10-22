@@ -1,6 +1,7 @@
 import type { DescService } from "@bufbuild/protobuf";
 import { createConnectQueryKey, skipToken, useMutation, useQuery } from "@connectrpc/connect-query";
 import { BoardService } from "@fries-in-the-bag/apigen/board/v1/board_pb";
+import { CookService } from "@fries-in-the-bag/apigen/cook/v1/cook_pb";
 import { ScanService } from "@fries-in-the-bag/apigen/scan/v1/scan_pb";
 import { type QueryClient, useQueryClient } from "@tanstack/react-query";
 
@@ -11,8 +12,9 @@ const LAST_SCAN_INPUT = {};
 export const SCANS = createConnectQueryKey({ schema: ScanService, cardinality: undefined });
 
 // The other services whose queries read the player's scans, so a new or fixed scan stales them
-// too: the board's Fridge of the Week. The profile (#30) joins it.
-const SCAN_READERS: readonly DescService[] = [BoardService];
+// too: the board's Fridge of the Week, and the recipes, which the server makes from a scan's list.
+// The profile (#30) joins it.
+const SCAN_READERS: readonly DescService[] = [BoardService, CookService];
 const SCAN_READER_KEYS = SCAN_READERS.map((schema) =>
   createConnectQueryKey({ schema, cardinality: undefined }),
 );
@@ -49,7 +51,8 @@ export function useCreateScan() {
 
 /**
  * useEditIngredients saves the player's corrected list. The verdict comes back with the new list
- * and the score it was judged with.
+ * and the score it was judged with. The save settles once the verdict is fresh, and the recipes
+ * made from the old list refetch behind it: the model writes the new ones, which takes seconds.
  */
 export function useEditIngredients() {
   const invalidateScans = useInvalidateScans();
@@ -64,7 +67,8 @@ export function useInvalidateScans() {
 
 /**
  * invalidateScanned stales SCANNED, and its promise waits for the scans' own reads alone. The
- * readers sit on other tabs and refetch behind it, so a verdict never waits on the board's pages.
+ * readers refetch behind it, so a verdict never waits on the board's pages, and a fixed list's
+ * save never waits on the model writing its new recipes.
  */
 export function invalidateScanned(queryClient: QueryClient) {
   for (const queryKey of SCAN_READER_KEYS) {
