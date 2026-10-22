@@ -155,6 +155,15 @@ export function withIngredient(list: readonly Item[], name: string): readonly It
   ];
 }
 
+/**
+ * listToSave is the list Save sends: the draft, with a name still in the add field added last,
+ * since a player who typed it and tapped Save meant it on the list, return pressed or not. A field
+ * that adds nothing hands back the draft itself.
+ */
+export function listToSave(draft: readonly Item[], typed: string): readonly Item[] {
+  return withIngredient(draft, typed);
+}
+
 /** withoutIngredient is the list without the ingredient at `index`. */
 export function withoutIngredient(list: readonly Item[], index: number): readonly Item[] {
   return list.filter((_, i) => i !== index);
