@@ -125,11 +125,14 @@ export function offAction(place: { granted: boolean; canAsk: boolean }): OffActi
 }
 
 /**
- * emptyReason says which empty state an empty list shows: with Open now on, everything near is
- * shut ("Even the fries are closed."); otherwise the chips ruled the rest out.
+ * emptyReason says which empty state an empty list shows, from the chips and words it sent. Only
+ * when Open now is all that narrowed the list is the hour to blame ("Even the fries are closed.");
+ * another chip or the words may be the reason instead, so then the chips are, with a way to clear
+ * them.
  */
-export function emptyReason(on: readonly SpotFilter[]) {
-  return on.includes(SpotFilter.OPEN_NOW) ? "closed" : "filtered";
+export function emptyReason(on: readonly SpotFilter[], words: string) {
+  const onlyTheHour = on.length === 1 && on[0] === SpotFilter.OPEN_NOW && words.trim() === "";
+  return onlyTheHour ? "closed" : "filtered";
 }
 
 // Four decimals of a degree is about 11 m: finer than a spot's distance needs.
