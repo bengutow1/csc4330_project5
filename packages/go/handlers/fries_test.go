@@ -644,6 +644,17 @@ func TestABadFryRunIsRefusedAndNothingIsStored(t *testing.T) {
 			&friesv1.LogFryRunRequest{SpotId: "mock-03", SpotName: strings.Repeat("ñ", 121)},
 			map[string]string{"spot_name": "spot name must be at most 120 characters"},
 		},
+		{
+			// Valid UTF-8, so only the handler stands between it and a failed insert.
+			"a NUL in the name",
+			&friesv1.LogFryRunRequest{SpotId: "mock-03", SpotName: "Night Owl\x00 Fries"},
+			map[string]string{"spot_name": "spot name can't contain line breaks or other control characters"},
+		},
+		{
+			"a line break inside the id",
+			&friesv1.LogFryRunRequest{SpotId: "mock-\n03", SpotName: "Night Owl Fries"},
+			map[string]string{"spot_id": "spot id can't contain line breaks or other control characters"},
+		},
 	}
 	for _, c := range cases {
 		_, err := maya.LogFryRun(t.Context(), connect.NewRequest(c.req))

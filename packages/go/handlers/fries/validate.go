@@ -44,10 +44,11 @@ type listSpotsTags struct {
 	Limit int32  `pfield:"limit" validate:"gte=0"`
 }
 
-// fryRunInput holds a fry run to the checks on app.fry_run: keep the two in step.
+// fryRunInput holds a fry run to the checks on app.fry_run (keep the two in step), and to plain
+// text on one line, which the table cannot hold a NUL against anyway.
 type fryRunInput struct {
-	SpotID   string `pfield:"spot_id" validate:"required,max=256"`
-	SpotName string `pfield:"spot_name" validate:"required,max=120"`
+	SpotID   string `pfield:"spot_id" validate:"required,max=256,plaintext"`
+	SpotName string `pfield:"spot_name" validate:"required,max=120,plaintext"`
 }
 
 // buildListSpots normalizes a ListSpots request, then validates all of it, so the client hears
