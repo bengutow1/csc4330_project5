@@ -37,8 +37,8 @@ func TestFryRunCountIsTheCallersOwn(t *testing.T) {
 }
 
 // TestHallOfFriesWeeksCountsTheFinishedWeeksAPlayerTopped: a week counts once it is over, a shared
-// top counts for both, a run late on Sunday night belongs to that campus week, and the week still
-// running does not count yet.
+// top counts for both, a run late on Sunday night belongs to that campus week, a run just after
+// Monday midnight to the next, and the week still running does not count yet.
 func TestHallOfFriesWeeksCountsTheFinishedWeeksAPlayerTopped(t *testing.T) {
 	t.Parallel()
 	repo := newRepo(t)
@@ -51,8 +51,14 @@ func TestHallOfFriesWeeksCountsTheFinishedWeeksAPlayerTopped(t *testing.T) {
 	// Two weeks ago they share the top.
 	ranOn(t, repo, maya, twoAgo.Add(12*time.Hour))
 	ranOn(t, repo, ben, twoAgo.Add(12*time.Hour))
-	// Last week ben tops it, 2 to 1.
+	// Last week ben tops it, 3 to 1. His run at 00:30 on its Monday is stored on the Sunday before's
+	// late-night meal window, but weeks go by the clock, as points.WeekStart draws them for the
+	// board: it counts for last week, and two weeks ago he and maya still share the top.
 	ranOn(t, repo, ben, lastWeek.Add(12*time.Hour), lastWeek.AddDate(0, 0, 1).Add(12*time.Hour))
+	logFryRun(t, repo, ben.AccountID, repository.FryRun{
+		SpotID: "mock-03", SpotName: "Night Owl Fries",
+		MealDay: lastWeek.AddDate(0, 0, -1), MealWindow: "late_night", At: lastWeek.Add(30 * time.Minute),
+	})
 	ranOn(t, repo, maya, lastWeek.Add(12*time.Hour))
 	// This week maya leads, but it is not over.
 	ranOn(t, repo, maya, thisWeek.Add(12*time.Hour), thisWeek.AddDate(0, 0, 1).Add(12*time.Hour))
