@@ -11,13 +11,14 @@ import {
   type ListSpotsResponse,
   type SpotFilter,
 } from "@fries-in-the-bag/apigen/fries/v1/fries_pb";
+import { ProfileService } from "@fries-in-the-bag/apigen/profile/v1/profile_pb";
 import { keepPreviousData, type QueryClient, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { useSettled } from "../use-settled.ts";
 
-// The services whose queries count fry runs, so a new one stales them: the board's Hall of Fries.
-// The profile (#30) joins it, and useLogFryRun picks each one up from here.
-const FRY_RUN_COUNTERS: readonly DescService[] = [BoardService];
+// The services whose queries count fry runs, so a new one stales them: the board's Hall of Fries
+// and the profile's fry runs and fry ratio. useLogFryRun picks each one up from here.
+const FRY_RUN_COUNTERS: readonly DescService[] = [BoardService, ProfileService];
 
 // How long typing must pause before the words become a request. Each request spends one of the
 // player's ListSpots calls, so a search typed key by key must not spend one a key.
@@ -92,7 +93,7 @@ export function useInvalidateFryRuns() {
 
 /**
  * invalidateFryRuns stales every query that counts fry runs without waiting for them. Those sit on
- * other tabs and refetch behind the write, so a logged run never waits on the board's pages.
+ * other tabs and refetch behind the write, so a logged run never waits on their pages.
  */
 export function invalidateFryRuns(queryClient: QueryClient) {
   for (const schema of FRY_RUN_COUNTERS) {

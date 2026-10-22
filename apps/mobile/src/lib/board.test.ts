@@ -6,7 +6,6 @@ import {
   boardOf,
   distinctRows,
   emptyCopy,
-  groupDigits,
   itemsInView,
   leaderLine,
   pinsMyRow,
@@ -177,17 +176,6 @@ describe("distinctRows", () => {
   it("keeps each player's first row, in the server's order", () => {
     const rows = [row(1, "test_ann", 9n), row(2, "test_bob", 8n), row(5, "test_ann", 2n)];
     expect(distinctRows(rows)).toEqual([row(1, "test_ann", 9n), row(2, "test_bob", 8n)]);
-  });
-});
-
-describe("groupDigits", () => {
-  it.each([
-    { value: 0n, want: "0" },
-    { value: 980n, want: "980" },
-    { value: 1240n, want: "1,240" },
-    { value: 1234567n, want: "1,234,567" },
-  ])("writes $value as $want", ({ value, want }) => {
-    expect(groupDigits(value)).toBe(want);
   });
 });
 

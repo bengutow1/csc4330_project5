@@ -2,6 +2,7 @@ import type { DescService } from "@bufbuild/protobuf";
 import { createConnectQueryKey, skipToken, useMutation, useQuery } from "@connectrpc/connect-query";
 import { BoardService } from "@fries-in-the-bag/apigen/board/v1/board_pb";
 import { CookService } from "@fries-in-the-bag/apigen/cook/v1/cook_pb";
+import { ProfileService } from "@fries-in-the-bag/apigen/profile/v1/profile_pb";
 import { ScanService } from "@fries-in-the-bag/apigen/scan/v1/scan_pb";
 import { type QueryClient, useQueryClient } from "@tanstack/react-query";
 
@@ -12,9 +13,9 @@ const LAST_SCAN_INPUT = {};
 export const SCANS = createConnectQueryKey({ schema: ScanService, cardinality: undefined });
 
 // The other services whose queries read the player's scans, so a new or fixed scan stales them
-// too: the board's Fridge of the Week, and the recipes, which the server makes from a scan's list.
-// The profile (#30) joins it.
-const SCAN_READERS: readonly DescService[] = [BoardService, CookService];
+// too: the board's Fridge of the Week, the recipes, which the server makes from a scan's list, and
+// the profile's best score and badges.
+const SCAN_READERS: readonly DescService[] = [BoardService, CookService, ProfileService];
 const SCAN_READER_KEYS = SCAN_READERS.map((schema) =>
   createConnectQueryKey({ schema, cardinality: undefined }),
 );
@@ -67,7 +68,7 @@ export function useInvalidateScans() {
 
 /**
  * invalidateScanned stales SCANNED, and its promise waits for the scans' own reads alone. The
- * readers refetch behind it, so a verdict never waits on the board's pages, and a fixed list's
+ * readers refetch behind it, so a verdict never waits on another tab's pages, and a fixed list's
  * save never waits on the model writing its new recipes.
  */
 export function invalidateScanned(queryClient: QueryClient) {

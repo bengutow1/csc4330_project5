@@ -2,6 +2,7 @@ import { createConnectQueryKey } from "@connectrpc/connect-query";
 import { Diet } from "@fries-in-the-bag/apigen/account/v1/account_pb";
 import { BoardService } from "@fries-in-the-bag/apigen/board/v1/board_pb";
 import { CookService } from "@fries-in-the-bag/apigen/cook/v1/cook_pb";
+import { ProfileService } from "@fries-in-the-bag/apigen/profile/v1/profile_pb";
 import { MutationObserver, QueryClient, type QueryKey, QueryObserver } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
 import { createApiTransport } from "../transport.ts";
@@ -15,10 +16,16 @@ const SETTLE_MS = 50;
 
 const transport = createApiTransport({ baseUrl: "http://api.test.invalid" });
 
-// Reads that other services make from what a write changed: the board's fridge of the week, and
-// a scan's shelves, whose new recipes after a fixed list come from the model.
+// Reads that other services make from what a write changed: the board's fridge of the week, the Me
+// tab's profile, and a scan's shelves, whose new recipes after a fixed list come from the model.
 const BOARD = createConnectQueryKey({
   schema: BoardService.method.getFridgeOfTheWeek,
+  input: {},
+  transport,
+  cardinality: "finite",
+});
+const PROFILE = createConnectQueryKey({
+  schema: ProfileService.method.getProfile,
   input: {},
   transport,
   cardinality: "finite",
@@ -47,6 +54,9 @@ describe("a write's invalidation", () => {
     { write: "a scan", read: "the board", queryKey: BOARD, invalidate: invalidateScanned },
     { write: "a plate", read: "the board", queryKey: BOARD, invalidate: invalidatePlated },
     { write: "a fry run", read: "the board", queryKey: BOARD, invalidate: invalidateFryRuns },
+    { write: "a scan", read: "the Me tab", queryKey: PROFILE, invalidate: invalidateScanned },
+    { write: "a plate", read: "the Me tab", queryKey: PROFILE, invalidate: invalidatePlated },
+    { write: "a fry run", read: "the Me tab", queryKey: PROFILE, invalidate: invalidateFryRuns },
     {
       write: "a fixed list",
       read: "the shelves",

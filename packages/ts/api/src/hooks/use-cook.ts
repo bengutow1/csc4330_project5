@@ -3,6 +3,7 @@ import { createConnectQueryKey, skipToken, useMutation, useQuery } from "@connec
 import type { Diet, Equipment } from "@fries-in-the-bag/apigen/account/v1/account_pb";
 import { BoardService } from "@fries-in-the-bag/apigen/board/v1/board_pb";
 import { CookService } from "@fries-in-the-bag/apigen/cook/v1/cook_pb";
+import { ProfileService } from "@fries-in-the-bag/apigen/profile/v1/profile_pb";
 import { type QueryClient, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef } from "react";
 
@@ -10,8 +11,8 @@ import { useCallback, useEffect, useRef } from "react";
 export const RECIPES = createConnectQueryKey({ schema: CookService, cardinality: undefined });
 
 // The services whose queries count plates and their points, so a new plate stales them: the
-// board's Chefs. The profile (#30) joins it, and usePlateMeal picks each one up from here.
-const PLATE_COUNTERS: readonly DescService[] = [BoardService];
+// board's Chefs and the profile, and usePlateMeal picks each one up from here.
+const PLATE_COUNTERS: readonly DescService[] = [BoardService, ProfileService];
 
 /** PLATED is the family key of every query a plate changes, one per service that counts plates. */
 export const PLATED = PLATE_COUNTERS.map((schema) =>
@@ -87,7 +88,7 @@ export function recipeInput(recipeId: bigint | undefined) {
  * usePlateMeal sends a photo of the finished dish to be checked and paid. A plate the model did not
  * pass comes back as a receipt that says so, never as an error. A failed send is never retried on
  * its own: each try spends one of the player's checks, so the player taps again. Either way it
- * stales what counts plates, so new points show on the board's next look.
+ * stales what counts plates, so new points show on the board's and the profile's next look.
  */
 export function usePlateMeal() {
   const invalidatePlated = useInvalidatePlated();
@@ -102,7 +103,7 @@ export function useInvalidatePlated() {
 
 /**
  * invalidatePlated stales PLATED without waiting for it. Those queries sit on other tabs and
- * refetch behind the write, so a receipt never waits on the board's pages.
+ * refetch behind the write, so a receipt never waits on their pages.
  */
 export function invalidatePlated(queryClient: QueryClient) {
   for (const queryKey of PLATED) {
