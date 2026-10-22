@@ -1,5 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { type Spot, SpotFilter, useLastScan, useSpots } from "@fries-in-the-bag/api";
+import { type Spot, SpotFilter, useLastScan } from "@fries-in-the-bag/api";
 import { FlashList } from "@shopify/flash-list";
 import { Stack, useRouter } from "expo-router";
 import { type ReactNode, useState } from "react";
@@ -16,13 +16,11 @@ import {
   offAction,
   QUERY_MAX,
   SPOT_CHIPS,
-  STARTING_FILTERS,
-  sendableFilters,
   toggleFilter,
 } from "@/lib/spots";
 import { SpotRow } from "@/screens/fries/spot-row";
 import { SpotSheet } from "@/screens/fries/spot-sheet";
-import { usePlayerPoint } from "@/screens/fries/use-player-point";
+import { useLoadedSpots } from "@/screens/fries/spots-context";
 import { COLORS, RADII, SPACE, TYPE } from "@/theme";
 
 // A row's height while the list loads.
@@ -40,24 +38,22 @@ const NEAREST_ICON = 14;
  * offers the last scan's recipes. A spot opens its sheet.
  */
 export function SpotsScreen() {
-  const place = usePlayerPoint();
-  const [filters, setFilters] = useState<readonly SpotFilter[]>(STARTING_FILTERS);
-  const [query, setQuery] = useState("");
+  const router = useRouter();
+  const {
+    place,
+    filters,
+    setFilters,
+    query,
+    setQuery,
+    hasPoint,
+    searching,
+    sent,
+    spots,
+    pages,
+    list,
+  } = useLoadedSpots();
   const [picked, setPicked] = useState<Spot>();
-  const hasPoint = place.point !== undefined;
-  // With a point the list is "near me"; the search box only shows with location off.
-  const searching = hasPoint || query.trim() !== "";
-  // What the list asks the server, which also says why an empty list is empty.
-  const sent = {
-    at: place.point,
-    query: hasPoint ? "" : query,
-    filters: sendableFilters(filters, hasPoint),
-  };
-  const spots = useSpots(sent);
-  // Asked for as the screen opens, so it is in hand if nothing turns out to be open.
   const lastScanId = useLastScan().data?.verdict?.scanId;
-  const pages = spots.data?.pages ?? [];
-  const list = pages.flatMap((page) => page.spots);
   const nearest = pages[0]?.nearestFries;
 
   let body: ReactNode = null;
@@ -92,6 +88,14 @@ export function SpotsScreen() {
           onLookAgain={place.lookAgain}
           query={query}
           onQuery={setQuery}
+        />
+      ) : null}
+      {searching && list.length > 0 && !spots.isPlaceholderData && !spots.isFetching ? (
+        <Button
+          label="Fry Roulette"
+          icon="shuffle"
+          variant="secondary"
+          onPress={() => router.push("/fries/roulette")}
         />
       ) : null}
       {searching ? (
