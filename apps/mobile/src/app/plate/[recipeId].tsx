@@ -1,5 +1,7 @@
-import { PlaceholderScreen } from "@/screens/placeholder-screen";
+import { useLocalSearchParams } from "expo-router";
+import { PlateScreen } from "@/screens/plate-screen";
 
 export default function PlateRoute() {
-  return <PlaceholderScreen title="Plate it" issue={24} />;
+  const { recipeId } = useLocalSearchParams<{ recipeId: string }>();
+  return <PlateScreen recipeId={recipeId} />;
 }

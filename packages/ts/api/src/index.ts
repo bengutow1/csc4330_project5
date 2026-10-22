@@ -21,7 +21,12 @@ export {
   Range,
   type Row,
 } from "@fries-in-the-bag/apigen/board/v1/board_pb";
-export { type Badge, Difficulty, type Rank } from "@fries-in-the-bag/apigen/cook/v1/cook_pb";
+export {
+  type Badge,
+  Difficulty,
+  PointReason,
+  type Rank,
+} from "@fries-in-the-bag/apigen/cook/v1/cook_pb";
 export { type Spot, SpotFilter } from "@fries-in-the-bag/apigen/fries/v1/fries_pb";
 export type { Plate, Profile } from "@fries-in-the-bag/apigen/profile/v1/profile_pb";
 export { Category, PhotoKind, Tier } from "@fries-in-the-bag/apigen/scan/v1/scan_pb";

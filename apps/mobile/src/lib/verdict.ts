@@ -36,18 +36,6 @@ export function buttonsFor(tier: Tier): { big: Choice; small: Choice } {
   }
 }
 
-/**
- * parseScanId reads a scan's id from its route: a whole number above zero, or undefined for
- * anything else, so the screen never asks the api about a scan that can't exist.
- */
-export function parseScanId(param: string | undefined): bigint | undefined {
-  if (param === undefined || !/^\d+$/.test(param)) {
-    return undefined;
-  }
-  const id = BigInt(param);
-  return id > 0n ? id : undefined;
-}
-
 /** What the verdict screen shows. */
 export type Showing = "not-found" | "error" | "loading" | "verdict";
 
