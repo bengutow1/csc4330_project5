@@ -4,6 +4,7 @@ import {
   useCheckHandle,
   useCreateAccount,
   useCreatingAccount,
+  useSettled,
 } from "@fries-in-the-bag/api";
 import { Stack, useRouter } from "expo-router";
 import { useState } from "react";
@@ -21,7 +22,6 @@ import { BottomBar } from "@/components/bottom-bar";
 import { Button } from "@/components/button";
 import { Header } from "@/components/header";
 import { useSetup } from "@/lib/setup";
-import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { COLORS, RADII, SPACE, TYPE } from "@/theme";
 
 // The food emoji an avatar is picked from. Each is a single emoji to the server's check.
@@ -45,7 +45,7 @@ export function HandleScreen() {
   const setup = useSetup();
   const [handle, setHandle] = useState("");
   const [avatar, setAvatar] = useState<string>(AVATARS[0]);
-  const settled = useDebouncedValue(handle, CHECK_DELAY_MS);
+  const settled = useSettled(handle, CHECK_DELAY_MS);
   const check = useCheckHandle(settled);
   const create = useCreateAccount();
   // Any account still being made, this visit's or one the player backed out of. A second would

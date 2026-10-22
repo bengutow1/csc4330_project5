@@ -11,8 +11,8 @@ import {
   type SpotFilter,
 } from "@fries-in-the-bag/apigen/fries/v1/fries_pb";
 import { keepPreviousData, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { settleAfter } from "../settle.ts";
+import { useCallback } from "react";
+import { useSettled } from "../use-settled.ts";
 
 // The services whose queries count fry runs, so a new one stales them. None does yet: the board
 // (#28) and the profile (#30) join this list, and useLogFryRun picks them up from here.
@@ -70,18 +70,6 @@ export function spotsInput(search: SpotsSearch) {
 /** nextSpotsCursor is the cursor for the page after this one; undefined ends the list. */
 export function nextSpotsCursor(page: ListSpotsResponse) {
   return page.nextCursor === "" ? undefined : page.nextCursor;
-}
-
-/** useSettled is value once it has stopped changing for wait milliseconds. */
-function useSettled<T>(value: T, wait: number) {
-  const [settled, setSettled] = useState(value);
-  // One settler for the hook's life, so each change cancels the one before it.
-  const settler = useMemo(() => settleAfter<T>(wait, setSettled), [wait]);
-  useEffect(() => {
-    settler.push(value);
-  }, [settler, value]);
-  useEffect(() => settler.cancel, [settler]);
-  return settled;
 }
 
 /** useLogFryRun logs that the player went to a spot. It earns no points; it stales what counts fry runs. */
