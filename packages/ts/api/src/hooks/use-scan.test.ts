@@ -7,7 +7,7 @@ import { partialMatchKey } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
 import { createApiTransport } from "../transport.ts";
 import { recipeInput, recipesInput } from "./use-cook.ts";
-import { LIST_EDITED, SCANNED, SCANS, scanInput } from "./use-scan.ts";
+import { SCANNED, SCANS, scanInput } from "./use-scan.ts";
 
 describe("scanInput", () => {
   it("waits until there is a scan to ask about", () => {
@@ -74,31 +74,7 @@ describe("SCANNED", () => {
     expect(SCANNED.some((family) => partialMatchKey(fridge, family))).toBe(true);
   });
 
-  it("leaves the account alone, which a scan does not change", () => {
-    const whoAmI = createConnectQueryKey({
-      schema: AccountService.method.whoAmI,
-      input: {},
-      transport,
-      cardinality: "finite",
-    });
-    expect(SCANNED.some((family) => partialMatchKey(whoAmI, family))).toBe(false);
-  });
-});
-
-describe("LIST_EDITED", () => {
-  // A fixed list makes new recipes. Built as the hooks build their keys, so a family the edit
-  // missed shows here rather than as shelves that still hold the old list's recipes.
-  const transport = createApiTransport({ baseUrl: "http://api.test.invalid" });
-  const stales = (key: ReturnType<typeof createConnectQueryKey>) =>
-    LIST_EDITED.some((family) => partialMatchKey(key, family));
-
-  it("stales the verdict and every recipe read made from its list", () => {
-    const oneScan = createConnectQueryKey({
-      schema: ScanService.method.getScan,
-      input: scanInput(42n),
-      transport,
-      cardinality: "finite",
-    });
+  it("covers every recipe read, since the server makes the recipes from a scan's list", () => {
     const shelves = createConnectQueryKey({
       schema: CookService.method.listRecipes,
       input: recipesInput(42n, { maxMinutes: 10, equipment: [], diet: Diet.NONE }),
@@ -111,18 +87,17 @@ describe("LIST_EDITED", () => {
       transport,
       cardinality: "finite",
     });
-    expect(stales(oneScan)).toBe(true);
-    expect(stales(shelves)).toBe(true);
-    expect(stales(oneRecipe)).toBe(true);
+    expect(SCANNED.some((family) => partialMatchKey(shelves, family))).toBe(true);
+    expect(SCANNED.some((family) => partialMatchKey(oneRecipe, family))).toBe(true);
   });
 
-  it("leaves the account alone", () => {
+  it("leaves the account alone, which a scan does not change", () => {
     const whoAmI = createConnectQueryKey({
       schema: AccountService.method.whoAmI,
       input: {},
       transport,
       cardinality: "finite",
     });
-    expect(stales(whoAmI)).toBe(false);
+    expect(SCANNED.some((family) => partialMatchKey(whoAmI, family))).toBe(false);
   });
 });
