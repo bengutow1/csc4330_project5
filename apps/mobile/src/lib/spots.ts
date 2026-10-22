@@ -109,6 +109,21 @@ export function sendableFilters(on: readonly SpotFilter[], hasPoint: boolean) {
   return hasPoint ? [...on] : on.filter((f) => f !== SpotFilter.WALKABLE);
 }
 
+/** OffAction is what the list's location-off button does. */
+export type OffAction = "look again" | "ask" | "settings";
+
+/**
+ * offAction says what the list's location-off button does: look again when the app may already
+ * look, since then it was the phone that could not tell where it was; ask while the player can
+ * still be asked; and send them to settings once they have said no for good.
+ */
+export function offAction(place: { granted: boolean; canAsk: boolean }): OffAction {
+  if (place.granted) {
+    return "look again";
+  }
+  return place.canAsk ? "ask" : "settings";
+}
+
 /**
  * emptyReason says which empty state an empty list shows: with Open now on, everything near is
  * shut ("Even the fries are closed."); otherwise the chips ruled the rest out.

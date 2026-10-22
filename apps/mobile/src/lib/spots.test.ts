@@ -6,6 +6,7 @@ import {
   distanceText,
   emptyReason,
   metaLine,
+  offAction,
   openLine,
   priceText,
   sendableFilters,
@@ -151,6 +152,21 @@ describe("sendableFilters", () => {
   it("sends Walkable only with a point, since the server refuses it without one", () => {
     expect(sendableFilters(all, true)).toEqual(all);
     expect(sendableFilters(all, false)).toEqual([SpotFilter.OPEN_NOW]);
+  });
+});
+
+describe("offAction", () => {
+  it("looks again when the app may look but the phone could not tell where it was", () => {
+    expect(offAction({ granted: true, canAsk: true })).toBe("look again");
+    expect(offAction({ granted: true, canAsk: false })).toBe("look again");
+  });
+
+  it("asks while the player can still be asked", () => {
+    expect(offAction({ granted: false, canAsk: true })).toBe("ask");
+  });
+
+  it("sends the player to settings once they have said no for good", () => {
+    expect(offAction({ granted: false, canAsk: false })).toBe("settings");
   });
 });
 

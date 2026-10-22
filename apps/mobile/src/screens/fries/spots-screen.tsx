@@ -11,6 +11,8 @@ import { ErrorState } from "@/components/error-state";
 import { Skeleton } from "@/components/skeleton";
 import {
   emptyReason,
+  type OffAction,
+  offAction,
   QUERY_MAX,
   SPOT_CHIPS,
   STARTING_FILTERS,
@@ -84,8 +86,9 @@ export function SpotsScreen() {
     <View style={styles.header}>
       {place.off ? (
         <LocationOff
-          canAsk={place.canAsk}
+          action={offAction(place)}
           onAsk={() => void place.ask()}
+          onLookAgain={place.lookAgain}
           query={query}
           onQuery={setQuery}
         />
@@ -152,8 +155,9 @@ export function SpotsScreen() {
  * turn it on, and a search box that looks by words instead.
  */
 function LocationOff(props: {
-  canAsk: boolean;
+  action: OffAction;
   onAsk: () => void;
+  onLookAgain: () => void;
   query: string;
   onQuery: (query: string) => void;
 }) {
@@ -163,14 +167,19 @@ function LocationOff(props: {
         With your location, the closest food comes first. It's only used for this search, never
         stored.
       </Text>
-      {props.canAsk ? (
-        <Button label="Use my location" variant="secondary" size="small" onPress={props.onAsk} />
-      ) : (
+      {props.action === "settings" ? (
         <Button
           label="Open settings"
           variant="secondary"
           size="small"
           onPress={() => void Linking.openSettings()}
+        />
+      ) : (
+        <Button
+          label="Use my location"
+          variant="secondary"
+          size="small"
+          onPress={props.action === "look again" ? props.onLookAgain : props.onAsk}
         />
       )}
       <TextInput
