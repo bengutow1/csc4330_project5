@@ -54,9 +54,11 @@ func main() {
 		port = "8080"
 	}
 	addr := ":" + port
-	// Read once for every vendor below and the session cookie: "production" makes a missing key
-	// stop the boot and the cookie Secure. Anything else is local dev.
+	// Read once. "production" makes a missing vendor key stop the boot below, and the dev-only
+	// relaxations need an explicit "development" or "local", so an unset or misspelled APP_ENV
+	// runs hardened.
 	appEnv := os.Getenv("APP_ENV")
+	localDev := isLocalDev(appEnv)
 
 	// The vision model. Without a key the API serves the mock's canned fridges, except in
 	// production, where a missing key stops the boot: a real deployment never hands out a fake
@@ -116,14 +118,14 @@ func main() {
 	repo := repository.New(pool)
 
 	// Sessions live in Postgres, and the cookie is the device account's only credential, so it
-	// lasts a year. It is Secure only in production: local dev serves plain http to the simulator
-	// and to phones on the LAN, which would never send a Secure cookie back.
+	// lasts a year. It is Secure everywhere but local dev, which serves plain http to the simulator
+	// and to phones on the LAN, and they would never send a Secure cookie back.
 	sessionStore := pgxstore.New(pool)
 	defer sessionStore.StopCleanup()
 	sessions := scs.New()
 	sessions.Store = sessionStore
 	sessions.Lifetime = auth.Lifetime
-	sessions.Cookie.Secure = appEnv == "production"
+	sessions.Cookie.Secure = !localDev
 	sessions.Cookie.SameSite = http.SameSiteLaxMode
 	authn := auth.New(sessions, repo)
 
@@ -181,4 +183,10 @@ func main() {
 	if err != nil {
 		_ = srv.Close() // the drain timed out; drop what is left
 	}
+}
+
+// isLocalDev says whether APP_ENV opts into the dev-only relaxations. Only the two exact words do,
+// so a deployment that forgot APP_ENV, or misspelled it, still runs hardened.
+func isLocalDev(appEnv string) bool {
+	return appEnv == "development" || appEnv == "local"
 }

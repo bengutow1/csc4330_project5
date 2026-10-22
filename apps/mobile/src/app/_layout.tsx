@@ -7,10 +7,11 @@ import {
   useWhoAmI,
 } from "@fries-in-the-bag/api";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
+import { Stack, useSegments } from "expo-router";
 import { useMemo } from "react";
 import { AppState } from "react-native";
 import { API_URL } from "@/lib/api-url";
+import { launchCoverShows } from "@/lib/launch";
 import { LaunchCover } from "@/screens/launch-cover";
 import { COLORS, FONTS } from "@/theme";
 
@@ -38,12 +39,17 @@ export default function RootLayout() {
  */
 function RootStack() {
   const whoAmI = useWhoAmI();
+  const [route] = useSegments();
   // A failed refetch keeps the account it had, so a dropped connection signs nobody out. A dead
   // session does: the query client resets WhoAmI when any call comes back unauthenticated.
   const signedIn = whoAmI.data !== undefined;
   // Only the server saying "no session" means onboarding. Still asking, or never reaching it, is
-  // neither answer, so the cover stays up.
-  const unsure = !signedIn && !isUnauthenticated(whoAmI.error);
+  // neither answer, so the cover stays up over the guarded routes.
+  const covered = launchCoverShows({
+    signedIn,
+    noSession: isUnauthenticated(whoAmI.error),
+    route,
+  });
 
   return (
     <>
@@ -62,7 +68,8 @@ function RootStack() {
           <Stack.Screen name="onboarding/handle" />
           <Stack.Screen name="onboarding/kitchen" />
         </Stack.Protected>
-        {/* Every route that needs an account. A route left out of this list is open to anyone. */}
+        {/* Every route that needs an account. A route in neither list is open to anyone, and goes
+            in OPEN_ROUTES (src/lib/launch.ts) so the launch cover leaves it alone. */}
         <Stack.Protected guard={signedIn}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="scan/[id]" />
@@ -74,7 +81,7 @@ function RootStack() {
           <Stack.Screen name="settings" />
         </Stack.Protected>
       </Stack>
-      {unsure ? (
+      {covered ? (
         <LaunchCover
           failed={whoAmI.isError}
           retrying={whoAmI.isFetching}

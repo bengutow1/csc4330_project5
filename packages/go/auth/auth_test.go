@@ -73,6 +73,54 @@ func TestSignInNeverKeepsATokenFromBeforeIt(t *testing.T) {
 	}
 }
 
+// TestSignInSavesTheSessionBeforeItReturns: a caller that wrote something for the sign-in (the
+// account CreateAccount just made) has to hear of a failed save while it can still undo it, not
+// after the response has gone out.
+func TestSignInSavesTheSessionBeforeItReturns(t *testing.T) {
+	t.Parallel()
+	pool := newPool(t)
+	repo := repository.New(pool)
+	sessions := newSessions(pool)
+	a := auth.New(sessions, repo)
+	maya := createAccount(t, repo, "test_maya")
+	ctx := request(t, sessions, "")
+
+	err := a.SignIn(ctx, maya.AccountID)
+
+	if err != nil {
+		t.Fatalf("sign in: %v", err)
+	}
+	// No commit here, so the next request finds the session only if SignIn saved it.
+	got, err := a.CurrentAccount(request(t, sessions, sessions.Token(ctx)))
+	if err != nil {
+		t.Fatalf("current account on the next request: %v", err)
+	}
+	if got.AccountID != maya.AccountID {
+		t.Errorf("current account = %d, want %d", got.AccountID, maya.AccountID)
+	}
+}
+
+// TestSignInFailsWhenTheSessionCannotBeSaved: the failed save is the caller's cue to undo, so it
+// has to come back as an error.
+func TestSignInFailsWhenTheSessionCannotBeSaved(t *testing.T) {
+	t.Parallel()
+	pool := newPool(t)
+	repo := repository.New(pool)
+	sessions := newSessions(pool)
+	a := auth.New(sessions, repo)
+	maya := createAccount(t, repo, "test_maya")
+	_, err := pool.Exec(t.Context(), `drop table sessions`)
+	if err != nil {
+		t.Fatalf("drop sessions: %v", err)
+	}
+
+	err = a.SignIn(request(t, sessions, ""), maya.AccountID)
+
+	if err == nil {
+		t.Fatal("sign in reported success with no session saved")
+	}
+}
+
 // TestASessionWhoseAccountIsGoneIsNotAuthenticated: a deleted account has to land on the next
 // request as signed out, not as an internal error.
 func TestASessionWhoseAccountIsGoneIsNotAuthenticated(t *testing.T) {

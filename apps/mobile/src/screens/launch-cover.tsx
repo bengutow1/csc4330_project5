@@ -2,7 +2,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-nati
 import { COLORS, RADII, SPACE, TYPE } from "@/theme";
 
 /**
- * LaunchCover sits over every route until the app knows whose phone this is, so a returning
+ * LaunchCover sits over the guarded routes until the app knows whose phone this is, so a returning
  * player never sees onboarding flash past. When the server can't be reached it says so, rather
  * than reading the silence as "no account" and offering to make a second one.
  */
