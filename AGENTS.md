@@ -5,14 +5,17 @@ If there isn't one, it tells you to put the fries in the bag and finds food near
 points on a campus leaderboard, and Combo mode lets two friends merge their fridges to cook
 together. `apps/` holds deployables, `packages/` holds shared code.
 
-Status: device accounts and scans, and nothing to cook yet. The API serves the health probes,
-`AccountService` (make a device account, check a handle, who am I, save the kitchen) and
-`ScanService` (judge a kitchen's photos with the vision mock, read a verdict, fix its list), with
+Status: device accounts, scans, cooking for points and spots nearby. The API serves the health
+probes, `AccountService` (make a device account, check a handle, who am I, save the kitchen),
+`ScanService` (judge a kitchen's photos with the vision mock, read a verdict, fix its list),
+`CookService` (a scan's recipes on two shelves, one recipe, and a plate the mock checks, paid in
+points on a receipt) and `FriesService` (spots nearby from the places mock, and fry runs), with
 sessions in Postgres. The Go packages hold what every feature builds on (the error boundary,
 validation, the gate, the limiter, the session, the repository, logging), and the schema holds the
-`app` schema, its shared trigger, `app.account`, the sessions table and `app.scan` with its items:
-copy their shape. `packages/ts/api` holds the transport, the query client, the foreground refetch,
-error decoding and the health, account and scan hooks.
+`app` schema, its shared trigger, `app.account`, the sessions table, `app.scan` with its items, the
+recipes, the plates with their points ledger, and the fry runs: copy their shape.
+`packages/ts/api` holds the transport, the query client, the foreground refetch, error decoding
+and the health, account, scan, cook and fries hooks.
 `apps/mobile` is the shell: a first launch goes through onboarding (welcome, handle and avatar,
 kitchen), then three tabs and a placeholder for every other Core route, with `/status` wired to
 the API end to end. Each issue builds its screen from the design in `docs/design.md`.
