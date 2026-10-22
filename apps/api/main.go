@@ -27,12 +27,14 @@ import (
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/cook/v1/cookv1connect"
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/fries/v1/friesv1connect"
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/health/v1/healthv1connect"
+	"github.com/bengutow1/csc4330_project5/packages/go/apigen/profile/v1/profilev1connect"
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/scan/v1/scanv1connect"
 	"github.com/bengutow1/csc4330_project5/packages/go/auth"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/account"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/cook"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/fries"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/healthz"
+	"github.com/bengutow1/csc4330_project5/packages/go/handlers/profile"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/scan"
 	"github.com/bengutow1/csc4330_project5/packages/go/logging"
 	"github.com/bengutow1/csc4330_project5/packages/go/places"
@@ -160,6 +162,7 @@ func main() {
 		Limits: fries.DefaultLimits(),
 		Log:    log,
 	})
+	profileSvc := profile.NewProfile(profile.Config{Repo: repo, Auth: authn, Log: log})
 
 	// Every service reads request bodies under the same cap.
 	readCap := connect.WithReadMaxBytes(4 << 20)
@@ -174,6 +177,7 @@ func main() {
 	r.Mount(scanv1connect.NewScanServiceHandler(scanSvc, readCap))
 	r.Mount(cookv1connect.NewCookServiceHandler(cookSvc, readCap))
 	r.Mount(friesv1connect.NewFriesServiceHandler(friesSvc, readCap))
+	r.Mount(profilev1connect.NewProfileServiceHandler(profileSvc, readCap))
 
 	srv := &http.Server{
 		Addr:              addr,

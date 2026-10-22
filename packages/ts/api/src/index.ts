@@ -15,8 +15,9 @@ export {
   Staple,
 } from "@fries-in-the-bag/apigen/account/v1/account_pb";
 // The wire's types and enums that screens render, re-exported by name.
-export { Difficulty } from "@fries-in-the-bag/apigen/cook/v1/cook_pb";
+export { type Badge, Difficulty, type Rank } from "@fries-in-the-bag/apigen/cook/v1/cook_pb";
 export { type Spot, SpotFilter } from "@fries-in-the-bag/apigen/fries/v1/fries_pb";
+export type { Plate, Profile } from "@fries-in-the-bag/apigen/profile/v1/profile_pb";
 export { Tier } from "@fries-in-the-bag/apigen/scan/v1/scan_pb";
 export {
   errorMessage,
@@ -48,6 +49,7 @@ export {
   useSpots,
 } from "./hooks/use-fries.ts";
 export { useReady } from "./hooks/use-health.ts";
+export { useInvalidateProfile, usePlates, useProfile } from "./hooks/use-profile.ts";
 export {
   useCreateScan,
   useEditIngredients,

@@ -1,11 +1,13 @@
 import { createConnectQueryKey, skipToken } from "@connectrpc/connect-query";
 import { Diet, Equipment } from "@fries-in-the-bag/apigen/account/v1/account_pb";
 import { CookService } from "@fries-in-the-bag/apigen/cook/v1/cook_pb";
+import { ProfileService } from "@fries-in-the-bag/apigen/profile/v1/profile_pb";
 import { ScanService } from "@fries-in-the-bag/apigen/scan/v1/scan_pb";
 import { partialMatchKey } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
 import { createApiTransport } from "../transport.ts";
 import {
+  PLATED,
   RECIPES,
   type RecipeFilters,
   recipeInput,
@@ -101,5 +103,37 @@ describe("RECIPES", () => {
       cardinality: "finite",
     });
     expect(partialMatchKey(lastScan, RECIPES)).toBe(false);
+  });
+});
+
+describe("PLATED", () => {
+  const transport = createApiTransport({ baseUrl: "http://api.test.invalid" });
+
+  it("covers the profile and every page of its plates, so a new plate shows on the Me tab", () => {
+    const profile = createConnectQueryKey({
+      schema: ProfileService.method.getProfile,
+      input: {},
+      transport,
+      cardinality: "finite",
+    });
+    const plates = createConnectQueryKey({
+      schema: ProfileService.method.listPlates,
+      input: { cursor: "" },
+      transport,
+      cardinality: "infinite",
+      pageParamKey: "cursor",
+    });
+    expect(PLATED.some((family) => partialMatchKey(profile, family))).toBe(true);
+    expect(PLATED.some((family) => partialMatchKey(plates, family))).toBe(true);
+  });
+
+  it("leaves the recipes alone, which a plate does not change", () => {
+    const shelves = createConnectQueryKey({
+      schema: CookService.method.listRecipes,
+      input: recipesInput(42n, ANY),
+      transport,
+      cardinality: "finite",
+    });
+    expect(PLATED.some((family) => partialMatchKey(shelves, family))).toBe(false);
   });
 });

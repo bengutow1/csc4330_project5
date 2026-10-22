@@ -1,11 +1,22 @@
+import type { DescService } from "@bufbuild/protobuf";
 import { createConnectQueryKey, skipToken, useMutation, useQuery } from "@connectrpc/connect-query";
 import type { Diet, Equipment } from "@fries-in-the-bag/apigen/account/v1/account_pb";
 import { CookService } from "@fries-in-the-bag/apigen/cook/v1/cook_pb";
+import { ProfileService } from "@fries-in-the-bag/apigen/profile/v1/profile_pb";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 /** RECIPES is every recipe read, finite or infinite: the one key the cook family invalidates. */
 export const RECIPES = createConnectQueryKey({ schema: CookService, cardinality: undefined });
+
+// The services whose queries count plates and their points, so a new plate stales them: the
+// profile. The board's Chefs (#28) joins it, and usePlateMeal picks each one up from here.
+const PLATE_COUNTERS: readonly DescService[] = [ProfileService];
+
+/** PLATED is the family key of every query a plate changes, one per service that counts plates. */
+export const PLATED = PLATE_COUNTERS.map((schema) =>
+  createConnectQueryKey({ schema, cardinality: undefined }),
+);
 
 /** RecipeFilters are the chips over the shelves. The server applies every one of them. */
 export type RecipeFilters = {
@@ -75,11 +86,21 @@ export function recipeInput(recipeId: bigint | undefined) {
 /**
  * usePlateMeal sends a photo of the finished dish to be checked and paid. A plate the model did not
  * pass comes back as a receipt that says so, never as an error. A failed send is never retried on
- * its own: each try spends one of the player's checks, so the player taps again. Nothing a plate
- * changes is read yet; the profile and the board (#28, #30) widen its onSettled when they land.
+ * its own: each try spends one of the player's checks, so the player taps again. Either way it
+ * stales what counts plates, so new points show on the profile's next look.
  */
 export function usePlateMeal() {
-  return useMutation(CookService.method.plateMeal);
+  const invalidatePlated = useInvalidatePlated();
+  return useMutation(CookService.method.plateMeal, { onSettled: () => invalidatePlated() });
+}
+
+/** useInvalidatePlated stales every query that counts plates or their points (PLATED). */
+export function useInvalidatePlated() {
+  const queryClient = useQueryClient();
+  return useCallback(
+    () => Promise.all(PLATED.map((queryKey) => queryClient.invalidateQueries({ queryKey }))),
+    [queryClient],
+  );
 }
 
 /**

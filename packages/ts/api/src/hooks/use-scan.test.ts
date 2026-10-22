@@ -1,10 +1,11 @@
 import { createConnectQueryKey, skipToken } from "@connectrpc/connect-query";
 import { AccountService } from "@fries-in-the-bag/apigen/account/v1/account_pb";
+import { ProfileService } from "@fries-in-the-bag/apigen/profile/v1/profile_pb";
 import { ScanService } from "@fries-in-the-bag/apigen/scan/v1/scan_pb";
 import { partialMatchKey } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
 import { createApiTransport } from "../transport.ts";
-import { SCANS, scanInput } from "./use-scan.ts";
+import { SCANNED, SCANS, scanInput } from "./use-scan.ts";
 
 describe("scanInput", () => {
   it("waits until there is a scan to ask about", () => {
@@ -48,5 +49,36 @@ describe("SCANS", () => {
       cardinality: "finite",
     });
     expect(keyOf(whoAmI)).toBe(false);
+  });
+});
+
+describe("SCANNED", () => {
+  const transport = createApiTransport({ baseUrl: "http://api.test.invalid" });
+
+  it("covers the scans and the profile, whose best score and badges a new scan can change", () => {
+    const lastScan = createConnectQueryKey({
+      schema: ScanService.method.getLastScan,
+      input: {},
+      transport,
+      cardinality: "finite",
+    });
+    const profile = createConnectQueryKey({
+      schema: ProfileService.method.getProfile,
+      input: {},
+      transport,
+      cardinality: "finite",
+    });
+    expect(SCANNED.some((family) => partialMatchKey(lastScan, family))).toBe(true);
+    expect(SCANNED.some((family) => partialMatchKey(profile, family))).toBe(true);
+  });
+
+  it("leaves the account alone, which a scan does not change", () => {
+    const whoAmI = createConnectQueryKey({
+      schema: AccountService.method.whoAmI,
+      input: {},
+      transport,
+      cardinality: "finite",
+    });
+    expect(SCANNED.some((family) => partialMatchKey(whoAmI, family))).toBe(false);
   });
 });

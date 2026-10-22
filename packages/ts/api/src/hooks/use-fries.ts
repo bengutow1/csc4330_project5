@@ -10,13 +10,14 @@ import {
   type ListSpotsResponse,
   type SpotFilter,
 } from "@fries-in-the-bag/apigen/fries/v1/fries_pb";
+import { ProfileService } from "@fries-in-the-bag/apigen/profile/v1/profile_pb";
 import { keepPreviousData, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { useSettled } from "../use-settled.ts";
 
-// The services whose queries count fry runs, so a new one stales them. None does yet: the board
-// (#28) and the profile (#30) join this list, and useLogFryRun picks them up from here.
-const FRY_RUN_COUNTERS: readonly DescService[] = [];
+// The services whose queries count fry runs, so a new one stales them: the profile's fry runs and
+// fry ratio. The board's Hall of Fries (#28) joins it, and useLogFryRun picks each one up from here.
+const FRY_RUN_COUNTERS: readonly DescService[] = [ProfileService];
 
 // How long typing must pause before the words become a request. Each request spends one of the
 // player's ListSpots calls, so a search typed key by key must not spend one a key.

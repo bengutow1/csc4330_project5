@@ -54,3 +54,42 @@ func (r *Repository) LogFryRun(ctx context.Context, accountID int64, run FryRun)
 	}
 	return id, nil
 }
+
+// FryRunCount is how many fry runs accountID has logged, all time.
+func (r *Repository) FryRunCount(ctx context.Context, accountID int64) (int, error) {
+	var n int
+	err := r.db.QueryRow(ctx, `
+		select count(*)
+		  from app.fry_run f
+		 where f.account_id = $1`, accountID).Scan(&n)
+	if err != nil {
+		return 0, known(fmt.Sprintf("fry run count account=%d", accountID), err)
+	}
+	return n, nil
+}
+
+// HallOfFriesWeeks is how many finished weeks accountID ended on top of the Hall of Fries: the
+// weeks before before, each drawn Monday 00:00 to Monday 00:00 in campus, the zone the board's
+// weeks run on. A shared top counts for everyone on it. It reads across accounts, as the board
+// does, because topping a week is a comparison.
+func (r *Repository) HallOfFriesWeeks(ctx context.Context, accountID int64, before time.Time, campus *time.Location) (int, error) {
+	var n int
+	err := r.db.QueryRow(ctx, `
+		  with weekly as (
+		select f.account_id, date_trunc('week', f.created_at at time zone $3) as week, count(*) as runs
+		  from app.fry_run f
+		 where f.created_at < $2
+		 group by f.account_id, week
+		), ranked as (
+		select w.account_id, rank() over (partition by w.week order by w.runs desc) as rank
+		  from weekly w
+		)
+		select count(*)
+		  from ranked r
+		 where r.account_id = $1
+		   and r.rank = 1`, accountID, before, campus.String()).Scan(&n)
+	if err != nil {
+		return 0, known(fmt.Sprintf("hall of fries weeks account=%d", accountID), err)
+	}
+	return n, nil
+}
