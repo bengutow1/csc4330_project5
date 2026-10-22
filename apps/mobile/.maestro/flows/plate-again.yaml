@@ -1,0 +1,26 @@
+# A second plate in one meal window: the check passes, the window's one cook credit is spent, and
+# the api refuses it. No photo would do better, so the screen offers Done and no Try again. Start
+# the api with VISION_MOCK=scrappy and no VISION_MOCK_PLATE (VISION_MOCK=scrappy moon run api:dev).
+# Needs the app installed (moon run mobile:ios), Metro (moon run mobile:dev) and #22's recipe
+# screens.
+appId: com.cadenlund.friesinthebag
+---
+- launchApp:
+    clearState: true
+- runFlow: subflows/sign-up.yaml
+- runFlow: subflows/judge-sample.yaml
+- runFlow: subflows/open-plate.yaml
+- tapOn: "Use a sample photo"
+- extendedWaitUntil:
+    visible: "Total, \\+160"
+    timeout: 15000
+- tapOn: "Done"
+- runFlow: subflows/judge-sample.yaml
+- runFlow: subflows/open-plate.yaml
+- tapOn: "Use a sample photo"
+- extendedWaitUntil:
+    visible: "you already cooked this meal window"
+    timeout: 15000
+- assertNotVisible: "Try again"
+- tapOn: "Done"
+- assertVisible: "See what you have. Cook something great."
