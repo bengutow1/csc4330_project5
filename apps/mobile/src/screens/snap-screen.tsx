@@ -14,9 +14,9 @@ import { PillToggle } from "@/components/pill-toggle";
 import type { Size } from "@/lib/photo";
 import {
   addShot,
+  isFull,
   KINDS,
   kindLabel,
-  MAX_SHOTS,
   removeShot,
   type Shot,
   type ShotKind,
@@ -110,6 +110,8 @@ export function SnapScreen() {
     );
   }, [asked, saving, lost, shots, create, router]);
 
+  // Photos still saving count toward the three, or a fourth would be taken and then dropped.
+  const full = asked || isFull(shots.length, saving);
   const invalid = fieldErrors(create.error);
   const failure = create.isError
     ? (invalid.photos ?? (isUnreachable(create.error) ? NO_CONNECTION : errorMessage(create.error)))
@@ -132,9 +134,9 @@ export function SnapScreen() {
         <Camera
           why={WHY}
           onShot={fromCamera}
-          full={asked || shots.length >= MAX_SHOTS}
+          full={full}
           beside={
-            SAMPLE_PHOTO && !asked ? (
+            SAMPLE_PHOTO && !full ? (
               <IconButton icon="image-outline" label="Use a sample photo" onPress={fromSample} />
             ) : null
           }
