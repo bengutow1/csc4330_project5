@@ -99,8 +99,8 @@ Every table that references `app.account` declares `on delete cascade`, so delet
 
 ## Routes
 
-Issue #4 creates every Core route as a placeholder, so any screen can link to any other before it is
-built. Each owner replaces their own placeholder.
+Issue #4 created every Core route as a placeholder, so any screen could link to any other before it
+was built, and each owner replaced their own with its screen.
 
 | Route under `src/app/` | Screen | Issue |
 | --- | --- | --- |
