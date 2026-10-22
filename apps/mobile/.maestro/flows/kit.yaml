@@ -138,6 +138,11 @@ appId: com.cadenlund.friesinthebag
     element: "Looks like Creamy Tomato Pasta"
 - assertVisible: "Looks like Creamy Tomato Pasta"
 
+# Stickers, leaning opposite ways
+- scrollUntilVisible:
+    element: "Underdog badge\\. Cook from a fridge that scored under 35"
+- assertVisible: "On the Board badge\\. Earn your first points"
+
 # Tier pills, one for each tier. Each says it is a tier, so the last is not the logo.
 - scrollUntilVisible:
     element: "Fries in the Bag tier"

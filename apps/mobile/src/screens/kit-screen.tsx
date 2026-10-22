@@ -20,6 +20,7 @@ import { PointsBreakdown, type PointsLine } from "@/components/points-breakdown"
 import { SegmentedControl } from "@/components/segmented-control";
 import { Sheet } from "@/components/sheet";
 import { Skeleton } from "@/components/skeleton";
+import { Sticker } from "@/components/sticker";
 import { TierPill } from "@/components/tier-pill";
 import { UnderlineTabs } from "@/components/underline-tabs";
 import { COLORS, RADII, SPACE, TYPE } from "@/theme";
@@ -333,6 +334,13 @@ export function KitScreen() {
         <CheckPill label="Looks like Creamy Tomato Pasta" />
       </Section>
 
+      <Section title="Stickers">
+        <View style={styles.stickers}>
+          <Sticker name="On the Board" line="Earn your first points" lean="left" />
+          <Sticker name="Underdog" line="Cook from a fridge that scored under 35" lean="right" />
+        </View>
+      </Section>
+
       {/* The pieces that move. Play again mounts them afresh, so the landing, the count and the
           print run once more. */}
       <View key={plays} style={styles.moving}>
@@ -417,6 +425,7 @@ const styles = StyleSheet.create({
   skeletonRow: { flexDirection: "row", alignItems: "center", gap: SPACE.md },
   skeletonLines: { flex: 1, gap: SPACE.sm },
   moving: { gap: SPACE.xxl },
+  stickers: { flexDirection: "row", justifyContent: "space-around", gap: SPACE.lg },
   counts: { flexDirection: "row", justifyContent: "space-around" },
   count: { alignItems: "center", gap: SPACE.xs },
   hero: { ...TYPE.hero, color: COLORS.ink },

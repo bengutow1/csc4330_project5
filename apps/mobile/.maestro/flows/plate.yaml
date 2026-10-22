@@ -1,0 +1,33 @@
+# Plating a recipe pays on a receipt: what the check saw, each award, the total, the streak, a new
+# badge and the rank. Start the api with VISION_MOCK=scrappy and no VISION_MOCK_PLATE
+# (VISION_MOCK=scrappy moon run api:dev), so the receipt carries Scrappy's bonus. Needs the app
+# installed (moon run mobile:ios), Metro (moon run mobile:dev) and #22's recipe screens.
+#
+# Checking lasts only as long as the call (the mock takes 2 s), and Maestro's wait for the screen
+# to settle after a tap can outlast it. So the flow waits for the receipt, never the pending line.
+# The sample is cut a little differently each time, so the api never sees the same plate twice.
+appId: com.cadenlund.friesinthebag
+---
+- launchApp:
+    clearState: true
+- runFlow: subflows/sign-up.yaml
+- runFlow: subflows/judge-sample.yaml
+- runFlow: subflows/open-plate.yaml
+- tapOn: "Use a sample photo"
+# The total prints last, under every award.
+- extendedWaitUntil:
+    visible: "Total, \\+160"
+    timeout: 15000
+- assertVisible: "Looks like Spicy Pea Ramen"
+- assertVisible: "\\+160"
+- assertVisible: "Home-cooked meal, \\+100"
+- assertVisible: "Scrappy bonus, \\+50"
+- assertVisible: "1-day streak, \\+10"
+# A new player's first points earn a badge, and 160 leaves them a Fry Cook.
+- scrollUntilVisible:
+    element: "On the Board badge\\. Earn your first points"
+- scrollUntilVisible:
+    element: "340 points to Line Cook"
+- assertVisible: "Fry Cook"
+- tapOn: "Done"
+- assertVisible: "See what you have. Cook something great."

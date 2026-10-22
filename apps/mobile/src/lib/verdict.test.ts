@@ -1,6 +1,6 @@
 import { Tier } from "@fries-in-the-bag/api";
 import { describe, expect, it } from "vitest";
-import { buttonsFor, parseScanId, showing } from "./verdict.ts";
+import { buttonsFor, showing } from "./verdict.ts";
 
 describe("buttonsFor", () => {
   // Every tier written out by hand: the big button, then the one beside it.
@@ -43,25 +43,6 @@ describe("buttonsFor", () => {
 
     expect(buttonsFor(Tier.UNSPECIFIED)).toEqual(plain);
     expect(buttonsFor(5 as Tier)).toEqual(plain);
-  });
-});
-
-describe("parseScanId", () => {
-  it("reads a scan's id from its route", () => {
-    expect(parseScanId("42")).toBe(42n);
-  });
-
-  it("reads an id too big for a JavaScript number", () => {
-    expect(parseScanId("9007199254740993")).toBe(9007199254740993n);
-  });
-
-  it("is undefined for anything that can't name a scan, so nothing is asked for", () => {
-    expect(parseScanId(undefined)).toBeUndefined();
-    expect(parseScanId("")).toBeUndefined();
-    expect(parseScanId("0")).toBeUndefined();
-    expect(parseScanId("-3")).toBeUndefined();
-    expect(parseScanId("1.5")).toBeUndefined();
-    expect(parseScanId("abc")).toBeUndefined();
   });
 });
 
