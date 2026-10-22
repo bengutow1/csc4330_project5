@@ -17,7 +17,18 @@ var (
 	ErrNotFound = errors.New("not found")
 	// ErrDuplicate fires when a unique constraint refuses a write.
 	ErrDuplicate = errors.New("already exists")
+	// ErrPlateSeen fires when a plate's photo has been plated before, by anyone.
+	ErrPlateSeen = errors.New("we've seen this plate before")
+	// ErrMealWindowCooked fires when the player already has this meal window's cook credit.
+	ErrMealWindowCooked = errors.New("you already cooked this meal window")
 )
+
+// uniqueRefusals are the unique constraints whose refusal the player reads in words of its own,
+// rather than as ErrDuplicate.
+var uniqueRefusals = map[string]error{
+	"plate_photo_sha256_key":                 ErrPlateSeen,
+	"point_event_account_id_meal_window_key": ErrMealWindowCooked,
+}
 
 // known folds driver errors into the sentinels above and wraps everything else. op carries the
 // ids for the server log; it never reaches a caller.
@@ -27,7 +38,11 @@ func known(op string, err error) error {
 	}
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == "23505" { // unique_violation
-		return fmt.Errorf("%s (%s): %w", op, pgErr.ConstraintName, ErrDuplicate)
+		refusal, ok := uniqueRefusals[pgErr.ConstraintName]
+		if !ok {
+			refusal = ErrDuplicate
+		}
+		return fmt.Errorf("%s (%s): %w", op, pgErr.ConstraintName, refusal)
 	}
 	return fmt.Errorf("%s: %w", op, err)
 }
