@@ -1,8 +1,7 @@
 # A signed-in player starts on Snap, and each tab switches to its own screen. Assertions use a line
-# only that tab shows (Snap's tagline, the Board placeholder's issue line, a new player's empty
-# plates on Me), because the tab labels stay visible whichever tab is open. Me waits for the
-# profile to load. Needs the app installed (moon run mobile:ios), Metro (moon run mobile:dev) and
-# the api (moon run api:dev).
+# only that tab shows (Snap's tagline, the board's title, a new player's empty plates on Me),
+# because the tab labels stay visible whichever tab is open. Me waits for the profile to load. Needs
+# the app installed (moon run mobile:ios), Metro (moon run mobile:dev) and the api (moon run api:dev).
 appId: com.cadenlund.friesinthebag
 ---
 - launchApp:
@@ -10,7 +9,7 @@ appId: com.cadenlund.friesinthebag
 - runFlow: subflows/sign-up.yaml
 - assertVisible: "See what you have. Cook something great."
 - tapOn: "Board"
-- assertVisible: "Coming in #29."
+- assertVisible: "Leaderboard"
 - tapOn: "Me"
 - extendedWaitUntil:
     visible: "No plates yet."
