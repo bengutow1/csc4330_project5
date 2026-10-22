@@ -181,8 +181,10 @@ describe("emptyReason", () => {
     expect(emptyReason([SpotFilter.OPEN_NOW, SpotFilter.WALKABLE], "")).toBe("filtered");
   });
 
-  it("blames the chips when typed words narrow the list too", () => {
-    expect(emptyReason([SpotFilter.OPEN_NOW], "sushi")).toBe("filtered");
+  it("blames the search when typed words narrowed the list, chips or not", () => {
+    expect(emptyReason([SpotFilter.OPEN_NOW], "sushi")).toBe("searched");
+    expect(emptyReason([SpotFilter.CHEAP], "sushi")).toBe("searched");
+    expect(emptyReason([], "sushi")).toBe("searched");
   });
 
   it("blames the chips without Open now", () => {
