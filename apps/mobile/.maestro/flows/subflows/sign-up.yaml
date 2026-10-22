@@ -12,4 +12,4 @@ appId: com.cadenlund.friesinthebag
 - tapOn: "Next"
 - assertVisible: "Your kitchen"
 - tapOn: "Save my kitchen"
-- assertVisible: "Coming in #18."
+- assertVisible: "See what you have. Cook something great."

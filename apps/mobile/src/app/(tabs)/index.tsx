@@ -1,5 +1,5 @@
-import { PlaceholderScreen } from "@/screens/placeholder-screen";
+import { SnapScreen } from "@/screens/snap-screen";
 
 export default function SnapRoute() {
-  return <PlaceholderScreen title="Snap" issue={18} />;
+  return <SnapScreen />;
 }

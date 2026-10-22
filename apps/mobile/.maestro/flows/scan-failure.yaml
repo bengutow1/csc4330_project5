@@ -1,0 +1,17 @@
+# A scan the server can't judge keeps its photos, says why and offers Try again. Needs the app
+# installed (moon run mobile:ios), Metro (moon run mobile:dev) and the api started with
+# VISION_MOCK=error (VISION_MOCK=error moon run api:dev), which fails every scan as if the model
+# were down.
+appId: com.cadenlund.friesinthebag
+---
+- launchApp:
+    clearState: true
+- runFlow: subflows/sign-up.yaml
+- tapOn: "Use a sample photo"
+- assertVisible: "Photo 1, Fridge"
+- tapOn: "Judge my fridge"
+- extendedWaitUntil:
+    visible: "Something went wrong. Try again."
+    timeout: 15000
+- assertVisible: "Photo 1, Fridge"
+- assertVisible: "Try again"
