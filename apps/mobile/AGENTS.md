@@ -13,7 +13,8 @@ it. A route meant for anyone also goes in `OPEN_ROUTES` (`src/lib/launch.ts`), o
 hides it until the server answers. The tabs are Snap (the camera), Board and Me, with the verdict,
 cooking, Fries mode and Combo as flows over them, and every Core route in `docs/contracts.md` not
 built yet mounts `PlaceholderScreen`, which names the issue that builds it. Each issue replaces its
-route's mount with a screen from the design (`docs/design.md`). `src/app/status.tsx` (open it with
+route's mount with a screen from the design (`docs/design.md`). Settings (P3, `src/app/settings.tsx`)
+opens from the gear on the Me tab and reuses O3's `KitchenForm`. `src/app/status.tsx` (open it with
 `friesinthebag://status`) asks the API whether it can serve, with or without an account.
 
 ## Running it
