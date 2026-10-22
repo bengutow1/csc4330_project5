@@ -9,7 +9,8 @@ export type Point = { lat: number; lng: number };
  * usePlayerPoint is where the phone is, once the player has let the app look. It never asks by
  * itself: ask() shows the prompt, which the fries moment calls when the player taps Find food. A
  * phone that cannot fix its place (location services off) counts as off, so the screen offers the
- * search box. The point stays on the phone except for the one ListSpots call that uses it.
+ * search box, and lookAgain tries again (after the player turns location services back on). The
+ * point stays on the phone except for the one ListSpots call that uses it.
  */
 export function usePlayerPoint() {
   const [permission, requestPermission] = Location.useForegroundPermissions();
@@ -17,8 +18,9 @@ export function usePlayerPoint() {
   const [unfixable, setUnfixable] = useState(false);
   const granted = permission?.granted === true;
 
+  // Looks once the app may, and again each time a miss is cleared.
   useEffect(() => {
-    if (!granted) {
+    if (!granted || unfixable) {
       return;
     }
     let live = true;
@@ -37,7 +39,7 @@ export function usePlayerPoint() {
     return () => {
       live = false;
     };
-  }, [granted]);
+  }, [granted, unfixable]);
 
   return {
     /** Still finding out whether the app may look, or where the phone is. */
@@ -50,5 +52,7 @@ export function usePlayerPoint() {
     /** There is no point to search around: the player said no, or the phone could not tell. */
     off: permission !== null && (!granted || unfixable),
     ask: requestPermission,
+    /** Tries the phone's position again, once the app may look but could not tell where it was. */
+    lookAgain: () => setUnfixable(false),
   };
 }
