@@ -1,0 +1,42 @@
+# P3, end to end: a new player opens settings from the Me tab's gear, changes the roast level and
+# sees it saved, then deletes their data and lands back on the welcome (O1). Needs the app
+# installed (moon run mobile:ios), Metro (moon run mobile:dev) and the api (moon run api:dev).
+appId: com.cadenlund.friesinthebag
+---
+- launchApp:
+    clearState: true
+- runFlow: subflows/sign-up.yaml
+- tapOn: "Me"
+- tapOn:
+    text: "Settings"
+    label: "Open settings from the Me tab's gear"
+# Centered before the tap: Maestro counts a choice the bottom bar hides as visible, and its tap
+# would land on Save instead.
+- scrollUntilVisible:
+    element: "Extra crispy"
+    centerElement: true
+- tapOn: "Extra crispy"
+- tapOn: "Save"
+- assertVisible:
+    text: "Coming in #30."
+    label: "Save goes back to the Me tab"
+# Opened again, the form reads the roast level back from the server.
+- tapOn: "Settings"
+- scrollUntilVisible:
+    element: "Extra crispy"
+    centerElement: true
+- assertVisible:
+    text: "Extra crispy"
+    selected: true
+    label: "The new roast level is the one saved"
+- scrollUntilVisible:
+    element: "Delete my data"
+    centerElement: true
+- tapOn: "Delete my data"
+- assertVisible:
+    text: "Delete your data?"
+    label: "Delete asks first"
+- tapOn: "Delete"
+- assertVisible:
+    text: ".*becomes a decision in under a minute.*"
+    label: "With the account gone, the phone is back at O1"

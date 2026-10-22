@@ -1,5 +1,5 @@
-import { PlaceholderScreen } from "@/screens/placeholder-screen";
+import { SettingsScreen } from "@/screens/settings/settings-screen";
 
 export default function SettingsRoute() {
-  return <PlaceholderScreen title="Settings" issue={16} />;
+  return <SettingsScreen />;
 }
