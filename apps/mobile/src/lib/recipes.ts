@@ -143,3 +143,31 @@ export function parseRecipeId(param: string | undefined): bigint | undefined {
   const id = BigInt(param);
   return id > 0n ? id : undefined;
 }
+
+/** What C1 or C2 shows. */
+export type CookShowing = "not-found" | "error" | "loading" | "answer";
+
+/**
+ * cookShowing picks what C1 or C2 shows, by the rule the verdict keeps (showing in verdict.ts). An
+ * answer in hand stays on screen: a refresh that fails later keeps the cached answer and shows
+ * nothing here, because a failed read is the app-wide toast's to report. So not found and the
+ * error state are only for an answer that never loaded.
+ */
+export function cookShowing(read: {
+  id: bigint | undefined;
+  /** The answer in hand: undefined until one loads, null if it came back holding nothing. */
+  answer: unknown;
+  notFound: boolean;
+  failed: boolean;
+}): CookShowing {
+  if (read.id === undefined) {
+    return "not-found";
+  }
+  if (read.answer !== undefined) {
+    return read.answer === null ? "not-found" : "answer";
+  }
+  if (read.notFound) {
+    return "not-found";
+  }
+  return read.failed ? "error" : "loading";
+}

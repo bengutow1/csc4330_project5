@@ -1,6 +1,7 @@
 import { Diet, Difficulty, Equipment, type RecipeFilters } from "@fries-in-the-bag/api";
 import { describe, expect, it } from "vitest";
 import {
+  cookShowing,
   DIET_CHIPS,
   difficultyLabel,
   emptyLine,
@@ -201,5 +202,35 @@ describe("parseRecipeId", () => {
     for (const param of [undefined, "", "0", "-3", "1.5", "7a", " 7", "abc"]) {
       expect(parseRecipeId(param)).toBeUndefined();
     }
+  });
+});
+
+describe("cookShowing", () => {
+  const shelves = { makeItNow: [], oneItemAway: [] };
+  const settled = { notFound: false, failed: false };
+
+  it("keeps an answer it has when a refresh fails, rather than trading it for an error page", () => {
+    expect(cookShowing({ id: 7n, answer: shelves, notFound: false, failed: true })).toBe("answer");
+    expect(cookShowing({ id: 7n, answer: shelves, notFound: true, failed: true })).toBe("answer");
+  });
+
+  it("shows the answer once it has one, empty shelves too", () => {
+    expect(cookShowing({ id: 7n, answer: shelves, ...settled })).toBe("answer");
+  });
+
+  it("shows the error page only for an answer that never loaded", () => {
+    expect(cookShowing({ id: 7n, answer: undefined, notFound: false, failed: true })).toBe("error");
+  });
+
+  it("says not found for one that isn't the player's, an id that can't be one, or no recipe", () => {
+    expect(cookShowing({ id: 7n, answer: undefined, notFound: true, failed: true })).toBe(
+      "not-found",
+    );
+    expect(cookShowing({ id: undefined, answer: undefined, ...settled })).toBe("not-found");
+    expect(cookShowing({ id: 7n, answer: null, ...settled })).toBe("not-found");
+  });
+
+  it("is loading until the first answer", () => {
+    expect(cookShowing({ id: 7n, answer: undefined, ...settled })).toBe("loading");
   });
 });

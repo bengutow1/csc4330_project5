@@ -21,6 +21,7 @@ import { IngredientSheet } from "@/components/ingredient-sheet";
 import { Skeleton } from "@/components/skeleton";
 import { EQUIPMENT } from "@/lib/kitchen";
 import {
+  cookShowing,
   DIET_CHIPS,
   difficultyLabel,
   emptyLine,
@@ -61,7 +62,14 @@ export function RecipesScreen(props: { scanId: string | undefined }) {
   const [fixing, setFixing] = useState(false);
 
   const back = () => router.back();
-  if (scanId === undefined || isNotFound(recipes.error) || isNotFound(scan.error)) {
+  // Shelves in hand stay on screen through a failed refresh.
+  const state = cookShowing({
+    id: scanId,
+    answer: recipes.data,
+    notFound: isNotFound(recipes.error) || isNotFound(scan.error),
+    failed: recipes.isError,
+  });
+  if (state === "not-found" || scanId === undefined) {
     return (
       <Bare top={insets.top} onBack={back}>
         <EmptyState
@@ -78,7 +86,7 @@ export function RecipesScreen(props: { scanId: string | undefined }) {
     router.push({ pathname: "/recipe/[id]", params: { id: String(recipe.recipeId) } });
 
   let shelves: ReactNode;
-  if (recipes.isError) {
+  if (state === "error") {
     shelves = (
       <ErrorState
         title="Couldn't load your recipes"
@@ -87,7 +95,7 @@ export function RecipesScreen(props: { scanId: string | undefined }) {
         onRetry={() => void recipes.refetch()}
       />
     );
-  } else if (recipes.isPending) {
+  } else if (state === "loading" || recipes.data === undefined) {
     shelves = <Loading />;
   } else {
     const { makeItNow, oneItemAway } = recipes.data;

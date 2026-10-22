@@ -12,6 +12,7 @@ import { ErrorState } from "@/components/error-state";
 import { IconButton } from "@/components/icon-button";
 import { Skeleton } from "@/components/skeleton";
 import {
+  cookShowing,
   difficultyLabel,
   equipmentLabel,
   minutesLabel,
@@ -39,8 +40,17 @@ export function RecipeScreen(props: { id: string | undefined }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
+  // A recipe in hand stays on screen through a failed refresh. The api always sends one;
+  // protobuf-es types every message field as optional, so an answer without one is not found.
+  const found = recipe.data?.recipe;
+  const state = cookShowing({
+    id: recipeId,
+    answer: recipe.data === undefined ? undefined : (found ?? null),
+    notFound: isNotFound(recipe.error),
+    failed: recipe.isError,
+  });
   let body: ReactNode;
-  if (recipeId === undefined || isNotFound(recipe.error)) {
+  if (state === "not-found") {
     body = (
       <EmptyState
         title="No recipe here"
@@ -48,7 +58,7 @@ export function RecipeScreen(props: { id: string | undefined }) {
         action={{ label: "Scan your fridge", onPress: () => router.dismissTo("/") }}
       />
     );
-  } else if (recipe.isError) {
+  } else if (state === "error") {
     body = (
       <ErrorState
         title="Couldn't load the recipe"
@@ -57,19 +67,9 @@ export function RecipeScreen(props: { id: string | undefined }) {
         onRetry={() => void recipe.refetch()}
       />
     );
-  } else if (recipe.isPending) {
+  } else if (state === "loading" || found === undefined) {
     body = <Loading />;
-  } else if (recipe.data.recipe === undefined) {
-    // The api always sends one; protobuf-es types every message field as optional.
-    body = (
-      <EmptyState
-        title="No recipe here"
-        line="This recipe doesn't exist, or it isn't yours."
-        action={{ label: "Scan your fridge", onPress: () => router.dismissTo("/") }}
-      />
-    );
   } else {
-    const found = recipe.data.recipe;
     return (
       <View style={styles.root}>
         <Stack.Screen options={{ headerShown: false }} />
