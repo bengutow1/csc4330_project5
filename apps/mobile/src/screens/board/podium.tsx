@@ -1,7 +1,8 @@
 import type { Row } from "@fries-in-the-bag/api";
 import { Image } from "expo-image";
 import { StyleSheet, Text, View } from "react-native";
-import { type BoardKey, groupDigits, podiumOrder, podiumStep, rowLabel } from "@/lib/board";
+import { type BoardKey, podiumOrder, podiumStep, rowLabel } from "@/lib/board";
+import { groupDigits } from "@/lib/format";
 import { Avatar } from "@/screens/board/avatar";
 import { CROWN } from "@/screens/board/board-row";
 import { COLORS, RADII, SPACE, TYPE } from "@/theme";

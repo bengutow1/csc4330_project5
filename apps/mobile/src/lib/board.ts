@@ -1,4 +1,5 @@
 import { Board, Range } from "@fries-in-the-bag/api";
+import { groupDigits } from "./format.ts";
 
 const BOARDS = { chefs: Board.CHEFS, hall_of_fries: Board.HALL_OF_FRIES } as const;
 const RANGES = { this_week: Range.THIS_WEEK, all_time: Range.ALL_TIME } as const;
@@ -121,11 +122,6 @@ export function itemsInView<T>(items: readonly T[], inView: readonly number[] | 
     const item = items[index];
     return item === undefined ? [] : [item];
   });
-}
-
-/** groupDigits writes a value with thousands separators, as screen 7 does ("1,240"). */
-export function groupDigits(value: bigint) {
-  return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
 // countText is a board's value with its unit ("1 fry run", "1,240 points").
