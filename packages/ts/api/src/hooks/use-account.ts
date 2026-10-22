@@ -1,5 +1,6 @@
 import { createConnectQueryKey, skipToken, useMutation, useQuery } from "@connectrpc/connect-query";
 import { AccountService } from "@fries-in-the-bag/apigen/account/v1/account_pb";
+import { CookService } from "@fries-in-the-bag/apigen/cook/v1/cook_pb";
 import {
   type MutationFilters,
   type QueryClient,
@@ -64,23 +65,36 @@ export function useCreatingAccount() {
   return useIsMutating(CREATING_ACCOUNT) > 0;
 }
 
+// Every recipe read. The recipes leave out what the player can't eat or cook with, so shelves
+// cached before an allergy was saved would still offer a recipe that contains it.
+const RECIPE_FAMILY = createConnectQueryKey({ schema: CookService, cardinality: undefined });
+
 /**
- * useInvalidateAccount marks the session's account stale, so every screen showing it refetches.
- * It is the account family's one invalidator.
+ * useInvalidateAccount marks the session's account stale, and every recipe read cut to its
+ * kitchen, so every screen showing either refetches. It is the account family's one invalidator.
  */
 export function useInvalidateAccount() {
   const queryClient = useQueryClient();
-  return () => queryClient.invalidateQueries({ queryKey: WHO_AM_I_FAMILY });
+  return () => invalidateAccount(queryClient);
+}
+
+/** invalidateAccount is useInvalidateAccount's work, on whichever query client it is handed. */
+export function invalidateAccount(queryClient: QueryClient) {
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: WHO_AM_I_FAMILY }),
+    queryClient.invalidateQueries({ queryKey: RECIPE_FAMILY }),
+  ]);
 }
 
 /**
- * useUpdateKitchen saves the player's whole kitchen. The account carries the kitchen, so it
- * refetches once the write settles, and the mutation finishes only after it has.
+ * useUpdateKitchen saves the player's whole kitchen. The account carries the kitchen and the
+ * recipes are cut to it, so both refetch once the write settles, and the mutation finishes only
+ * after they have.
  */
 export function useUpdateKitchen() {
-  const invalidateAccount = useInvalidateAccount();
+  const invalidate = useInvalidateAccount();
   return useMutation(AccountService.method.updateKitchen, {
-    onSettled: () => invalidateAccount(),
+    onSettled: () => invalidate(),
   });
 }
 

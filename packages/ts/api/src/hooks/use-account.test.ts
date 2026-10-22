@@ -3,8 +3,16 @@ import { createConnectQueryKey, skipToken } from "@connectrpc/connect-query";
 import {
   AccountService,
   CheckHandleResponseSchema,
+  Diet,
+  Equipment,
   WhoAmIResponseSchema,
 } from "@fries-in-the-bag/apigen/account/v1/account_pb";
+import {
+  CookService,
+  GetRecipeResponseSchema,
+  ListRecipesResponseSchema,
+} from "@fries-in-the-bag/apigen/cook/v1/cook_pb";
+import { GetScanResponseSchema, ScanService } from "@fries-in-the-bag/apigen/scan/v1/scan_pb";
 import { MutationObserver, QueryClient } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
 import { createApiTransport } from "../transport.ts";
@@ -12,6 +20,7 @@ import {
   CREATING_ACCOUNT,
   checkHandleInput,
   createAccountOptions,
+  invalidateAccount,
   WHO_AM_I_FAMILY,
 } from "./use-account.ts";
 
@@ -81,6 +90,51 @@ describe("WHO_AM_I_FAMILY", () => {
 
     expect(client.getQueryState(whoAmI)?.isInvalidated).toBe(true);
     expect(client.getQueryState(checkHandle)?.isInvalidated).toBe(false);
+    client.clear();
+  });
+});
+
+describe("invalidateAccount", () => {
+  // The recipes leave out what the player is allergic to. Shelves cached before an allergy was
+  // saved would keep offering a recipe that contains it.
+  it("stales the account and every recipe read, and leaves the scans alone", async () => {
+    const client = new QueryClient();
+    const transport = createApiTransport({ baseUrl: "http://api.test.invalid" });
+    const whoAmI = createConnectQueryKey({
+      schema: AccountService.method.whoAmI,
+      input: {},
+      transport,
+      cardinality: "finite",
+    });
+    const shelves = createConnectQueryKey({
+      schema: CookService.method.listRecipes,
+      input: { scanId: 7n, maxMinutes: 20, equipment: [Equipment.STOVETOP], diet: Diet.NONE },
+      transport,
+      cardinality: "finite",
+    });
+    const recipe = createConnectQueryKey({
+      schema: CookService.method.getRecipe,
+      input: { recipeId: 3n },
+      transport,
+      cardinality: "finite",
+    });
+    const scan = createConnectQueryKey({
+      schema: ScanService.method.getScan,
+      input: { scanId: 7n },
+      transport,
+      cardinality: "finite",
+    });
+    client.setQueryData(whoAmI, create(WhoAmIResponseSchema, { account: { handle: "test_maya" } }));
+    client.setQueryData(shelves, create(ListRecipesResponseSchema, {}));
+    client.setQueryData(recipe, create(GetRecipeResponseSchema, {}));
+    client.setQueryData(scan, create(GetScanResponseSchema, {}));
+
+    await invalidateAccount(client);
+
+    expect(client.getQueryState(whoAmI)?.isInvalidated).toBe(true);
+    expect(client.getQueryState(shelves)?.isInvalidated).toBe(true);
+    expect(client.getQueryState(recipe)?.isInvalidated).toBe(true);
+    expect(client.getQueryState(scan)?.isInvalidated).toBe(false);
     client.clear();
   });
 });
