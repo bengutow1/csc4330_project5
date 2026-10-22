@@ -171,13 +171,23 @@ describe("offAction", () => {
 });
 
 describe("emptyReason", () => {
-  it("blames the hour when Open now is on", () => {
-    expect(emptyReason([SpotFilter.OPEN_NOW, SpotFilter.CHEAP])).toBe("closed");
+  it("blames the hour when Open now is all that narrows the list", () => {
+    expect(emptyReason([SpotFilter.OPEN_NOW], "")).toBe("closed");
+    expect(emptyReason([SpotFilter.OPEN_NOW], "  ")).toBe("closed");
   });
 
-  it("blames the chips otherwise", () => {
-    expect(emptyReason([SpotFilter.CHEAP])).toBe("filtered");
-    expect(emptyReason([])).toBe("filtered");
+  it("blames the chips when another one is on too, since it may be the reason", () => {
+    expect(emptyReason([SpotFilter.OPEN_NOW, SpotFilter.CHEAP], "")).toBe("filtered");
+    expect(emptyReason([SpotFilter.OPEN_NOW, SpotFilter.WALKABLE], "")).toBe("filtered");
+  });
+
+  it("blames the chips when typed words narrow the list too", () => {
+    expect(emptyReason([SpotFilter.OPEN_NOW], "sushi")).toBe("filtered");
+  });
+
+  it("blames the chips without Open now", () => {
+    expect(emptyReason([SpotFilter.CHEAP], "")).toBe("filtered");
+    expect(emptyReason([], "")).toBe("filtered");
   });
 });
 

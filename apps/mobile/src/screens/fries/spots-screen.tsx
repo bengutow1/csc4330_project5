@@ -46,11 +46,13 @@ export function SpotsScreen() {
   const hasPoint = place.point !== undefined;
   // With a point the list is "near me"; the search box only shows with location off.
   const searching = hasPoint || query.trim() !== "";
-  const spots = useSpots({
+  // What the list asks the server, which also says why an empty list is empty.
+  const sent = {
     at: place.point,
     query: hasPoint ? "" : query,
     filters: sendableFilters(filters, hasPoint),
-  });
+  };
+  const spots = useSpots(sent);
   // Asked for as the screen opens, so it is in hand if nothing turns out to be open.
   const lastScanId = useLastScan().data?.verdict?.scanId;
   const pages = spots.data?.pages ?? [];
@@ -71,7 +73,7 @@ export function SpotsScreen() {
     );
   } else if (searching && list.length === 0) {
     body =
-      emptyReason(filters) === "closed" ? (
+      emptyReason(sent.filters, sent.query) === "closed" ? (
         <ClosedState lastScanId={lastScanId} />
       ) : (
         <EmptyState
