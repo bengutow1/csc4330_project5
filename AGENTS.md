@@ -22,9 +22,10 @@ kitchen), then three tabs. Snap is the camera, which judges a kitchen and opens 
 score, tier and roast, what was spotted, and a sheet that fixes the list. Cook mode takes a verdict
 to its recipes on two shelves, narrowed by chips the server applies, and to one recipe: what you
 have, what you need and its steps. Plate it photographs a cooked recipe and prints the points
-receipt. Fries mode is the fries moment and the spots nearby, settings (P3) sits behind the Me
-tab's gear, and the other Core routes are still placeholders, with `/status` wired to the API end
-to end. Each issue builds its screen from the design in `docs/design.md`.
+receipt. Fries mode is the fries moment and the spots nearby. Board ranks players by points or fry
+runs on a podium and pins the player's own row, and Me shows their rank, stats, plates and badges,
+with settings (P3) behind its gear. `/status` is wired to the API end to end. Each issue builds its
+screen from the design in `docs/design.md`.
 
 ## Words we use
 
