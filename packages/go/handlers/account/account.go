@@ -1,6 +1,6 @@
 // Author: Caden Lund
 // Package account serves account.v1 AccountService: making the device account, saying whose
-// session a request carries, and saving the player's kitchen.
+// session a request carries, saving the player's kitchen, and deleting the account for good.
 package account
 
 import (
@@ -228,4 +228,35 @@ func (h *Account) WhoAmI(
 		return nil, h.fail(op, err)
 	}
 	return connect.NewResponse(&accountv1.WhoAmIResponse{Account: account}), nil
+}
+
+// DeleteAccount deletes the caller's account and everything of theirs, then ends its sessions.
+func (h *Account) DeleteAccount(
+	ctx context.Context, _ *connect.Request[accountv1.DeleteAccountRequest],
+) (*connect.Response[accountv1.DeleteAccountResponse], error) {
+	const op = "delete account"
+
+	// 1. Who is asking: the account comes from the session
+	me, err := h.gate.Account(ctx)
+	if err != nil {
+		return nil, h.fail(op, err)
+	}
+
+	// 2. The write: one statement, and every table that references the account cascades
+	// (docs/contracts.md). Another call can delete it between the gate and here
+	deleted, err := h.repo.DeleteAccount(ctx, me.AccountID)
+	if err != nil {
+		return nil, h.fail(op, err)
+	}
+	if !deleted {
+		return nil, h.fail(op, repository.ErrNotFound)
+	}
+
+	// 3. Its sessions. A session left behind already reads as signed out, because the gate
+	// re-reads the account on every call, so a failure here is logged and never returned
+	err = h.auth.EndSessions(ctx, me.AccountID)
+	if err != nil {
+		h.log.Warn("end sessions", "account_id", me.AccountID, "err", err)
+	}
+	return connect.NewResponse(&accountv1.DeleteAccountResponse{}), nil
 }

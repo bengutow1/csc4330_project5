@@ -1,4 +1,4 @@
-import { Allergy, Diet, Equipment, RoastLevel, Staple } from "@fries-in-the-bag/api";
+import { Allergy, Diet, Equipment, type Kitchen, RoastLevel, Staple } from "@fries-in-the-bag/api";
 
 /** Choice is one value of a kitchen's closed set and the words the app shows for it. */
 export interface Choice<T> {
@@ -72,4 +72,24 @@ export const ROAST_LEVELS: readonly (Choice<RoastLevel> & { sample: string })[] 
 /** toggled is list with value added, or taken out if it was in. */
 export function toggled<T>(list: readonly T[], value: T): T[] {
   return list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
+}
+
+/** KitchenDraft is the kitchen form as picked so far, which a save sends back whole. */
+export interface KitchenDraft {
+  roastLevel: RoastLevel | undefined;
+  equipment: Equipment[];
+  diet: Diet | undefined;
+  allergies: Allergy[];
+  staples: Staple[];
+}
+
+/** draftOf opens the form on a kitchen as stored, or empty before it has loaded. */
+export function draftOf(kitchen: Kitchen | undefined): KitchenDraft {
+  return {
+    roastLevel: kitchen?.roastLevel,
+    equipment: [...(kitchen?.equipment ?? [])],
+    diet: kitchen?.diet,
+    allergies: [...(kitchen?.allergies ?? [])],
+    staples: [...(kitchen?.staples ?? [])],
+  };
 }

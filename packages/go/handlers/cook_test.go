@@ -700,6 +700,150 @@ func TestTwentyRacingRequestsStoreOneSet(t *testing.T) {
 	}
 }
 
+// TestAChipTappedWhileTheSetIsMadeWaitsForIt: a chip tapped during the first set's model call must
+// wait for that set, not ask the model again and spend another of the player's sets.
+func TestAChipTappedWhileTheSetIsMadeWaitsForIt(t *testing.T) {
+	t.Parallel()
+	f, chef := kitchenFixture()
+	chef.hold = make(chan struct{})
+	f.limit = handlers.NewLimiter(1, time.Hour)
+	srv := cookStack(t, f)
+	release := releaseOnEnd(t, chef)
+	maya := cookPlayerFor(t, srv, "test_maya")
+	verdict := scanFridge(t, maya)
+
+	opened := listInBackground(t.Context(), maya, &cookv1.ListRecipesRequest{ScanId: verdict.GetScanId()})
+	waitForChef(t, chef, 1)
+	tapped := listInBackground(t.Context(), maya, &cookv1.ListRecipesRequest{ScanId: verdict.GetScanId(), MaxMinutes: 10})
+	stillWaiting(t, tapped, "the chip")
+	release()
+
+	first, chip := <-opened, <-tapped
+	if first.err != nil {
+		t.Fatalf("the shelves: %v", first.err)
+	}
+	if chip.err != nil {
+		t.Fatalf("the chip: %v, want the set the shelves made", chip.err)
+	}
+	want := listRecipes(t, maya, &cookv1.ListRecipesRequest{ScanId: verdict.GetScanId(), MaxMinutes: 10})
+	if len(want.GetMakeItNow()) == 0 || !proto.Equal(chip.msg, want) {
+		t.Errorf("the chip answered %v, want the stored set at 10 minutes %v", chip.msg, want)
+	}
+	asked := len(chef.calls())
+	if asked != 1 {
+		t.Errorf("the model was asked %d times, want once for the one set", asked)
+	}
+}
+
+// TestASetLandsWhenTheRequestMakingItHangsUp: in the app a chip's new query aborts the first
+// fetch, and the set that request was making must still land for the chip, not be made twice.
+func TestASetLandsWhenTheRequestMakingItHangsUp(t *testing.T) {
+	t.Parallel()
+	f, chef := kitchenFixture()
+	chef.hold = make(chan struct{})
+	f.limit = handlers.NewLimiter(1, time.Hour)
+	srv := cookStack(t, f)
+	release := releaseOnEnd(t, chef)
+	maya := cookPlayerFor(t, srv, "test_maya")
+	verdict := scanFridge(t, maya)
+
+	ctx, hangUp := context.WithCancel(t.Context())
+	opened := listInBackground(ctx, maya, &cookv1.ListRecipesRequest{ScanId: verdict.GetScanId()})
+	waitForChef(t, chef, 1)
+	tapped := listInBackground(t.Context(), maya, &cookv1.ListRecipesRequest{ScanId: verdict.GetScanId(), MaxMinutes: 10})
+	stillWaiting(t, tapped, "the chip")
+	hangUp()
+	<-opened
+	// The server hears the hang-up a moment later. A set made on the first request's context
+	// gives up then; the test waits a moment for that before letting the model answer.
+	for range 30 {
+		if chef.quits() > 0 {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	release()
+
+	chip := <-tapped
+	if chip.err != nil {
+		t.Fatalf("the chip: %v, want the set the first request went on making", chip.err)
+	}
+	want := listRecipes(t, maya, &cookv1.ListRecipesRequest{ScanId: verdict.GetScanId(), MaxMinutes: 10})
+	if len(want.GetMakeItNow()) == 0 || !proto.Equal(chip.msg, want) {
+		t.Errorf("the chip answered %v, want the stored set at 10 minutes %v", chip.msg, want)
+	}
+	asked, quit := len(chef.calls()), chef.quits()
+	if asked != 1 || quit != 0 {
+		t.Errorf("the model was asked %d times and %d gave up, want one call that finished", asked, quit)
+	}
+}
+
+// TestARequestWaitingOnAFailedSetMakesItItself: when the request making a set fails, one that
+// waited for it must make the set itself, not answer with empty shelves.
+func TestARequestWaitingOnAFailedSetMakesItItself(t *testing.T) {
+	t.Parallel()
+	f, chef := kitchenFixture()
+	chef.hold = make(chan struct{})
+	chef.failOnce = fmt.Errorf("vision: recipes: %w", vision.ErrUnavailable)
+	srv := cookStack(t, f)
+	release := releaseOnEnd(t, chef)
+	maya := cookPlayerFor(t, srv, "test_maya")
+	verdict := scanFridge(t, maya)
+
+	opened := listInBackground(t.Context(), maya, &cookv1.ListRecipesRequest{ScanId: verdict.GetScanId()})
+	waitForChef(t, chef, 1)
+	tapped := listInBackground(t.Context(), maya, &cookv1.ListRecipesRequest{ScanId: verdict.GetScanId(), MaxMinutes: 10})
+	stillWaiting(t, tapped, "the chip")
+	release()
+
+	first, chip := <-opened, <-tapped
+	if connect.CodeOf(first.err) != connect.CodeUnavailable {
+		t.Errorf("the shelves: %v (%v), want unavailable from the model", connect.CodeOf(first.err), first.err)
+	}
+	if chip.err != nil {
+		t.Fatalf("the chip: %v, want the set it made itself", chip.err)
+	}
+	if len(chip.msg.GetMakeItNow()) == 0 {
+		t.Errorf("the chip's shelves are empty, want the set it made after the first request failed")
+	}
+	asked := len(chef.calls())
+	if asked != 2 {
+		t.Errorf("the model was asked %d times, want twice: the failed set and the chip's", asked)
+	}
+}
+
+// TestAWaitingRequestAnswersInsideItsOneDeadline: when the model hangs, a chip that waited on the
+// first request's set must answer inside one set deadline, its wait included. A fresh deadline
+// for the set it makes once the wait ends runs it to two, past the server's WriteTimeout.
+func TestAWaitingRequestAnswersInsideItsOneDeadline(t *testing.T) {
+	t.Parallel()
+	f, chef := kitchenFixture()
+	chef.hold = make(chan struct{}) // the model hangs: nothing releases it before the test ends
+	f.setDeadline = time.Second
+	srv := cookStack(t, f)
+	releaseOnEnd(t, chef)
+	maya := cookPlayerFor(t, srv, "test_maya")
+	verdict := scanFridge(t, maya)
+
+	opened := listInBackground(t.Context(), maya, &cookv1.ListRecipesRequest{ScanId: verdict.GetScanId()})
+	waitForChef(t, chef, 1)
+	tappedAt := time.Now()
+	tapped := listInBackground(t.Context(), maya, &cookv1.ListRecipesRequest{ScanId: verdict.GetScanId(), MaxMinutes: 10})
+
+	chip := <-tapped
+	took := time.Since(tappedAt)
+	first := <-opened
+	if connect.CodeOf(first.err) != connect.CodeDeadlineExceeded {
+		t.Errorf("the shelves: %v (%v), want deadline_exceeded from the hung model", connect.CodeOf(first.err), first.err)
+	}
+	if connect.CodeOf(chip.err) != connect.CodeDeadlineExceeded {
+		t.Errorf("the chip: %v (%v), want deadline_exceeded", connect.CodeOf(chip.err), chip.err)
+	}
+	if took > f.setDeadline*3/2 {
+		t.Errorf("the chip answered %v after it was tapped, want inside its one deadline of %v", took, f.setDeadline)
+	}
+}
+
 // TestAnInvalidListRequestIsRefusedFieldByField: every problem arrives at once under its field,
 // and a refused request never reaches the model.
 func TestAnInvalidListRequestIsRefusedFieldByField(t *testing.T) {
@@ -781,15 +925,17 @@ func TestCookingNeedsAnAccount(t *testing.T) {
 }
 
 // cookFixture is what a cook stack runs with: the eyes that read fridges into scans, the chef
-// that writes recipes and checks plates, the limits on both (nil limits nothing), the clock (nil
-// is time.Now) and the cook service's log (nil discards).
+// that writes recipes and checks plates, the limits on both (nil limits nothing), the deadline
+// for one request's set (zero is the API's), the clock (nil is time.Now) and the cook service's
+// log (nil discards).
 type cookFixture struct {
-	eyes       scan.Vision
-	chef       cook.Vision
-	limit      *handlers.Limiter
-	plateLimit *handlers.Limiter
-	now        func() time.Time
-	log        *slog.Logger
+	eyes        scan.Vision
+	chef        cook.Vision
+	limit       *handlers.Limiter
+	plateLimit  *handlers.Limiter
+	setDeadline time.Duration
+	now         func() time.Time
+	log         *slog.Logger
 }
 
 // kitchenFixture reads every fridge as kitchenFridge and writes kitchenRecipes for it. The chef
@@ -810,7 +956,7 @@ func cookStack(t *testing.T, f cookFixture) stack {
 			scan.NewScan(scan.Config{Repo: repo, Auth: authn, Vision: f.eyes})))
 		svc := cook.NewCook(cook.Config{
 			Repo: repo, Auth: authn, Vision: f.chef, Limit: f.limit, PlateLimit: f.plateLimit,
-			Now: f.now, Log: f.log,
+			SetDeadline: f.setDeadline, Now: f.now, Log: f.log,
 		})
 		mux.Handle(cookv1connect.NewCookServiceHandler(svc, connect.WithReadMaxBytes(4<<20)))
 	})
@@ -908,13 +1054,16 @@ func titlesOf(recipes []*cookv1.Recipe) []string {
 	return out
 }
 
-// fakeChef writes the recipes a test gave it for any list, at once, or fails with err. It passes
-// every plate unless rejectPlates, or fails the check with plateErr, and records what it was sent.
-// It is safe because the model is the true edge here: the checks, the store, the filters and the
-// points rules behind it are all real.
+// fakeChef writes the recipes a test gave it for any list, or fails with err, and records what it
+// was sent. It answers at once unless hold is set, and then each call waits until the test closes
+// hold. failOnce fails only the first call. It passes every plate unless rejectPlates, or fails
+// the check with plateErr. It is safe because the model is the true edge here: the checks, the
+// store, the filters and the points rules behind it are all real.
 type fakeChef struct {
 	recipes      []vision.Recipe
 	err          error
+	failOnce     error
+	hold         chan struct{}
 	rejectPlates bool
 	plateErr     error
 	// together, when set, holds each plate check until all it counts have arrived, so their
@@ -924,6 +1073,7 @@ type fakeChef struct {
 	mu     sync.Mutex
 	asked  []chefCall
 	looked []string // the recipe titles each plate check was for
+	quit   int      // held calls whose caller gave up
 }
 
 // chefCall is one call the fake answered.
@@ -932,12 +1082,27 @@ type chefCall struct {
 	kitchen vision.Kitchen
 }
 
-func (f *fakeChef) Recipes(_ context.Context, items []vision.Item, kitchen vision.Kitchen) ([]vision.Recipe, error) {
+func (f *fakeChef) Recipes(ctx context.Context, items []vision.Item, kitchen vision.Kitchen) ([]vision.Recipe, error) {
 	f.mu.Lock()
-	defer f.mu.Unlock()
 	f.asked = append(f.asked, chefCall{items: slices.Clone(items), kitchen: kitchen})
+	first := len(f.asked) == 1
+	f.mu.Unlock()
+	if f.hold != nil {
+		// A held call gives up when its caller does, as the real client and the mock do.
+		select {
+		case <-f.hold:
+		case <-ctx.Done():
+			f.mu.Lock()
+			f.quit++
+			f.mu.Unlock()
+			return nil, fmt.Errorf("fake chef: %w", ctx.Err())
+		}
+	}
 	if f.err != nil {
 		return nil, f.err
+	}
+	if first && f.failOnce != nil {
+		return nil, f.failOnce
 	}
 	out := make([]vision.Recipe, 0, len(f.recipes))
 	for _, r := range f.recipes {
@@ -976,4 +1141,64 @@ func (f *fakeChef) plateChecks() []string {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return slices.Clone(f.looked)
+}
+
+func (f *fakeChef) quits() int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.quit
+}
+
+// releaseOnEnd returns what lets the held chef answer, and does it when the test ends too. A test
+// that fails while the chef is held would otherwise leave a handler waiting, and the server's Close
+// waiting on it. Called after the stack is built, so its cleanup runs before the server closes.
+func releaseOnEnd(t *testing.T, chef *fakeChef) func() {
+	t.Helper()
+	release := sync.OnceFunc(func() { close(chef.hold) })
+	t.Cleanup(release)
+	return release
+}
+
+// waitForChef waits until the chef has been asked n times.
+func waitForChef(t *testing.T, chef *fakeChef, n int) {
+	t.Helper()
+	for range 200 {
+		if len(chef.calls()) >= n {
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatalf("the chef was asked %d times, want %d", len(chef.calls()), n)
+}
+
+// listed is one ListRecipes answer, from a call made in the background.
+type listed struct {
+	msg *cookv1.ListRecipesResponse
+	err error
+}
+
+// listInBackground sends ListRecipes under ctx from its own goroutine and hands back its answer
+// once it comes. Canceling ctx hangs up, as the app's aborted fetch does.
+func listInBackground(ctx context.Context, p cookPlayer, req *cookv1.ListRecipesRequest) <-chan listed {
+	out := make(chan listed, 1)
+	go func() {
+		got, err := p.cook.ListRecipes(ctx, connect.NewRequest(req))
+		if err != nil {
+			out <- listed{err: err}
+			return
+		}
+		out <- listed{msg: got.Msg}
+	}()
+	return out
+}
+
+// stillWaiting fails the test if the call answers within a moment: it should be waiting for
+// another request's set.
+func stillWaiting(t *testing.T, answer <-chan listed, what string) {
+	t.Helper()
+	select {
+	case got := <-answer:
+		t.Fatalf("%s answered while the set was still being made (err %v), want it to wait", what, got.err)
+	case <-time.After(300 * time.Millisecond):
+	}
 }
