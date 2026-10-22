@@ -72,16 +72,26 @@ export function SpotsScreen() {
       />
     );
   } else if (searching && list.length === 0) {
-    body =
-      emptyReason(sent.filters, sent.query) === "closed" ? (
-        <ClosedState lastScanId={lastScanId} />
-      ) : (
+    const reason = emptyReason(sent.filters, sent.query);
+    if (reason === "closed") {
+      body = <ClosedState lastScanId={lastScanId} />;
+    } else if (reason === "searched") {
+      body = (
+        <EmptyState
+          title="Nothing matches that search."
+          line="Try other words."
+          action={{ label: "Clear the search", onPress: () => setQuery("") }}
+        />
+      );
+    } else {
+      body = (
         <EmptyState
           title="Nothing fits those chips."
           line="Turn a few off to see more spots."
           action={{ label: "Clear the chips", onPress: () => setFilters([]) }}
         />
       );
+    }
   }
 
   const header = (
