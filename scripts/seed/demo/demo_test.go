@@ -66,8 +66,9 @@ func TestTheDemoHasFifteenPlayersAndEveryTierBothWeeks(t *testing.T) {
 		Players: 15,
 		Scans:   count(t, pool, `select count(*) from app.scan`),
 		FryRuns: count(t, pool, `select count(*) from app.fry_run`),
+		Plates:  count(t, pool, `select count(*) from app.plate`),
 	}
-	if report != want || want.Scans == 0 || want.FryRuns == 0 {
+	if report != want || want.Scans == 0 || want.FryRuns == 0 || want.Plates == 0 {
 		t.Errorf("report = %+v, want %+v, which counts what is stored", report, want)
 	}
 }
@@ -136,6 +137,75 @@ func TestDormFridgeDanLeadsTheHallOfFriesThisWeek(t *testing.T) {
 	}
 }
 
+// TestChefMayaLeadsChefsThisWeekAndMealPrepSamAllTime: the two ranges have different leaders, so
+// the This week and All time switch visibly changes the board.
+func TestChefMayaLeadsChefsThisWeekAndMealPrepSamAllTime(t *testing.T) {
+	t.Parallel()
+	pool := newPool(t)
+
+	_, err := demo.Seed(t.Context(), repository.New(pool), wednesday)
+	if err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+
+	leaders := func(since time.Time) []string {
+		return texts(t, pool, `
+			select a.handle || ' ' || sum(e.points)
+			  from app.point_event e
+			  join app.account a on a.account_id = e.account_id
+			 where e.created_at >= $1
+			 group by a.handle
+			 order by sum(e.points) desc, a.handle
+			 limit 2`, since)
+	}
+	week := leaders(points.WeekStart(wednesday))
+	ever := leaders(time.Time{})
+	if !slices.Equal(week, []string{"chef_maya 560", "meal_prep_sam 500"}) {
+		t.Errorf("this week's top two = %v, want chef_maya's 560, then meal_prep_sam's 500", week)
+	}
+	if !slices.Equal(ever, []string{"meal_prep_sam 1150", "chef_maya 920"}) {
+		t.Errorf("all time's top two = %v, want meal_prep_sam's 1150, then chef_maya's 920", ever)
+	}
+}
+
+// TestPlatesArePaidByThePointsRules: each plate is paid the way the cook handler pays one, from
+// packages/go/points: one cook credit each, the bad-fridge bonuses by the scan's score, and a
+// streak for each day's first plate.
+func TestPlatesArePaidByThePointsRules(t *testing.T) {
+	t.Parallel()
+	pool := newPool(t)
+
+	_, err := demo.Seed(t.Context(), repository.New(pool), wednesday)
+	if err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+
+	uncredited := count(t, pool, `
+		select count(*)
+		  from app.plate p
+		 where (select count(*) from app.point_event e where e.plate_id = p.plate_id and e.reason = 'cook') <> 1`)
+	if uncredited != 0 {
+		t.Errorf("%d plates without exactly one cook credit, want none", uncredited)
+	}
+	awards := texts(t, pool, `
+		select a.handle || ' ' || e.reason || ' ' || e.points
+		  from app.point_event e
+		  join app.account a on a.account_id = e.account_id
+		 where a.handle in ('dorm_fridge_dan', 'ramen_king')
+		   and e.created_at >= $1
+		 order by e.created_at, e.point_event_id`, points.WeekStart(wednesday))
+	want := []string{
+		// ramen_king cooks out of a 39 fridge on two days running.
+		"ramen_king cook 100", "ramen_king scrappy_bonus 50", "ramen_king streak 10",
+		"ramen_king cook 100", "ramen_king scrappy_bonus 50", "ramen_king streak 20",
+		// dorm_fridge_dan cooks out of a 10 fridge, once.
+		"dorm_fridge_dan cook 100", "dorm_fridge_dan against_all_odds 100", "dorm_fridge_dan streak 10",
+	}
+	if !slices.Equal(awards, want) {
+		t.Errorf("this week's awards = %v\nwant %v", awards, want)
+	}
+}
+
 // TestTheDemoLeavesOutWhatHasNotHappenedYet: seeded on Monday afternoon, nothing is dated after
 // now, the report counts only what was written, and the Fridge of the Week is already there.
 func TestTheDemoLeavesOutWhatHasNotHappenedYet(t *testing.T) {
@@ -149,9 +219,11 @@ func TestTheDemoLeavesOutWhatHasNotHappenedYet(t *testing.T) {
 	}
 
 	ahead := count(t, pool, `select count(*) from app.scan where created_at > $1`, monday) +
-		count(t, pool, `select count(*) from app.fry_run where created_at > $1`, monday)
+		count(t, pool, `select count(*) from app.fry_run where created_at > $1`, monday) +
+		count(t, pool, `select count(*) from app.plate where created_at > $1`, monday) +
+		count(t, pool, `select count(*) from app.point_event where created_at > $1`, monday)
 	if ahead != 0 {
-		t.Errorf("%d scans and fry runs after now, want none", ahead)
+		t.Errorf("%d scans, fry runs, plates and points after now, want none", ahead)
 	}
 	best := texts(t, pool, `
 		select a.handle
@@ -167,6 +239,7 @@ func TestTheDemoLeavesOutWhatHasNotHappenedYet(t *testing.T) {
 		Players: 15,
 		Scans:   count(t, pool, `select count(*) from app.scan`),
 		FryRuns: count(t, pool, `select count(*) from app.fry_run`),
+		Plates:  count(t, pool, `select count(*) from app.plate`),
 	}
 	if report != want {
 		t.Errorf("report = %+v, want all 15 players and only what was written, %+v", report, want)
@@ -218,7 +291,10 @@ func TestAFailedSeedWritesNothing(t *testing.T) {
 		t.Fatal("seed with a handle taken: no error, want one")
 	}
 	got := tableCounts(t, pool)
-	want := map[string]int{"app.account": 1, "app.scan": 0, "app.scan_item": 0, "app.fry_run": 0}
+	want := map[string]int{
+		"app.account": 1, "app.scan": 0, "app.scan_item": 0, "app.fry_run": 0,
+		"app.recipe": 0, "app.plate": 0, "app.point_event": 0,
+	}
 	if !maps.Equal(got, want) {
 		t.Errorf("rows after the failed run = %v, want only the account that was there, %v", got, want)
 	}
@@ -228,10 +304,13 @@ func TestAFailedSeedWritesNothing(t *testing.T) {
 func tableCounts(t *testing.T, pool *pgxpool.Pool) map[string]int {
 	t.Helper()
 	return map[string]int{
-		"app.account":   count(t, pool, `select count(*) from app.account`),
-		"app.scan":      count(t, pool, `select count(*) from app.scan`),
-		"app.scan_item": count(t, pool, `select count(*) from app.scan_item`),
-		"app.fry_run":   count(t, pool, `select count(*) from app.fry_run`),
+		"app.account":     count(t, pool, `select count(*) from app.account`),
+		"app.scan":        count(t, pool, `select count(*) from app.scan`),
+		"app.scan_item":   count(t, pool, `select count(*) from app.scan_item`),
+		"app.fry_run":     count(t, pool, `select count(*) from app.fry_run`),
+		"app.recipe":      count(t, pool, `select count(*) from app.recipe`),
+		"app.plate":       count(t, pool, `select count(*) from app.plate`),
+		"app.point_event": count(t, pool, `select count(*) from app.point_event`),
 	}
 }
 

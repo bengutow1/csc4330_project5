@@ -50,6 +50,7 @@ func run() int {
 		log.Info("the demo is already here; nothing changed")
 		return 0
 	}
-	log.Info("seeded the demo week", "players", report.Players, "scans", report.Scans, "fry_runs", report.FryRuns)
+	log.Info("seeded the demo week",
+		"players", report.Players, "scans", report.Scans, "plates", report.Plates, "fry_runs", report.FryRuns)
 	return 0
 }

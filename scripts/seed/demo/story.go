@@ -40,10 +40,12 @@ func (s slot) at(weekStart time.Time) time.Time {
 	return time.Date(start.Year(), start.Month(), start.Day()+s.day, s.hour, s.minute, 0, 0, points.Campus())
 }
 
-// fridge is what one scan found, and the line the model wrote about it.
+// fridge is what one scan found, the line the model wrote about it, and the dish its scan offers
+// (nil when nothing in it cooks).
 type fridge struct {
 	roast string
 	items []repository.ScanItem
+	dish  *repository.NewRecipe
 }
 
 // spot is a place a fry run went: the places mock's own ids and names.
@@ -61,11 +63,20 @@ type run struct {
 	spot spot
 }
 
-// player is one of the demo's regulars and their week.
+// plate is a cooked dish: the dish from one of the player's scans, by its place in their scans,
+// plated at when.
+type plate struct {
+	when slot
+	scan int
+}
+
+// player is one of the demo's regulars and their week. Plates come in the order they were cooked,
+// as the streak counts them.
 type player struct {
 	handle, avatar string
 	scans          []scan
 	runs           []run
+	plates         []plate
 }
 
 func item(name, category, quantity string) repository.ScanItem {
@@ -89,6 +100,14 @@ var (
 			item("Cheddar", repository.CategoryDairy, ""),
 			item("Blueberries", repository.CategoryFruit, "1 pint"),
 		},
+		dish: &repository.NewRecipe{
+			Title: "Salmon rice bowl", Minutes: 25, Difficulty: repository.DifficultyMedium,
+			Equipment: []string{repository.EquipmentStovetop},
+			Uses:      []string{"Salmon", "Brown rice", "Spinach"},
+			Allergens: []string{repository.AllergyFish},
+			Diets:     []string{repository.DietPescatarian},
+			Steps:     []string{"Cook the rice.", "Sear the salmon.", "Wilt the spinach and pile it all up."},
+		},
 	}
 	// 89: Certified Chef, and a clear second to stocked.
 	planned = fridge{
@@ -101,6 +120,13 @@ var (
 			item("Tortillas", repository.CategoryGrain, "1 pack"),
 			item("Salsa", repository.CategoryCondiment, "1 jar"),
 		},
+		dish: &repository.NewRecipe{
+			Title: "Turkey tacos", Minutes: 20, Difficulty: repository.DifficultyEasy,
+			Equipment: []string{repository.EquipmentStovetop},
+			Uses:      []string{"Ground turkey", "Tortillas", "Onions", "Salsa"},
+			Allergens: []string{repository.AllergyWheat},
+			Steps:     []string{"Brown the turkey with the onions.", "Warm the tortillas.", "Fill and top with salsa."},
+		},
 	}
 	// 68: Home Cook.
 	breakfast = fridge{
@@ -109,6 +135,14 @@ var (
 			item("Eggs", repository.CategoryProtein, "x4"),
 			item("Spinach", repository.CategoryVegetable, "half a bag"),
 			item("Sourdough", repository.CategoryGrain, "1 loaf"),
+		},
+		dish: &repository.NewRecipe{
+			Title: "Spinach eggs on toast", Minutes: 10, Difficulty: repository.DifficultyEasy,
+			Equipment: []string{repository.EquipmentStovetop},
+			Uses:      []string{"Eggs", "Spinach", "Sourdough"},
+			Allergens: []string{repository.AllergyEggs, repository.AllergyWheat},
+			Diets:     []string{repository.DietVegetarian, repository.DietPescatarian},
+			Steps:     []string{"Toast the bread.", "Scramble the eggs with the spinach.", "Pile it on the toast."},
 		},
 	}
 	// 39: Scrappy.
@@ -120,6 +154,14 @@ var (
 			item("Leftover pizza", repository.CategoryLeftover, "2 slices"),
 			item("Hot sauce", repository.CategoryCondiment, ""),
 		},
+		dish: &repository.NewRecipe{
+			Title: "Pea ramen", Minutes: 10, Difficulty: repository.DifficultyEasy,
+			Equipment: []string{repository.EquipmentStovetop},
+			Uses:      []string{"Instant ramen", "Frozen peas", "Hot sauce"},
+			Allergens: []string{repository.AllergyWheat},
+			Diets:     []string{repository.DietVegetarian, repository.DietPescatarian},
+			Steps:     []string{"Boil the noodles with the peas.", "Season and finish with hot sauce."},
+		},
 	}
 	// 10: Fries in the Bag.
 	takeout = fridge{
@@ -128,6 +170,13 @@ var (
 			item("Leftover lo mein", repository.CategoryLeftover, "half a box"),
 			item("Soy sauce packets", repository.CategoryCondiment, "x9"),
 			item("Sparkling water", repository.CategoryDrink, "x2"),
+		},
+		dish: &repository.NewRecipe{
+			Title: "Crispy lo mein", Minutes: 10, Difficulty: repository.DifficultyEasy,
+			Equipment: []string{repository.EquipmentStovetop},
+			Uses:      []string{"Leftover lo mein", "Soy sauce packets"},
+			Allergens: []string{repository.AllergyWheat, repository.AllergySoy},
+			Steps:     []string{"Fry the noodles flat until crisp.", "Flip, then splash with soy sauce."},
 		},
 	}
 	// 1: Fries in the Bag.
@@ -152,22 +201,37 @@ var (
 )
 
 // players is the demo's fifteen regulars. The first is how a run knows the demo is already there.
-// This week, chef_maya's Monday fridge is the clear Fridge of the Week, dorm_fridge_dan leads the
-// Hall of Fries with 5 runs, and ten more players have a run, so a newcomer's first run lands
-// below the fold.
+// This week, chef_maya's Monday fridge is the clear Fridge of the Week and her plates lead Chefs,
+// while meal_prep_sam's streak leads it all time. dorm_fridge_dan leads the Hall of Fries with 5
+// runs, and ten more players have a run, so a newcomer's first run lands below the fold.
 var players = []player{
 	{
 		handle: "chef_maya", avatar: "🍳",
 		scans: []scan{{this(0, 9, 0), stocked}, {last(1, 18, 0), planned}},
+		// Lunch and dinner every day this week: Chefs' leader this week.
+		plates: []plate{
+			{last(1, 19, 0), 1}, {last(2, 19, 0), 1}, {last(3, 19, 0), 1},
+			{this(0, 12, 30), 0}, {this(0, 19, 0), 0}, {this(1, 12, 30), 0}, {this(1, 19, 0), 0},
+			{this(2, 12, 30), 0},
+		},
 	},
 	{
 		handle: "gymbro_tyler", avatar: "💪",
 		scans: []scan{{this(1, 7, 30), planned}, {last(0, 7, 0), stocked}},
 		runs:  []run{{this(0, 20, 0), drumstick}, {this(1, 20, 30), drumstick}},
+		plates: []plate{
+			{last(0, 12, 0), 1}, {last(1, 12, 0), 1}, {last(2, 12, 0), 1}, {last(3, 12, 0), 1},
+			{this(1, 12, 0), 0}, {this(2, 12, 0), 0},
+		},
 	},
 	{
 		handle: "meal_prep_sam", avatar: "🥡",
 		scans: []scan{{this(0, 11, 0), planned}, {last(2, 12, 0), breakfast}},
+		// A plate a day since last Wednesday: the longest streak, and all time's leader.
+		plates: []plate{
+			{last(2, 13, 0), 1}, {last(3, 13, 0), 1}, {last(4, 13, 0), 1}, {last(5, 13, 0), 1},
+			{last(6, 13, 0), 1}, {this(0, 12, 0), 0}, {this(1, 12, 0), 0}, {this(2, 12, 0), 0},
+		},
 	},
 	{
 		handle: "ramen_king", avatar: "🍜",
@@ -176,6 +240,8 @@ var players = []player{
 			{this(0, 19, 0), noodles}, {this(1, 12, 30), noodles}, {this(2, 13, 0), noodles},
 			{last(4, 19, 30), noodles},
 		},
+		// Scrappy: a 39 fridge pays a bonus on top of each plate.
+		plates: []plate{{this(0, 19, 30), 0}, {this(1, 19, 30), 0}},
 	},
 	{
 		handle: "dorm_fridge_dan", avatar: "🍟",
@@ -190,15 +256,19 @@ var players = []player{
 			{this(2, 0, 30), nightOwl}, {this(2, 12, 15), nightOwl},
 			{last(4, 22, 30), nightOwl}, {last(5, 23, 45), nightOwl},
 		},
+		// Against all odds: one plate out of a 10 fridge.
+		plates: []plate{{this(1, 21, 0), 1}},
 	},
 	{
 		handle: "salad_szn", avatar: "🥗",
-		scans: []scan{{this(0, 12, 30), breakfast}, {last(6, 12, 0), breakfast}},
+		scans:  []scan{{this(0, 12, 30), breakfast}, {last(6, 12, 0), breakfast}},
+		plates: []plate{{this(0, 13, 0), 0}, {this(1, 13, 0), 0}},
 	},
 	{
 		handle: "taco_tuesday", avatar: "🌮",
-		scans: []scan{{this(1, 18, 0), breakfast}},
-		runs:  []run{{this(0, 12, 0), tacoTruck}, {this(1, 12, 0), tacoTruck}},
+		scans:  []scan{{this(1, 18, 0), breakfast}},
+		runs:   []run{{this(0, 12, 0), tacoTruck}, {this(1, 12, 0), tacoTruck}},
+		plates: []plate{{this(1, 19, 0), 0}},
 	},
 	{
 		handle: "pizza_pete", avatar: "🍕",
@@ -219,7 +289,8 @@ var players = []player{
 	},
 	{
 		handle: "spice_queen", avatar: "🔥",
-		scans: []scan{{this(2, 17, 0), planned}},
+		scans:  []scan{{this(2, 17, 0), planned}},
+		plates: []plate{{this(2, 18, 30), 0}},
 	},
 	{
 		handle: "freezer_burn", avatar: "🧊",
@@ -237,8 +308,9 @@ var players = []player{
 	},
 	{
 		handle: "noodle_nora", avatar: "🍝",
-		scans: []scan{{this(2, 12, 0), breakfast}, {last(4, 13, 0), negotiation}},
-		runs:  []run{{this(1, 18, 30), noodles}},
+		scans:  []scan{{this(2, 12, 0), breakfast}, {last(4, 13, 0), negotiation}},
+		runs:   []run{{this(1, 18, 30), noodles}},
+		plates: []plate{{last(4, 19, 0), 1}},
 	},
 	{
 		handle: "midnight_mo", avatar: "🌙",
