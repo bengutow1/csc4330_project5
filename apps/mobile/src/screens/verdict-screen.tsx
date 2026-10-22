@@ -16,7 +16,7 @@ import { Skeleton } from "@/components/skeleton";
 import { TierPill } from "@/components/tier-pill";
 import { categoryLook, groupByCategory } from "@/lib/categories";
 import type { Item } from "@/lib/ingredients";
-import { buttonsFor, parseScanId, type Way } from "@/lib/verdict";
+import { buttonsFor, parseScanId, showing, type Way } from "@/lib/verdict";
 import { COLORS, RADII, SPACE, TYPE } from "@/theme";
 
 // The design's ingredient tile (screen 2): a picture this tall, three to a row.
@@ -45,14 +45,23 @@ export function VerdictScreen(props: { id: string | undefined }) {
       ? router.push({ pathname: "/cook/[scanId]", params: { scanId: String(scanId) } })
       : router.push("/fries");
 
-  if (scanId === undefined || isNotFound(scan.error)) {
+  // A verdict in hand stays on screen through a failed refresh (showing). The api always sends
+  // one; protobuf-es types every message field as optional.
+  const state = showing({
+    id: scanId,
+    data: scan.data,
+    notFound: isNotFound(scan.error),
+    failed: scan.isError,
+  });
+  const verdict = scan.data?.verdict;
+  if (state === "not-found" || scanId === undefined) {
     return (
       <Bare top={insets.top} onBack={() => router.back()}>
         <NotFound onScan={scanAgain} />
       </Bare>
     );
   }
-  if (scan.isError) {
+  if (state === "error") {
     return (
       <Bare top={insets.top} onBack={() => router.back()}>
         <ErrorState
@@ -64,19 +73,10 @@ export function VerdictScreen(props: { id: string | undefined }) {
       </Bare>
     );
   }
-  if (scan.isPending) {
+  if (state === "loading" || verdict === undefined) {
     return (
       <Bare top={insets.top} onBack={() => router.back()}>
         <Loading />
-      </Bare>
-    );
-  }
-  // The api always sends one; protobuf-es types every message field as optional.
-  const verdict = scan.data.verdict;
-  if (verdict === undefined) {
-    return (
-      <Bare top={insets.top} onBack={() => router.back()}>
-        <NotFound onScan={scanAgain} />
       </Bare>
     );
   }

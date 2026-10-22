@@ -47,3 +47,29 @@ export function parseScanId(param: string | undefined): bigint | undefined {
   const id = BigInt(param);
   return id > 0n ? id : undefined;
 }
+
+/** What the verdict screen shows. */
+export type Showing = "not-found" | "error" | "loading" | "verdict";
+
+/**
+ * showing picks what the verdict screen shows. A verdict in hand stays on screen: a refresh that
+ * fails later keeps the cached answer, with the error flagged beside it, so the not-found and
+ * error states are only for a verdict that never loaded. An answer with no verdict names no scan.
+ */
+export function showing(scan: {
+  id: bigint | undefined;
+  data: { verdict?: unknown } | undefined;
+  notFound: boolean;
+  failed: boolean;
+}): Showing {
+  if (scan.id === undefined) {
+    return "not-found";
+  }
+  if (scan.data !== undefined) {
+    return scan.data.verdict === undefined ? "not-found" : "verdict";
+  }
+  if (scan.notFound) {
+    return "not-found";
+  }
+  return scan.failed ? "error" : "loading";
+}

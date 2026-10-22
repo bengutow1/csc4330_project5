@@ -1,6 +1,6 @@
 import { Tier } from "@fries-in-the-bag/api";
 import { describe, expect, it } from "vitest";
-import { buttonsFor, parseScanId } from "./verdict.ts";
+import { buttonsFor, parseScanId, showing } from "./verdict.ts";
 
 describe("buttonsFor", () => {
   // Every tier written out by hand: the big button, then the one beside it.
@@ -62,5 +62,33 @@ describe("parseScanId", () => {
     expect(parseScanId("-3")).toBeUndefined();
     expect(parseScanId("1.5")).toBeUndefined();
     expect(parseScanId("abc")).toBeUndefined();
+  });
+});
+
+describe("showing", () => {
+  const answer = { verdict: {} };
+  const settled = { notFound: false, failed: false };
+
+  it("keeps a verdict it has when a refresh fails, rather than trading it for an error page", () => {
+    expect(showing({ id: 42n, data: answer, notFound: false, failed: true })).toBe("verdict");
+    expect(showing({ id: 42n, data: answer, notFound: true, failed: true })).toBe("verdict");
+  });
+
+  it("shows the verdict once it has one", () => {
+    expect(showing({ id: 42n, data: answer, ...settled })).toBe("verdict");
+  });
+
+  it("shows the error page only for a verdict that never loaded", () => {
+    expect(showing({ id: 42n, data: undefined, notFound: false, failed: true })).toBe("error");
+  });
+
+  it("says not found for a scan that isn't the player's, an id that can't be one, or no verdict", () => {
+    expect(showing({ id: 42n, data: undefined, notFound: true, failed: true })).toBe("not-found");
+    expect(showing({ id: undefined, data: undefined, ...settled })).toBe("not-found");
+    expect(showing({ id: 42n, data: {}, ...settled })).toBe("not-found");
+  });
+
+  it("is loading until the first answer", () => {
+    expect(showing({ id: 42n, data: undefined, ...settled })).toBe("loading");
   });
 });
