@@ -17,7 +17,9 @@ import {
   type BoardKey,
   boardItems,
   boardOf,
+  distinctRows,
   emptyCopy,
+  itemsInView,
   pinsMyRow,
   RANGE_OPTIONS,
   type RangeKey,
@@ -57,16 +59,17 @@ export function BoardScreen() {
   const [rangeKey, setRangeKey] = useState<RangeKey>("this_week");
   const board = useBoard(boardOf(boardKey), rangeOf(rangeKey));
   const pages = board.data?.pages ?? [];
-  const items = boardItems(pages.flatMap((page) => page.rows));
+  const items = boardItems(distinctRows(pages.flatMap((page) => page.rows)));
   const myRow = pages[0]?.myRow;
-  // What the list last said is on screen; unknown until it first says.
-  const [onScreen, setOnScreen] = useState<readonly BoardItem<Row>[]>();
-  const pinned = pinsMyRow(myRow?.handle, onScreen) ? myRow : undefined;
+  // Where the list last said it is looking, as positions read against the board as it is now: a
+  // switch or a refetch can change the rows there without the list saying so again.
+  const [inView, setInView] = useState<readonly number[]>();
+  const pinned = pinsMyRow(myRow?.handle, itemsInView(items, inView)) ? myRow : undefined;
 
   // Stable, because the list cannot take a new one after it mounts.
   const onViewableItemsChanged = useCallback(
     (info: { viewableItems: ViewToken<BoardItem<Row>>[] }) =>
-      setOnScreen(info.viewableItems.map((token) => token.item)),
+      setInView(info.viewableItems.flatMap((token) => (token.index === null ? [] : [token.index]))),
     [],
   );
 

@@ -4,8 +4,10 @@ import {
   BOARD_OPTIONS,
   boardItems,
   boardOf,
+  distinctRows,
   emptyCopy,
   groupDigits,
+  itemsInView,
   leaderLine,
   pinsMyRow,
   podiumOrder,
@@ -131,6 +133,50 @@ describe("pinsMyRow", () => {
 
   it("pins nothing before the list first says what is on screen", () => {
     expect(pinsMyRow("test_maya", undefined)).toBe(false);
+  });
+});
+
+describe("itemsInView", () => {
+  it("reads the positions in view from the board as it is now", () => {
+    expect(itemsInView(["a", "b", "c", "d"], [1, 2])).toEqual(["b", "c"]);
+  });
+
+  it("leaves out a position past the end of a shorter board", () => {
+    expect(itemsInView(["a", "b"], [1, 2])).toEqual(["b"]);
+  });
+
+  it("stays unknown until the list first says what is in view", () => {
+    expect(itemsInView(["a"], undefined)).toBeUndefined();
+  });
+
+  it("pins my row after a switch moves it off the positions in view", () => {
+    // On the old board maya stood fourth, in view. On the new one she is eighth, below it, and the
+    // list need not say so again, since the same positions stay in view.
+    const before = boardItems(
+      ["test_ann", "test_bob", "test_cat", "test_maya"].map((h, i) => row(i + 1, h, 9n)),
+    );
+    const after = boardItems(
+      [
+        "test_ann",
+        "test_bob",
+        "test_cat",
+        "test_dan",
+        "test_eve",
+        "test_fay",
+        "test_gus",
+        "test_maya",
+      ].map((h, i) => row(i + 1, h, 9n)),
+    );
+    const inView = [0, 1];
+    expect(pinsMyRow("test_maya", itemsInView(before, inView))).toBe(false);
+    expect(pinsMyRow("test_maya", itemsInView(after, inView))).toBe(true);
+  });
+});
+
+describe("distinctRows", () => {
+  it("keeps each player's first row, in the server's order", () => {
+    const rows = [row(1, "test_ann", 9n), row(2, "test_bob", 8n), row(5, "test_ann", 2n)];
+    expect(distinctRows(rows)).toEqual([row(1, "test_ann", 9n), row(2, "test_bob", 8n)]);
   });
 });
 

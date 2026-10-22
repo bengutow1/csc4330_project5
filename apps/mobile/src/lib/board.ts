@@ -50,6 +50,22 @@ export type BoardItem<R> = { kind: "podium"; rows: readonly R[] } | { kind: "row
 const PODIUM_SIZE = 3;
 
 /**
+ * distinctRows keeps each player's first row. Pages come one at a time, and a this-week board walked
+ * across Monday midnight reads its next page from the new week, where a player already shown can
+ * come back; the list keys rows by handle, so each may appear once.
+ */
+export function distinctRows<R extends { handle: string }>(rows: readonly R[]): R[] {
+  const seen = new Set<string>();
+  return rows.filter((row) => {
+    if (seen.has(row.handle)) {
+      return false;
+    }
+    seen.add(row.handle);
+    return true;
+  });
+}
+
+/**
  * boardItems lays the rows out as screen 7 does: the first three on the podium, the rest below,
  * in the order the server ranked them.
  */
@@ -93,6 +109,18 @@ export function pinsMyRow(
       ? item.rows.some((row) => row.handle === myHandle)
       : item.row.handle === myHandle,
   );
+}
+
+/**
+ * itemsInView is what sits at the positions the list last said were in view, read from the board as
+ * it is now: a switch or a refetch can change the rows there without the list saying so again.
+ * Unknown stays unknown until the list first says.
+ */
+export function itemsInView<T>(items: readonly T[], inView: readonly number[] | undefined) {
+  return inView?.flatMap((index) => {
+    const item = items[index];
+    return item === undefined ? [] : [item];
+  });
 }
 
 /** groupDigits writes a value with thousands separators, as screen 7 does ("1,240"). */
