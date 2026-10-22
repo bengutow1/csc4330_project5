@@ -10,6 +10,7 @@ import { FormSection } from "@/components/form-section";
 import { Header } from "@/components/header";
 import { KitchenForm } from "@/components/kitchen-form";
 import { draftOf } from "@/lib/kitchen";
+import { lastWriteError } from "@/lib/last-write";
 import { COLORS, SPACE, TYPE } from "@/theme";
 
 /**
@@ -26,8 +27,8 @@ export function SettingsScreen() {
   const [confirming, setConfirming] = useState(false);
   const save = useUpdateKitchen();
   const remove = useDeleteAccount();
-  // Both writes report here, above the button: a failed delete closes its dialog to say so.
-  const failed = save.error ?? remove.error;
+  // The write tried last reports above Save. A failed delete closes its dialog to show why.
+  const failed = lastWriteError(save, remove);
 
   const submit = () => save.mutate({ kitchen: draft }, { onSuccess: () => router.back() });
   const deleteData = () => remove.mutate({}, { onError: () => setConfirming(false) });
