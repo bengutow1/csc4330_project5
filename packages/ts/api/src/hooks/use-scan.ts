@@ -1,6 +1,7 @@
 import type { DescService } from "@bufbuild/protobuf";
 import { createConnectQueryKey, skipToken, useMutation, useQuery } from "@connectrpc/connect-query";
 import { BoardService } from "@fries-in-the-bag/apigen/board/v1/board_pb";
+import { CookService } from "@fries-in-the-bag/apigen/cook/v1/cook_pb";
 import { ScanService } from "@fries-in-the-bag/apigen/scan/v1/scan_pb";
 import { type QueryClient, useQueryClient } from "@tanstack/react-query";
 
@@ -19,6 +20,16 @@ const SCAN_READER_KEYS = SCAN_READERS.map((schema) =>
 
 /** SCANNED is the family key of every query a scan changes: the scans' own, then each reader's. */
 export const SCANNED = [SCANS, ...SCAN_READER_KEYS];
+
+/**
+ * LIST_EDITED is the family key of every read a fixed list changes: all a scan changes, and the
+ * recipes the server makes from the list. The recipes come from CookService's schema, never its
+ * hooks.
+ */
+export const LIST_EDITED = [
+  ...SCANNED,
+  createConnectQueryKey({ schema: CookService, cardinality: undefined }),
+];
 
 /** useScan reads one of the player's verdicts, and waits until there is a scan to ask about. */
 export function useScan(scanId: bigint | undefined) {
@@ -49,11 +60,15 @@ export function useCreateScan() {
 
 /**
  * useEditIngredients saves the player's corrected list. The verdict comes back with the new list
- * and the score it was judged with.
+ * and the score it was judged with. The recipes follow the list, so every read in LIST_EDITED
+ * refetches, and the save finishes only once the shelves on screen hold the new list's recipes.
  */
 export function useEditIngredients() {
-  const invalidateScans = useInvalidateScans();
-  return useMutation(ScanService.method.editIngredients, { onSettled: invalidateScans });
+  const queryClient = useQueryClient();
+  return useMutation(ScanService.method.editIngredients, {
+    onSettled: () =>
+      Promise.all(LIST_EDITED.map((queryKey) => queryClient.invalidateQueries({ queryKey }))),
+  });
 }
 
 /** useInvalidateScans marks every read a scan changes stale (SCANNED), after a write changed one. */
