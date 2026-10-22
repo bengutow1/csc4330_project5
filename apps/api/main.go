@@ -70,19 +70,10 @@ func main() {
 
 	// The vision model. Without a key the API serves the mock's canned fridges, except in
 	// production, where a missing key stops the boot: a real deployment never hands out a fake
-	// verdict.
+	// verdict. With a key, scans go to the real client, and recipes and plate checks stay on the
+	// mock until the client learns them (#25).
 	visionKey := os.Getenv("VISION_API_KEY")
 	visionPin := os.Getenv("VISION_MOCK")
-	switch {
-	case visionKey != "":
-		// The real client is still to come (#20), and serving the mock anyway would ignore the key
-		// without a word.
-		log.Error("VISION_API_KEY is set, but there is no vision client yet; unset it to serve the mock")
-		os.Exit(1)
-	case appEnv == "production":
-		log.Error("VISION_API_KEY is required in production")
-		os.Exit(1)
-	}
 	platePin := os.Getenv("VISION_MOCK_PLATE")
 	visionMock, err := vision.NewMock(visionPin, platePin)
 	if err != nil {
@@ -90,8 +81,25 @@ func main() {
 		log.Error("VISION_MOCK or VISION_MOCK_PLATE names no mock pin", "err", err)
 		os.Exit(1)
 	}
-	log.Info("vision mock is live", "serving", cmp.Or(visionPin, "every fridge in turn"),
-		"plates", cmp.Or(platePin, "every plate passes"))
+	var fridgeReader scan.Vision = visionMock
+	switch {
+	case visionKey != "" && appEnv == "production":
+		// Recipes and plate checks would still come from the mock, and production never serves it.
+		log.Error("VISION_API_KEY is set, but recipes and plate checks have no real client yet (#25)")
+		os.Exit(1)
+	case visionKey != "":
+		model := cmp.Or(os.Getenv("VISION_MODEL"), vision.DefaultModel)
+		fridgeReader = vision.NewClient(vision.Config{APIKey: visionKey, Model: model})
+		log.Info("vision model is live for scans", "model", model)
+		log.Info("vision mock is live for recipes and plates until #25",
+			"plates", cmp.Or(platePin, "every plate passes"))
+	case appEnv == "production":
+		log.Error("VISION_API_KEY is required in production")
+		os.Exit(1)
+	default:
+		log.Info("vision mock is live", "serving", cmp.Or(visionPin, "every fridge in turn"),
+			"plates", cmp.Or(platePin, "every plate passes"))
+	}
 
 	// The places provider. Without a key the API serves the mock's made-up spots, except in
 	// production, where a missing key stops the boot: a real deployment never lists fake spots.
@@ -145,7 +153,7 @@ func main() {
 	scanSvc := scan.NewScan(scan.Config{
 		Repo:   repo,
 		Auth:   authn,
-		Vision: visionMock,
+		Vision: fridgeReader,
 		Limit:  scan.DefaultLimit(),
 		Log:    log,
 	})
