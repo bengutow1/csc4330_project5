@@ -53,8 +53,9 @@ export type Showing = "not-found" | "error" | "loading" | "verdict";
 
 /**
  * showing picks what the verdict screen shows. A verdict in hand stays on screen: a refresh that
- * fails later keeps the cached answer, with the error flagged beside it, so the not-found and
- * error states are only for a verdict that never loaded. An answer with no verdict names no scan.
+ * fails later keeps the cached answer and shows nothing here, because a failed read is the
+ * app-wide toast's to report and the app has no toast yet. So the not-found and error states are
+ * only for a verdict that never loaded. An answer with no verdict names no scan.
  */
 export function showing(scan: {
   id: bigint | undefined;
