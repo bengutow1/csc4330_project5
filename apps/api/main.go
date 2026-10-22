@@ -146,11 +146,12 @@ func main() {
 		Log:    log,
 	})
 	cookSvc := cook.NewCook(cook.Config{
-		Repo:   repo,
-		Auth:   authn,
-		Vision: visionMock,
-		Limit:  cook.DefaultLimit(),
-		Log:    log,
+		Repo:       repo,
+		Auth:       authn,
+		Vision:     visionMock,
+		Limit:      cook.DefaultLimit(),
+		PlateLimit: cook.DefaultPlateLimit(),
+		Log:        log,
 	})
 	friesSvc := fries.NewFries(fries.Config{
 		Repo:   repo,

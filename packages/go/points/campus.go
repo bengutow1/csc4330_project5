@@ -68,8 +68,9 @@ func MealWindow(t time.Time) (window Window, day time.Time) {
 	}
 }
 
-// Streak is the run of consecutive campus days with a checked plate, ending today, so it is 0
-// until today has one. days holds the plates' times or their days, in any order, repeats allowed.
+// Streak is the run of consecutive days with a checked plate, ending today, so it is 0 until
+// today has one. Pass each plate's day and today's from MealWindow, so a plate at 00:30 counts for
+// the night before; days may come in any order, repeats allowed.
 func Streak(days []time.Time, today time.Time) int {
 	// DayOf's values share one Location and carry no monotonic reading, so == compares them as
 	// days and they work as map keys.

@@ -781,13 +781,15 @@ func TestCookingNeedsAnAccount(t *testing.T) {
 }
 
 // cookFixture is what a cook stack runs with: the eyes that read fridges into scans, the chef
-// that writes recipes, the limit on writing them (nil limits nothing) and the cook service's log
-// (nil discards).
+// that writes recipes and checks plates, the limits on both (nil limits nothing), the clock (nil
+// is time.Now) and the cook service's log (nil discards).
 type cookFixture struct {
-	eyes  scan.Vision
-	chef  cook.Vision
-	limit *handlers.Limiter
-	log   *slog.Logger
+	eyes       scan.Vision
+	chef       cook.Vision
+	limit      *handlers.Limiter
+	plateLimit *handlers.Limiter
+	now        func() time.Time
+	log        *slog.Logger
 }
 
 // kitchenFixture reads every fridge as kitchenFridge and writes kitchenRecipes for it. The chef
@@ -806,7 +808,10 @@ func cookStack(t *testing.T, f cookFixture) stack {
 			account.NewAccount(account.Config{Repo: repo, Auth: authn})))
 		mux.Handle(scanv1connect.NewScanServiceHandler(
 			scan.NewScan(scan.Config{Repo: repo, Auth: authn, Vision: f.eyes})))
-		svc := cook.NewCook(cook.Config{Repo: repo, Auth: authn, Vision: f.chef, Limit: f.limit, Log: f.log})
+		svc := cook.NewCook(cook.Config{
+			Repo: repo, Auth: authn, Vision: f.chef, Limit: f.limit, PlateLimit: f.plateLimit,
+			Now: f.now, Log: f.log,
+		})
 		mux.Handle(cookv1connect.NewCookServiceHandler(svc, connect.WithReadMaxBytes(4<<20)))
 	})
 }
@@ -903,15 +908,22 @@ func titlesOf(recipes []*cookv1.Recipe) []string {
 	return out
 }
 
-// fakeChef writes the recipes a test gave it for any list, at once, or fails with err, and
-// records what it was sent. It is safe because the model is the true edge here: the checks, the
-// store and the filters behind it are all real.
+// fakeChef writes the recipes a test gave it for any list, at once, or fails with err. It passes
+// every plate unless rejectPlates, or fails the check with plateErr, and records what it was sent.
+// It is safe because the model is the true edge here: the checks, the store, the filters and the
+// points rules behind it are all real.
 type fakeChef struct {
-	recipes []vision.Recipe
-	err     error
+	recipes      []vision.Recipe
+	err          error
+	rejectPlates bool
+	plateErr     error
+	// together, when set, holds each plate check until all it counts have arrived, so their
+	// transactions start at once.
+	together *sync.WaitGroup
 
-	mu    sync.Mutex
-	asked []chefCall
+	mu     sync.Mutex
+	asked  []chefCall
+	looked []string // the recipe titles each plate check was for
 }
 
 // chefCall is one call the fake answered.
@@ -940,4 +952,28 @@ func (f *fakeChef) calls() []chefCall {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return slices.Clone(f.asked)
+}
+
+func (f *fakeChef) CheckPlate(_ context.Context, _ []byte, recipeTitle string) (vision.PlateCheck, error) {
+	if f.together != nil {
+		f.together.Done()
+		f.together.Wait()
+	}
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.looked = append(f.looked, recipeTitle)
+	if f.plateErr != nil {
+		return vision.PlateCheck{}, f.plateErr
+	}
+	if f.rejectPlates {
+		return vision.PlateCheck{Passed: false, Reason: "a photo of the floor"}, nil
+	}
+	return vision.PlateCheck{Passed: true}, nil
+}
+
+// plateChecks is the titles the model was asked to check plates for, in order.
+func (f *fakeChef) plateChecks() []string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return slices.Clone(f.looked)
 }

@@ -25,7 +25,7 @@ type Line struct {
 // Plate is what a checked plate's award depends on.
 type Plate struct {
 	Score      int  // the score of the scan the recipe came from
-	FirstOfDay bool // the player's first checked plate of the campus day
+	FirstOfDay bool // the player's first checked plate of the day, by MealWindow's day
 	Streak     int  // the current streak in days, this plate's day included (see Streak)
 	Combo      bool // cooked in a combo (Next), where one plate counts for both players
 }

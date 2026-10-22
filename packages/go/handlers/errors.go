@@ -52,6 +52,12 @@ func ConnectErr(log *slog.Logger, op string, err error) error {
 		return connect.NewError(connect.CodeNotFound, repository.ErrNotFound)
 	case errors.Is(err, repository.ErrDuplicate):
 		return connect.NewError(connect.CodeAlreadyExists, repository.ErrDuplicate)
+	// AlreadyExists: that photo is a plate already, and no retry makes it a new one.
+	case errors.Is(err, repository.ErrPlateSeen):
+		return connect.NewError(connect.CodeAlreadyExists, repository.ErrPlateSeen)
+	// FailedPrecondition, not AlreadyExists: the plate is new, and the next meal window takes it.
+	case errors.Is(err, repository.ErrMealWindowCooked):
+		return connect.NewError(connect.CodeFailedPrecondition, repository.ErrMealWindowCooked)
 
 	// auth
 	// The app reads Unauthenticated as "back to onboarding", with no toast.

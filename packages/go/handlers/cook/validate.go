@@ -136,3 +136,18 @@ func eachTrimmed(in []string) []string {
 	}
 	return out
 }
+
+// buildPlate validates a PlateMeal request: the recipe and the photo, every problem at once.
+func buildPlate(req *cookv1.PlateMealRequest) handlers.FieldErrors {
+	invalid := handlers.Validate(struct {
+		RecipeID int64 `pfield:"recipe_id" validate:"gt=0"`
+	}{req.GetRecipeId()})
+	photo := req.GetPhoto()
+	switch {
+	case !handlers.IsJPEG(photo):
+		invalid = append(invalid, handlers.FieldError{Field: "photo", Message: "the photo isn't a JPEG"})
+	case len(photo) > handlers.MaxPhotoBytes:
+		invalid = append(invalid, handlers.FieldError{Field: "photo", Message: "the photo is over 2 MB"})
+	}
+	return invalid
+}
