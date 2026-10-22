@@ -1,0 +1,27 @@
+# A scan that spotted nothing says so and offers another go, and its list still shows the
+# kitchen's staples as on. Start the api with VISION_MOCK=empty (VISION_MOCK=empty moon run
+# api:dev). Needs the app installed (moon run mobile:ios) and Metro (moon run mobile:dev).
+appId: com.cadenlund.friesinthebag
+---
+- launchApp:
+    clearState: true
+- runFlow: subflows/sign-up.yaml
+- runFlow: subflows/judge-sample.yaml
+- assertVisible: "0"
+- assertVisible: "Fries in the Bag tier"
+- assertVisible: "Nothing spotted"
+- assertVisible: "Either your fridge is empty or the photo is."
+# Sign-up kept every staple on, and they count with nothing scanned.
+- scrollUntilVisible:
+    element: "Fix the list"
+- tapOn: "Fix the list"
+- assertVisible: "Nothing on the list."
+- assertVisible: "Salt, on"
+- assertVisible: "Spices, on"
+- tapOn: "Close"
+- assertNotVisible: "Nothing on the list."
+- scrollUntilVisible:
+    element: "Scan again"
+    direction: UP
+- tapOn: "Scan again"
+- assertVisible: "See what you have. Cook something great."

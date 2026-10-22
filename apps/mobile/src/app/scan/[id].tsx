@@ -1,5 +1,7 @@
-import { PlaceholderScreen } from "@/screens/placeholder-screen";
+import { useLocalSearchParams } from "expo-router";
+import { VerdictScreen } from "@/screens/verdict-screen";
 
 export default function VerdictRoute() {
-  return <PlaceholderScreen title="Verdict" issue={19} />;
+  const { id } = useLocalSearchParams<{ id: string }>();
+  return <VerdictScreen id={id} />;
 }
