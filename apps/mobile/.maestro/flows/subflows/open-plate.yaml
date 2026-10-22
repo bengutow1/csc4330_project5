@@ -1,0 +1,16 @@
+# From a scrappy verdict to plate it, through #22's recipe screens: cook, the Spicy Pea Ramen
+# recipe, then I made it. Run it on the verdict of a VISION_MOCK=scrappy scan. #22 builds those
+# screens, so check these labels against it once it lands. It lives in a subfolder so a folder
+# run of flows/ does not run it on its own.
+appId: com.cadenlund.friesinthebag
+---
+- tapOn: "Show me what I can cook \\(\\+50\\)"
+# The recipes come from the vision mock, which takes 2 s.
+- extendedWaitUntil:
+    visible: "Spicy Pea Ramen.*"
+    timeout: 15000
+- tapOn: "Spicy Pea Ramen.*"
+- scrollUntilVisible:
+    element: "I made it"
+- tapOn: "I made it"
+- assertVisible: "Snap what you made."
