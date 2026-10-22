@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"slices"
 	"strconv"
+	"sync"
 	"time"
 
 	"connectrpc.com/connect"
@@ -57,12 +58,48 @@ type Cook struct {
 	vision     Vision
 	limit      *handlers.Limiter
 	plateLimit *handlers.Limiter
+	making     *making
 	now        func() time.Time
 	log        *slog.Logger
 }
 
 // Every rpc is served here, so a new one in cook.proto fails the build until it is.
 var _ cookv1connect.CookServiceHandler = (*Cook)(nil)
+
+// making holds the sets being made right now, so each is made by one request at a time. Another
+// request for the same set (a chip tapped while the first shelves load) waits for that one
+// instead of asking the model again and spending another of the player's sets. It covers one
+// process; recipe_set's unique key still settles a race between two.
+type making struct {
+	mu   sync.Mutex
+	sets map[setKey]chan struct{}
+}
+
+// setKey names one version of one scan's list, which gets one set.
+type setKey struct {
+	scanID  int64
+	version int
+}
+
+// claim makes this request the one making key's set, or returns what closes when the request
+// making it is done.
+func (m *making) claim(key setKey) (done <-chan struct{}, mine bool) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if ch, ok := m.sets[key]; ok {
+		return ch, false
+	}
+	m.sets[key] = make(chan struct{})
+	return nil, true
+}
+
+// release ends this request's claim on key and wakes every request waiting on it.
+func (m *making) release(key setKey) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	close(m.sets[key])
+	delete(m.sets, key)
+}
 
 // Config is what Cook needs to exist.
 type Config struct {
@@ -106,6 +143,7 @@ func NewCook(cfg Config) *Cook {
 		vision:     cfg.Vision,
 		limit:      cfg.Limit,
 		plateLimit: cfg.PlateLimit,
+		making:     &making{sets: map[setKey]chan struct{}{}},
 		now:        now,
 		log:        log,
 	}
@@ -143,16 +181,9 @@ func (h *Cook) ListRecipes(
 	// 4. Each version of the list gets its set once. A list with nothing on it has nothing to
 	// cook, so it never reaches the model
 	if len(scan.Items) > 0 {
-		var has bool
-		has, err = h.repo.HasRecipes(ctx, me.AccountID, scan.ScanID, scan.ItemsVersion)
+		err = h.ensureSet(ctx, me, scan)
 		if err != nil {
 			return nil, h.fail(op, err)
-		}
-		if !has {
-			err = h.makeSet(ctx, me, scan)
-			if err != nil {
-				return nil, h.fail(op, err)
-			}
 		}
 	}
 
@@ -166,6 +197,39 @@ func (h *Cook) ListRecipes(
 		return nil, h.fail(op, err)
 	}
 	return connect.NewResponse(resp), nil
+}
+
+// ensureSet sees that the scan's list has its set, making it if no request has. A request that
+// finds another making it waits for that one and spends nothing, and makes the set itself if that
+// one failed.
+func (h *Cook) ensureSet(ctx context.Context, me repository.Account, scan repository.Scan) error {
+	key := setKey{scanID: scan.ScanID, version: scan.ItemsVersion}
+	for {
+		has, err := h.repo.HasRecipes(ctx, me.AccountID, scan.ScanID, scan.ItemsVersion)
+		if err != nil || has {
+			return err
+		}
+		done, mine := h.making.claim(key)
+		if mine {
+			return h.makeClaimed(ctx, me, scan, key)
+		}
+		select {
+		case <-done:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+}
+
+// makeClaimed makes the set this request claimed, unless another request stored it between the
+// look and the claim.
+func (h *Cook) makeClaimed(ctx context.Context, me repository.Account, scan repository.Scan, key setKey) error {
+	defer h.making.release(key)
+	has, err := h.repo.HasRecipes(ctx, me.AccountID, scan.ScanID, scan.ItemsVersion)
+	if err != nil || has {
+		return err
+	}
+	return h.makeSet(ctx, me, scan)
 }
 
 // makeSet asks the model for recipes for the scan's list and stores the ones the player can cook.
