@@ -18,10 +18,11 @@ runs: copy their shape.
 `packages/ts/api` holds the transport, the query client, the foreground refetch, error decoding and
 the health, account, scan, cook and fries hooks.
 `apps/mobile` is the shell: a first launch goes through onboarding (welcome, handle and avatar,
-kitchen), then three tabs. Snap is the camera, which judges a kitchen and opens its verdict, Fries
-mode is the fries moment and the spots nearby, settings (P3) sits behind the Me tab's gear, and the
-other Core routes are still placeholders, with `/status` wired to the API end to end. Each issue
-builds its screen from the design in `docs/design.md`.
+kitchen), then three tabs. Snap is the camera, which judges a kitchen and opens its verdict: the
+score, tier and roast, what was spotted, and a sheet that fixes the list. Fries mode is the fries
+moment and the spots nearby, settings (P3) sits behind the Me tab's gear, and the other Core routes
+are still placeholders, with `/status` wired to the API end to end. Each issue builds its screen
+from the design in `docs/design.md`.
 
 ## Words we use
 

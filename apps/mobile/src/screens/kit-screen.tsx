@@ -7,7 +7,7 @@ import { BottomBar } from "@/components/bottom-bar";
 import { Button } from "@/components/button";
 import { Card, Divider } from "@/components/card";
 import { CheckPill } from "@/components/check-pill";
-import { FilterChip, RemovableChip } from "@/components/chip";
+import { FilterChip, OnChip, RemovableChip } from "@/components/chip";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { CountUp } from "@/components/count-up";
 import { EmptyState } from "@/components/empty-state";
@@ -172,6 +172,13 @@ export function KitScreen() {
           variant="secondary"
           onPress={() => setFoods(FOODS)}
         />
+      </Section>
+
+      <Section title="Staple chips">
+        <View style={styles.wrap}>
+          <OnChip label="Salt" />
+          <OnChip label="Rice" />
+        </View>
       </Section>
 
       <Section title="Segmented control">
