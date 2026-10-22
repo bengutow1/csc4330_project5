@@ -1,7 +1,7 @@
 // Author: Caden Lund
 // Package handlers holds what every Connect service shares: the one error boundary, field
 // violations, validation, the gate and the limiter. Each product surface is a subpackage
-// (healthz, account and scan now, then cook, fries, combo and board).
+// (healthz, account, scan and fries now, then cook, combo and board).
 package handlers
 
 import (
@@ -13,6 +13,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/bengutow1/csc4330_project5/packages/go/auth"
+	"github.com/bengutow1/csc4330_project5/packages/go/places"
 	"github.com/bengutow1/csc4330_project5/packages/go/repository"
 	"github.com/bengutow1/csc4330_project5/packages/go/vision"
 )
@@ -21,7 +22,7 @@ var (
 	// ErrNotReady fires when a readiness check fails. The probe is public, so the real failure
 	// stays in the server log.
 	ErrNotReady = errors.New("not ready")
-	// ErrTooManyRequests fires when one client IP has spent a public rpc's limit for now.
+	// ErrTooManyRequests fires when one client IP, or one account, has spent an rpc's limit for now.
 	ErrTooManyRequests = errors.New("too many tries, wait a few minutes and try again")
 )
 
@@ -64,6 +65,11 @@ func ConnectErr(log *slog.Logger, op string, err error) error {
 	// Unavailable: the model failed or timed out, and the same photos may well work a moment later.
 	case errors.Is(err, vision.ErrUnavailable):
 		return connect.NewError(connect.CodeUnavailable, vision.ErrUnavailable)
+
+	// places
+	// Unavailable: the provider failed or timed out, and the player's next tap may well work.
+	case errors.Is(err, places.ErrUnavailable):
+		return connect.NewError(connect.CodeUnavailable, places.ErrUnavailable)
 
 	// handlers
 	// Unavailable, not Internal: the process is fine and a dependency is not, so a probe and a
