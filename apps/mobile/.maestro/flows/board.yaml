@@ -1,0 +1,71 @@
+# The board, against the demo seed (#31) with #23's ledger in. A new player logs one fry run, which
+# puts them on the Hall of Fries below the seeded regulars. Chefs opens first, and its Hall of Fries
+# card leads there. The player's row is pinned to the bottom until a scroll brings it into the
+# list. Then the switches: all time, and Chefs. Needs the api with the seed loaded, the app
+# installed (moon run mobile:ios) and Metro (moon run mobile:dev).
+#
+# A row is one element whose label reads "Rank 7, you, 1 fry run", so the flow matches it with a
+# regular expression.
+appId: com.cadenlund.friesinthebag
+---
+- setLocation:
+    latitude: 30.4133
+    longitude: -91.18
+- launchApp:
+    clearState: true
+- runFlow: subflows/sign-up.yaml
+# One fry run, from the spots list.
+- openLink: friesinthebag://fries/spots
+# iOS asks before opening a link with our scheme; Android does not.
+- tapOn:
+    text: "Open"
+    optional: true
+- tapOn:
+    text: "Allow While Using App"
+    optional: true
+- tapOn:
+    text: "While using the app"
+    optional: true
+- extendedWaitUntil:
+    visible: "Night Owl Fries.*"
+    timeout: 10000
+- tapOn: "Night Owl Fries.*"
+- tapOn: "Log fry run"
+- assertVisible: "Fry run logged."
+- openLink: friesinthebag://board
+- tapOn:
+    text: "Open"
+    optional: true
+- assertVisible: "Leaderboard"
+# Chefs opens first. Under it, this week's Hall of Fries leader, one tap from that board.
+- scrollUntilVisible:
+    element: "Open the Hall of Fries: .* leads with .*"
+    direction: DOWN
+- tapOn: "Open the Hall of Fries: .* leads with .*"
+- assertVisible: "Campus · this week"
+# Below the regulars, the player's own row waits at the bottom.
+- extendedWaitUntil:
+    visible:
+      id: "pinned-row"
+    timeout: 10000
+- repeat:
+    while:
+      visible:
+        id: "pinned-row"
+    times: 10
+    commands:
+      - scroll
+- assertNotVisible:
+    id: "pinned-row"
+- assertVisible: "Rank \\d+, you, 1 fry run"
+# The switches scrolled away with the header.
+- scrollUntilVisible:
+    element: "All time"
+    direction: UP
+- tapOn: "All time"
+- assertVisible: "Campus · all time"
+- tapOn: "Chefs"
+- extendedWaitUntil:
+    visible: "Rank 1, .*"
+    timeout: 10000
+- assertNotVisible: "Couldn't load the board"
