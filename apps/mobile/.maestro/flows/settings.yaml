@@ -17,8 +17,10 @@ appId: com.cadenlund.friesinthebag
     centerElement: true
 - tapOn: "Extra crispy"
 - tapOn: "Save"
-- assertVisible:
-    text: "Coming in #30."
+# Back on the Me tab, a new player's profile shows its empty plates.
+- extendedWaitUntil:
+    visible: "No plates yet."
+    timeout: 10000
     label: "Save goes back to the Me tab"
 # Opened again, the form reads the roast level back from the server.
 - tapOn: "Settings"
