@@ -79,13 +79,10 @@ export function HandleScreen() {
   return (
     <KeyboardAvoidingView
       behavior={process.env.EXPO_OS === "ios" ? "padding" : undefined}
-      style={styles.root}
+      style={[styles.root, { paddingTop: insets.top }]}
     >
       <Stack.Screen options={{ headerShown: false }} />
-      <ScrollView
-        contentContainerStyle={[styles.content, { paddingTop: insets.top }]}
-        keyboardShouldPersistTaps="handled"
-      >
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Header
           title="Pick a handle"
           subtitle="It's your name on the board."
@@ -137,7 +134,8 @@ const AVATAR_SIZE = 64;
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg },
-  content: { gap: SPACE.xxl, padding: SPACE.lg },
+  // No top padding: the header sits right under the status bar, as the design draws it.
+  content: { gap: SPACE.xxl, paddingHorizontal: SPACE.lg, paddingBottom: SPACE.lg },
   field: { gap: SPACE.sm },
   input: {
     ...TYPE.body,

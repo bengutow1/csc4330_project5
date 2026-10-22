@@ -836,6 +836,79 @@ func (x *UpdateKitchenResponse) GetAccount() *Account {
 	return nil
 }
 
+type DeleteAccountRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteAccountRequest) Reset() {
+	*x = DeleteAccountRequest{}
+	mi := &file_account_v1_account_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteAccountRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteAccountRequest) ProtoMessage() {}
+
+func (x *DeleteAccountRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_account_v1_account_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteAccountRequest.ProtoReflect.Descriptor instead.
+func (*DeleteAccountRequest) Descriptor() ([]byte, []int) {
+	return file_account_v1_account_proto_rawDescGZIP(), []int{10}
+}
+
+// Nothing is left to return: the account is gone, and the response clears the session cookie.
+type DeleteAccountResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteAccountResponse) Reset() {
+	*x = DeleteAccountResponse{}
+	mi := &file_account_v1_account_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteAccountResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteAccountResponse) ProtoMessage() {}
+
+func (x *DeleteAccountResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_account_v1_account_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteAccountResponse.ProtoReflect.Descriptor instead.
+func (*DeleteAccountResponse) Descriptor() ([]byte, []int) {
+	return file_account_v1_account_proto_rawDescGZIP(), []int{11}
+}
+
 var File_account_v1_account_proto protoreflect.FileDescriptor
 
 const file_account_v1_account_proto_rawDesc = "" +
@@ -868,7 +941,9 @@ const file_account_v1_account_proto_rawDesc = "" +
 	"\x14UpdateKitchenRequest\x12-\n" +
 	"\akitchen\x18\x01 \x01(\v2\x13.account.v1.KitchenR\akitchen\"F\n" +
 	"\x15UpdateKitchenResponse\x12-\n" +
-	"\aaccount\x18\x01 \x01(\v2\x13.account.v1.AccountR\aaccount*u\n" +
+	"\aaccount\x18\x01 \x01(\v2\x13.account.v1.AccountR\aaccount\"\x16\n" +
+	"\x14DeleteAccountRequest\"\x17\n" +
+	"\x15DeleteAccountResponse*u\n" +
 	"\n" +
 	"RoastLevel\x12\x1b\n" +
 	"\x17ROAST_LEVEL_UNSPECIFIED\x10\x00\x12\x14\n" +
@@ -910,12 +985,13 @@ const file_account_v1_account_proto_rawDesc = "" +
 	"\fSTAPLE_PASTA\x10\x06\x12\x10\n" +
 	"\fSTAPLE_FLOUR\x10\a\x12\x10\n" +
 	"\fSTAPLE_SUGAR\x10\b\x12\x11\n" +
-	"\rSTAPLE_SPICES\x10\t2\xcd\x02\n" +
+	"\rSTAPLE_SPICES\x10\t2\xa3\x03\n" +
 	"\x0eAccountService\x12T\n" +
 	"\rCreateAccount\x12 .account.v1.CreateAccountRequest\x1a!.account.v1.CreateAccountResponse\x12N\n" +
 	"\vCheckHandle\x12\x1e.account.v1.CheckHandleRequest\x1a\x1f.account.v1.CheckHandleResponse\x12?\n" +
 	"\x06WhoAmI\x12\x19.account.v1.WhoAmIRequest\x1a\x1a.account.v1.WhoAmIResponse\x12T\n" +
-	"\rUpdateKitchen\x12 .account.v1.UpdateKitchenRequest\x1a!.account.v1.UpdateKitchenResponseB\xb6\x01\n" +
+	"\rUpdateKitchen\x12 .account.v1.UpdateKitchenRequest\x1a!.account.v1.UpdateKitchenResponse\x12T\n" +
+	"\rDeleteAccount\x12 .account.v1.DeleteAccountRequest\x1a!.account.v1.DeleteAccountResponseB\xb6\x01\n" +
 	"\x0ecom.account.v1B\fAccountProtoP\x01ZMgithub.com/bengutow1/csc4330_project5/packages/go/apigen/account/v1;accountv1\xa2\x02\x03AXX\xaa\x02\n" +
 	"Account.V1\xca\x02\n" +
 	"Account\\V1\xe2\x02\x16Account\\V1\\GPBMetadata\xea\x02\vAccount::V1b\x06proto3"
@@ -933,7 +1009,7 @@ func file_account_v1_account_proto_rawDescGZIP() []byte {
 }
 
 var file_account_v1_account_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
-var file_account_v1_account_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_account_v1_account_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_account_v1_account_proto_goTypes = []any{
 	(RoastLevel)(0),               // 0: account.v1.RoastLevel
 	(Equipment)(0),                // 1: account.v1.Equipment
@@ -950,6 +1026,8 @@ var file_account_v1_account_proto_goTypes = []any{
 	(*WhoAmIResponse)(nil),        // 12: account.v1.WhoAmIResponse
 	(*UpdateKitchenRequest)(nil),  // 13: account.v1.UpdateKitchenRequest
 	(*UpdateKitchenResponse)(nil), // 14: account.v1.UpdateKitchenResponse
+	(*DeleteAccountRequest)(nil),  // 15: account.v1.DeleteAccountRequest
+	(*DeleteAccountResponse)(nil), // 16: account.v1.DeleteAccountResponse
 }
 var file_account_v1_account_proto_depIdxs = []int32{
 	6,  // 0: account.v1.Account.kitchen:type_name -> account.v1.Kitchen
@@ -966,12 +1044,14 @@ var file_account_v1_account_proto_depIdxs = []int32{
 	9,  // 11: account.v1.AccountService.CheckHandle:input_type -> account.v1.CheckHandleRequest
 	11, // 12: account.v1.AccountService.WhoAmI:input_type -> account.v1.WhoAmIRequest
 	13, // 13: account.v1.AccountService.UpdateKitchen:input_type -> account.v1.UpdateKitchenRequest
-	8,  // 14: account.v1.AccountService.CreateAccount:output_type -> account.v1.CreateAccountResponse
-	10, // 15: account.v1.AccountService.CheckHandle:output_type -> account.v1.CheckHandleResponse
-	12, // 16: account.v1.AccountService.WhoAmI:output_type -> account.v1.WhoAmIResponse
-	14, // 17: account.v1.AccountService.UpdateKitchen:output_type -> account.v1.UpdateKitchenResponse
-	14, // [14:18] is the sub-list for method output_type
-	10, // [10:14] is the sub-list for method input_type
+	15, // 14: account.v1.AccountService.DeleteAccount:input_type -> account.v1.DeleteAccountRequest
+	8,  // 15: account.v1.AccountService.CreateAccount:output_type -> account.v1.CreateAccountResponse
+	10, // 16: account.v1.AccountService.CheckHandle:output_type -> account.v1.CheckHandleResponse
+	12, // 17: account.v1.AccountService.WhoAmI:output_type -> account.v1.WhoAmIResponse
+	14, // 18: account.v1.AccountService.UpdateKitchen:output_type -> account.v1.UpdateKitchenResponse
+	16, // 19: account.v1.AccountService.DeleteAccount:output_type -> account.v1.DeleteAccountResponse
+	15, // [15:20] is the sub-list for method output_type
+	10, // [10:15] is the sub-list for method input_type
 	10, // [10:10] is the sub-list for extension type_name
 	10, // [10:10] is the sub-list for extension extendee
 	0,  // [0:10] is the sub-list for field type_name
@@ -988,7 +1068,7 @@ func file_account_v1_account_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_account_v1_account_proto_rawDesc), len(file_account_v1_account_proto_rawDesc)),
 			NumEnums:      5,
-			NumMessages:   10,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

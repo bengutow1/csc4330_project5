@@ -4,9 +4,13 @@ package auth_test
 import (
 	"context"
 	"errors"
+	"slices"
 	"testing"
+	"time"
 
 	"github.com/alexedwards/scs/v2"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/bengutow1/csc4330_project5/packages/go/auth"
 	"github.com/bengutow1/csc4330_project5/packages/go/repository"
@@ -167,6 +171,97 @@ func TestCurrentAccountReadsTheRowAfresh(t *testing.T) {
 	if got.RoastLevel != repository.RoastExtraCrispy {
 		t.Errorf("roast level = %q, want %q", got.RoastLevel, repository.RoastExtraCrispy)
 	}
+}
+
+// TestEndSessionsEndsEverySessionOfTheAccountAndNoOther: deleting an account has to sign out every
+// session that held it, this request's with its cookie, while another player's stays signed in.
+func TestEndSessionsEndsEverySessionOfTheAccountAndNoOther(t *testing.T) {
+	t.Parallel()
+	pool := newPool(t)
+	repo := repository.New(pool)
+	sessions := newSessions(pool)
+	a := auth.New(sessions, repo)
+	maya := createAccount(t, repo, "test_maya")
+	ben := createAccount(t, repo, "test_ben")
+	here := signIn(t, a, sessions, "", maya.AccountID)
+	// A second session holding maya, as a copied cookie would be.
+	elsewhere := signIn(t, a, sessions, "", maya.AccountID)
+	bens := signIn(t, a, sessions, "", ben.AccountID)
+	ctx := request(t, sessions, here)
+	bensRow := storedSession(t, pool, bens)
+
+	err := a.EndSessions(ctx, maya.AccountID)
+
+	if err != nil {
+		t.Fatalf("end sessions: %v", err)
+	}
+	// Iterate hands each stored session to the callback and saves none back, so the store holds
+	// ben's session exactly as it was, and no empty session for each one ended.
+	left := storedSessions(t, pool)
+	if !slices.Equal(left, []sessionRow{bensRow}) {
+		t.Errorf("session store = %v, want only ben's, unchanged: %v", left, bensRow)
+	}
+	if sessions.Status(ctx) != scs.Destroyed {
+		t.Errorf("this request's session status = %v, want destroyed, so the response clears its cookie",
+			sessions.Status(ctx))
+	}
+	// Maya's account still exists here, so signed out means the session itself is gone.
+	cases := []struct {
+		name, token string
+		want        int64 // the account the session still names, 0 for none
+	}{
+		{"this request's session", here, 0},
+		{"maya's other session", elsewhere, 0},
+		{"ben's session", bens, ben.AccountID},
+	}
+	for _, c := range cases {
+		got, err := a.CurrentAccount(request(t, sessions, c.token))
+		switch {
+		case c.want == 0 && !errors.Is(err, auth.ErrNotAuthenticated):
+			t.Errorf("%s: current account = %d, %v, want signed out", c.name, got.AccountID, err)
+		case c.want != 0 && (err != nil || got.AccountID != c.want):
+			t.Errorf("%s: current account = %d, %v, want %d", c.name, got.AccountID, err, c.want)
+		}
+	}
+}
+
+// sessionRow is one row of the session store, as scs's pgxstore keeps it.
+type sessionRow struct {
+	token  string
+	data   string
+	expiry time.Time
+}
+
+// storedSessions is every row in the session store, by token.
+func storedSessions(t *testing.T, pool *pgxpool.Pool) []sessionRow {
+	t.Helper()
+	rows, err := pool.Query(t.Context(), `select token, data, expiry from sessions order by token`)
+	if err != nil {
+		t.Fatalf("read the session store: %v", err)
+	}
+	got, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (sessionRow, error) {
+		var r sessionRow
+		var data []byte
+		err := row.Scan(&r.token, &data, &r.expiry)
+		r.data = string(data)
+		return r, err
+	})
+	if err != nil {
+		t.Fatalf("read the session store: %v", err)
+	}
+	return got
+}
+
+// storedSession is the store's row for token.
+func storedSession(t *testing.T, pool *pgxpool.Pool, token string) sessionRow {
+	t.Helper()
+	for _, r := range storedSessions(t, pool) {
+		if r.token == token {
+			return r
+		}
+	}
+	t.Fatalf("no stored session for token %q", token)
+	return sessionRow{}
 }
 
 // request loads the session a token names, the way LoadAndSave does when a request arrives. ""

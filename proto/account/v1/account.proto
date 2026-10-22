@@ -20,6 +20,9 @@ service AccountService {
   // UpdateKitchen replaces the caller's kitchen with the one sent. A value outside its closed set,
   // unspecified included, is invalid_argument on its field, naming the valid values.
   rpc UpdateKitchen(UpdateKitchenRequest) returns (UpdateKitchenResponse);
+  // DeleteAccount deletes the caller's account and everything of theirs, and ends every session
+  // that held it, this one included. Unauthenticated without a session.
+  rpc DeleteAccount(DeleteAccountRequest) returns (DeleteAccountResponse);
 }
 
 // Account is the caller as they see themselves: their public name and their kitchen.
@@ -82,6 +85,11 @@ message UpdateKitchenResponse {
   // The account as stored, with its new kitchen.
   Account account = 1;
 }
+
+message DeleteAccountRequest {}
+
+// Nothing is left to return: the account is gone, and the response clears the session cookie.
+message DeleteAccountResponse {}
 
 // RoastLevel is how hard the roast hits. Medium is the default.
 enum RoastLevel {

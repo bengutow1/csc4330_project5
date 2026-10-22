@@ -1,6 +1,6 @@
-import { Allergy, Diet, Equipment, RoastLevel, Staple } from "@fries-in-the-bag/api";
+import { Allergy, Diet, Equipment, type Kitchen, RoastLevel, Staple } from "@fries-in-the-bag/api";
 import { describe, expect, it } from "vitest";
-import { ALLERGIES, DIETS, EQUIPMENT, ROAST_LEVELS, STAPLES, toggled } from "./kitchen.ts";
+import { ALLERGIES, DIETS, draftOf, EQUIPMENT, ROAST_LEVELS, STAPLES, toggled } from "./kitchen.ts";
 
 // Every value of a wire enum but UNSPECIFIED, in number order. A numeric TS enum also maps each
 // number back to its name, hence the filter.
@@ -36,5 +36,40 @@ describe("toggled", () => {
     expect(toggled(list, Staple.OIL)).toEqual([Staple.SALT, Staple.RICE, Staple.OIL]);
     expect(toggled(list, Staple.SALT)).toEqual([Staple.RICE]);
     expect(list).toEqual([Staple.SALT, Staple.RICE]);
+  });
+});
+
+describe("draftOf", () => {
+  // Settings and onboarding save the draft whole, so a field it dropped would be switched off.
+  it("opens on every field of the kitchen as stored, on lists of its own", () => {
+    const kitchen: Kitchen = {
+      $typeName: "account.v1.Kitchen",
+      roastLevel: RoastLevel.EXTRA_CRISPY,
+      equipment: [Equipment.OVEN],
+      diet: Diet.VEGAN,
+      allergies: [Allergy.PEANUTS, Allergy.SESAME],
+      staples: [Staple.SALT],
+    };
+
+    const draft = draftOf(kitchen);
+
+    expect(draft).toEqual({
+      roastLevel: RoastLevel.EXTRA_CRISPY,
+      equipment: [Equipment.OVEN],
+      diet: Diet.VEGAN,
+      allergies: [Allergy.PEANUTS, Allergy.SESAME],
+      staples: [Staple.SALT],
+    });
+    expect(draft.equipment).not.toBe(kitchen.equipment);
+  });
+
+  it("opens empty before the kitchen has loaded", () => {
+    expect(draftOf(undefined)).toEqual({
+      roastLevel: undefined,
+      equipment: [],
+      diet: undefined,
+      allergies: [],
+      staples: [],
+    });
   });
 });

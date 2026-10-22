@@ -65,6 +65,17 @@ export function useCreatingAccount() {
   return useIsMutating(CREATING_ACCOUNT) > 0;
 }
 
+/**
+ * useDeleteAccount deletes the player's account and everything of theirs. Success resets every
+ * query, as making one does, so WhoAmI asks again, finds no session and onboarding opens.
+ */
+export function useDeleteAccount() {
+  const queryClient = useQueryClient();
+  return useMutation(AccountService.method.deleteAccount, {
+    onSuccess: () => queryClient.resetQueries(),
+  });
+}
+
 // Every recipe read. The recipes leave out what the player can't eat or cook with, so shelves
 // cached before an allergy was saved would still offer a recipe that contains it.
 const RECIPE_FAMILY = createConnectQueryKey({ schema: CookService, cardinality: undefined });

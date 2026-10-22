@@ -6,21 +6,22 @@ points on a campus leaderboard, and Combo mode lets two friends merge their frid
 together. `apps/` holds deployables, `packages/` holds shared code.
 
 Status: device accounts, scans, cooking for points and spots nearby. The API serves the health
-probes, `AccountService` (make a device account, check a handle, who am I, save the kitchen),
-`ScanService` (judge a kitchen's photos with the vision mock, read a verdict, fix its list),
-`CookService` (a scan's recipes on two shelves, one recipe, and a plate the mock checks, paid in
-points on a receipt) and `FriesService` (spots nearby from the places mock, and fry runs), with
-sessions in Postgres. The Go packages hold what every feature builds on (the error boundary,
-validation, the gate, the limiter, the session, the repository, logging), and the schema holds the
-`app` schema, its shared trigger, `app.account`, the sessions table, `app.scan` with its items, the
-recipes, the plates with their points ledger, and the fry runs: copy their shape.
-`packages/ts/api` holds the transport, the query client, the foreground refetch, error decoding
-and the health, account, scan, cook and fries hooks.
+probes, `AccountService` (make a device account, check a handle, who am I, save the kitchen, delete
+the account and end its sessions), `ScanService` (judge a kitchen's photos with the vision mock,
+read a verdict, fix its list), `CookService` (a scan's recipes on two shelves, one recipe, and a
+plate the mock checks, paid in points on a receipt) and `FriesService` (spots nearby from the
+places mock, and fry runs), with sessions in Postgres. The Go packages hold what every feature
+builds on (the error boundary, validation, the gate, the limiter, the session, the repository,
+logging), and the schema holds the `app` schema, its shared trigger, `app.account`, the sessions
+table, `app.scan` with its items, the recipes, the plates with their points ledger, and the fry
+runs: copy their shape.
+`packages/ts/api` holds the transport, the query client, the foreground refetch, error decoding and
+the health, account, scan, cook and fries hooks.
 `apps/mobile` is the shell: a first launch goes through onboarding (welcome, handle and avatar,
 kitchen), then three tabs. Snap is the camera, which judges a kitchen and opens its verdict, Fries
-mode is the fries moment and the spots nearby, and the other Core routes are still placeholders,
-with `/status` wired to the API end to end. Each issue builds its screen from the design in
-`docs/design.md`.
+mode is the fries moment and the spots nearby, settings (P3) sits behind the Me tab's gear, and the
+other Core routes are still placeholders, with `/status` wired to the API end to end. Each issue
+builds its screen from the design in `docs/design.md`.
 
 ## Words we use
 

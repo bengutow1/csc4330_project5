@@ -33,6 +33,7 @@ export {
   useCheckHandle,
   useCreateAccount,
   useCreatingAccount,
+  useDeleteAccount,
   useUpdateKitchen,
   useWhoAmI,
 } from "./hooks/use-account.ts";
