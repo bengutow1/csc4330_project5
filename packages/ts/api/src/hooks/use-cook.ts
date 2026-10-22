@@ -1,4 +1,4 @@
-import { createConnectQueryKey, skipToken, useQuery } from "@connectrpc/connect-query";
+import { createConnectQueryKey, skipToken, useMutation, useQuery } from "@connectrpc/connect-query";
 import type { Diet, Equipment } from "@fries-in-the-bag/apigen/account/v1/account_pb";
 import { CookService } from "@fries-in-the-bag/apigen/cook/v1/cook_pb";
 import { useQueryClient } from "@tanstack/react-query";
@@ -70,6 +70,16 @@ export function useRecipe(recipeId: bigint | undefined) {
 /** recipeInput is what useRecipe sends: skipToken until the id is a real one. */
 export function recipeInput(recipeId: bigint | undefined) {
   return recipeId === undefined || recipeId <= 0n ? skipToken : { recipeId };
+}
+
+/**
+ * usePlateMeal sends a photo of the finished dish to be checked and paid. A plate the model did not
+ * pass comes back as a receipt that says so, never as an error. A failed send is never retried on
+ * its own: each try spends one of the player's checks, so the player taps again. Nothing a plate
+ * changes is read yet; the profile and the board (#28, #30) widen its onSettled when they land.
+ */
+export function usePlateMeal() {
+  return useMutation(CookService.method.plateMeal);
 }
 
 /**

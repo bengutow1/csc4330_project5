@@ -80,3 +80,94 @@ func visionItems(items []repository.ScanItem) []vision.Item {
 	}
 	return out
 }
+
+// pointReasons is the closed set in one table: the points rules' reason and the wire's enum. A
+// reason missing here fails the plate with a logged internal error rather than reaching the app
+// as unspecified.
+var pointReasons = map[points.Reason]cookv1.PointReason{
+	points.ReasonCook:           cookv1.PointReason_POINT_REASON_COOK,
+	points.ReasonScrappyBonus:   cookv1.PointReason_POINT_REASON_SCRAPPY_BONUS,
+	points.ReasonAgainstAllOdds: cookv1.PointReason_POINT_REASON_AGAINST_ALL_ODDS,
+	points.ReasonStreak:         cookv1.PointReason_POINT_REASON_STREAK,
+	points.ReasonComboCook:      cookv1.PointReason_POINT_REASON_COMBO_COOK,
+}
+
+// paidPlate is what one plate paid, and where it left the player.
+type paidPlate struct {
+	lines                   []points.Line
+	streak                  int
+	before, after           repository.PlayerStats
+	totalBefore, totalAfter int
+}
+
+// toAwards is a plate's lines as the ledger stores them; the points rules spell each reason as
+// app.point_event's check does.
+func toAwards(lines []points.Line) []repository.Award {
+	out := make([]repository.Award, 0, len(lines))
+	for _, line := range lines {
+		out = append(out, repository.Award{Reason: string(line.Reason), Points: line.Points})
+	}
+	return out
+}
+
+// toProtoReceipt is the receipt for a plate that passed: its lines in receipt order, their
+// total, the streak, the badges this plate earned, and the rank before and after.
+func toProtoReceipt(message string, p paidPlate) (*cookv1.Receipt, error) {
+	r := &cookv1.Receipt{
+		Passed:     true,
+		Message:    message,
+		StreakDays: int32(p.streak), // a count of days, far under int32
+		RankBefore: toProtoRank(points.RankOf(p.totalBefore)),
+		RankAfter:  toProtoRank(points.RankOf(p.totalAfter)),
+		NewBadges:  newBadges(statsOf(p.before), statsOf(p.after)),
+	}
+	for _, line := range p.lines {
+		reason, ok := pointReasons[line.Reason]
+		if !ok {
+			return nil, fmt.Errorf("cook: no wire reason for %q", line.Reason)
+		}
+		earned := int32(line.Points) // at most 100 a line
+		r.Lines = append(r.Lines, &cookv1.AwardLine{Reason: reason, Points: earned})
+		r.Total += earned
+	}
+	return r, nil
+}
+
+// newBadges are the badges after earns that before did not, in the concept's order.
+func newBadges(before, after points.Stats) []*cookv1.Badge {
+	had := points.Badges(before)
+	var out []*cookv1.Badge
+	for i, b := range points.Badges(after) {
+		if b.Earned && !had[i].Earned {
+			out = append(out, &cookv1.Badge{Name: b.Name, HowToEarn: b.HowToEarn, Earned: true})
+		}
+	}
+	return out
+}
+
+// statsOf is a player's counts as the badges read them. The Hall of Fries has no weeks to count
+// until the board (#30) keeps them.
+func statsOf(s repository.PlayerStats) points.Stats {
+	return points.Stats{
+		Scans:                 s.Scans,
+		BestScore:             s.BestScore,
+		Cooks:                 s.Cooks,
+		CooksUnder35:          s.CooksUnder35,
+		CooksWithThreeOrFewer: s.CooksWithThreeOrFewer,
+		ComboCooks:            s.ComboCooks,
+		LongestStreak:         s.LongestStreak,
+		LateNightPlates:       s.LateNightPlates,
+		MicrowaveOnlyCooks:    s.MicrowaveOnlyCooks,
+		BiggestWeeklyRise:     s.BiggestWeeklyRise,
+	}
+}
+
+// toProtoRank maps a rank to the wire.
+func toProtoRank(r points.Rank) *cookv1.Rank {
+	return &cookv1.Rank{
+		Name:     r.Name,
+		Next:     r.Next,
+		ToNext:   int32(r.ToNext), // at most the 10000 to the top title
+		Progress: r.Progress,
+	}
+}

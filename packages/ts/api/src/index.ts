@@ -37,6 +37,7 @@ export {
 export {
   type RecipeFilters,
   useInvalidateRecipes,
+  usePlateMeal,
   useRecipe,
   useRecipes,
 } from "./hooks/use-cook.ts";

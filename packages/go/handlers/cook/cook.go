@@ -1,11 +1,14 @@
 // Author: Caden Lund
 // Package cook serves cook.v1 CookService: the recipes for one of a player's scans, on two
-// shelves, and one recipe at a time. Plating (#23) answers unimplemented until it lands.
+// shelves, one recipe at a time, and the plate that turns a cooked recipe into points.
 package cook
 
 import (
 	"context"
+	"crypto/sha256"
+	"fmt"
 	"log/slog"
+	"slices"
 	"strconv"
 	"time"
 
@@ -15,6 +18,7 @@ import (
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/cook/v1/cookv1connect"
 	"github.com/bengutow1/csc4330_project5/packages/go/auth"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers"
+	"github.com/bengutow1/csc4330_project5/packages/go/points"
 	"github.com/bengutow1/csc4330_project5/packages/go/recipes"
 	"github.com/bengutow1/csc4330_project5/packages/go/repository"
 	"github.com/bengutow1/csc4330_project5/packages/go/vision"
@@ -28,23 +32,37 @@ const (
 	setWindow   = time.Hour
 )
 
-// Vision writes recipes for a list and the player's kitchen. The vision mock serves it until the
-// real client (#25) exists.
+// Each plate check spends model time too, so each player gets platesPerHour of them. Four meal
+// windows a day leave room for a retake or two in each.
+const (
+	platesPerHour = 10
+	plateWindow   = time.Hour
+)
+
+// maxReasonRunes bounds the model's reason for a failed plate in the log line, since its words
+// are the vendor's.
+const maxReasonRunes = 200
+
+// Vision writes recipes for a list and the player's kitchen, and checks a photo of a cooked one.
+// The vision mock serves it until the real client (#25) exists.
 type Vision interface {
 	Recipes(ctx context.Context, items []vision.Item, kitchen vision.Kitchen) ([]vision.Recipe, error)
+	CheckPlate(ctx context.Context, photo []byte, recipeTitle string) (vision.PlateCheck, error)
 }
 
 // Cook implements cook.v1 CookService.
 type Cook struct {
-	// PlateMeal is #23's. Until it lands, the generated stub answers unimplemented.
-	cookv1connect.UnimplementedCookServiceHandler
-
-	repo   *repository.Repository
-	gate   handlers.Gate
-	vision Vision
-	limit  *handlers.Limiter
-	log    *slog.Logger
+	repo       *repository.Repository
+	gate       handlers.Gate
+	vision     Vision
+	limit      *handlers.Limiter
+	plateLimit *handlers.Limiter
+	now        func() time.Time
+	log        *slog.Logger
 }
+
+// Every rpc is served here, so a new one in cook.proto fails the build until it is.
+var _ cookv1connect.CookServiceHandler = (*Cook)(nil)
 
 // Config is what Cook needs to exist.
 type Config struct {
@@ -54,12 +72,22 @@ type Config struct {
 	// Limit caps how many sets of recipes each player's lists get. main.go passes DefaultLimit;
 	// nil limits nothing.
 	Limit *handlers.Limiter
-	Log   *slog.Logger
+	// PlateLimit caps how many plates each player has checked. main.go passes
+	// DefaultPlateLimit; nil limits nothing.
+	PlateLimit *handlers.Limiter
+	// Now is the clock the meal windows are read from; nil is time.Now.
+	Now func() time.Time
+	Log *slog.Logger
 }
 
 // DefaultLimit is the limit the API serves with: setsPerHour for each player.
 func DefaultLimit() *handlers.Limiter {
 	return handlers.NewLimiter(setsPerHour, setWindow)
+}
+
+// DefaultPlateLimit is the plate limit the API serves with: platesPerHour for each player.
+func DefaultPlateLimit() *handlers.Limiter {
+	return handlers.NewLimiter(platesPerHour, plateWindow)
 }
 
 // NewCook builds the service. A nil Log discards.
@@ -68,12 +96,18 @@ func NewCook(cfg Config) *Cook {
 	if log == nil {
 		log = slog.New(slog.DiscardHandler)
 	}
+	now := cfg.Now
+	if now == nil {
+		now = time.Now
+	}
 	return &Cook{
-		repo:   cfg.Repo,
-		gate:   handlers.Gate{Auth: cfg.Auth},
-		vision: cfg.Vision,
-		limit:  cfg.Limit,
-		log:    log,
+		repo:       cfg.Repo,
+		gate:       handlers.Gate{Auth: cfg.Auth},
+		vision:     cfg.Vision,
+		limit:      cfg.Limit,
+		plateLimit: cfg.PlateLimit,
+		now:        now,
+		log:        log,
 	}
 }
 
@@ -218,4 +252,182 @@ func (h *Cook) GetRecipe(
 		return nil, h.fail(op, err)
 	}
 	return connect.NewResponse(&cookv1.GetRecipeResponse{Recipe: recipe}), nil
+}
+
+// PlateMeal checks a photo of the finished dish and, when it passes, awards its points.
+func (h *Cook) PlateMeal(
+	ctx context.Context, req *connect.Request[cookv1.PlateMealRequest],
+) (*connect.Response[cookv1.PlateMealResponse], error) {
+	const op = "plate meal"
+
+	// 1. Who is asking: the account comes from the session
+	me, err := h.gate.Account(ctx)
+	if err != nil {
+		return nil, h.fail(op, err)
+	}
+
+	// 2. Validate the recipe id and the photo, before anything spends a check
+	invalid := buildPlate(req.Msg)
+	if invalid != nil {
+		return nil, h.fail(op, invalid)
+	}
+
+	// 3. Each check spends model time, so each player gets platesPerHour
+	err = h.plateLimit.Allow(strconv.FormatInt(me.AccountID, 10))
+	if err != nil {
+		return nil, h.fail(op, err)
+	}
+
+	// 4. Load the recipe through its scan: another player's answers as a missing one does
+	recipe, err := h.repo.RecipeByID(ctx, me.AccountID, req.Msg.GetRecipeId())
+	if err != nil {
+		return nil, h.fail(op, err)
+	}
+
+	// 5. The model looks at the photo. It takes seconds, so no transaction is open while it does
+	check, err := h.vision.CheckPlate(ctx, req.Msg.GetPhoto(), recipe.Title)
+	if err != nil {
+		return nil, h.fail(op, err)
+	}
+	now := h.now()
+
+	// 6. A plate that fails earns nothing and stores nothing. The model's reason is for the log,
+	// and the player reads our sentence
+	if !check.Passed {
+		h.log.Info("plate check failed", "account_id", me.AccountID, "recipe_id", recipe.RecipeID,
+			"reason", clip(check.Reason, maxReasonRunes))
+		receipt, err := h.failedReceipt(ctx, me.AccountID, recipe.Title, now)
+		if err != nil {
+			return nil, h.fail(op, err)
+		}
+		return connect.NewResponse(&cookv1.PlateMealResponse{Receipt: receipt}), nil
+	}
+
+	// 7. The plate and its points, as one act
+	receipt, err := h.plate(ctx, me.AccountID, recipe, req.Msg.GetPhoto(), now)
+	if err != nil {
+		return nil, h.fail(op, err)
+	}
+	return connect.NewResponse(&cookv1.PlateMealResponse{Receipt: receipt}), nil
+}
+
+// plate stores a passed plate and its awards in one transaction and returns the receipt.
+func (h *Cook) plate(
+	ctx context.Context, accountID int64, recipe repository.Recipe, photo []byte, now time.Time,
+) (*cookv1.Receipt, error) {
+	window, day := points.MealWindow(now)
+	today := day.Format(time.DateOnly)
+	hash := sha256.Sum256(photo)
+
+	var paid paidPlate
+	err := h.repo.InTx(ctx, func(tx *repository.Repository) error {
+		// 1. This player's plates take turns, so the day's first is read before it is written
+		err := tx.LockAccount(ctx, accountID)
+		if err != nil {
+			return err
+		}
+
+		// 2. Where they stood before this plate
+		paid.before, err = tx.PlayerStats(ctx, accountID)
+		if err != nil {
+			return err
+		}
+		paid.totalBefore, err = tx.PointsTotal(ctx, accountID)
+		if err != nil {
+			return err
+		}
+		cooked, err := tx.CookDays(ctx, accountID)
+		if err != nil {
+			return err
+		}
+
+		// 3. The plate. A photo seen before is refused here
+		plateID, err := tx.CreatePlate(ctx, accountID, repository.NewPlate{
+			RecipeID: recipe.RecipeID, Photo: photo, PhotoSHA256: hash[:], At: now,
+		})
+		if err != nil {
+			return err
+		}
+
+		// 4. The awards. The streak counts today, and only the day's first plate pays it
+		days, err := campusDays(cooked)
+		if err != nil {
+			return err
+		}
+		paid.streak = points.Streak(append(days, day), day)
+		paid.lines = points.PlateAward(points.Plate{
+			Score:      recipe.ScanScore,
+			FirstOfDay: !slices.Contains(cooked, today),
+			Streak:     paid.streak,
+		})
+
+		// 5. The ledger. The meal window's one cook credit is claimed here, and a second refused
+		err = tx.AwardPoints(ctx, accountID, plateID, today+" "+string(window), now, toAwards(paid.lines))
+		if err != nil {
+			return err
+		}
+
+		// 6. Re-read where they stand, so the receipt shows what was stored
+		paid.after, err = tx.PlayerStats(ctx, accountID)
+		if err != nil {
+			return err
+		}
+		paid.totalAfter, err = tx.PointsTotal(ctx, accountID)
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+	return toProtoReceipt(fmt.Sprintf("Looks like %s", recipe.Title), paid)
+}
+
+// failedReceipt is the receipt for a plate the model did not pass: nothing earned, with the
+// player's streak and rank as they stand.
+func (h *Cook) failedReceipt(
+	ctx context.Context, accountID int64, title string, now time.Time,
+) (*cookv1.Receipt, error) {
+	total, err := h.repo.PointsTotal(ctx, accountID)
+	if err != nil {
+		return nil, err
+	}
+	cooked, err := h.repo.CookDays(ctx, accountID)
+	if err != nil {
+		return nil, err
+	}
+	days, err := campusDays(cooked)
+	if err != nil {
+		return nil, err
+	}
+	_, today := points.MealWindow(now)
+	rank := toProtoRank(points.RankOf(total))
+	return &cookv1.Receipt{
+		Passed:     false,
+		Message:    fmt.Sprintf("That doesn't look like %s. Try another angle.", title),
+		StreakDays: int32(points.Streak(days, today)), // a count of days, far under int32
+		RankBefore: rank,
+		RankAfter:  rank,
+	}, nil
+}
+
+// campusDays reads the ledger's days ("2026-10-21") as campus midnights, which is what the
+// points rules count days in.
+func campusDays(days []string) ([]time.Time, error) {
+	out := make([]time.Time, 0, len(days))
+	for _, d := range days {
+		t, err := time.ParseInLocation(time.DateOnly, d, points.Campus())
+		if err != nil {
+			return nil, fmt.Errorf("cook: read cook day %q: %w", d, err)
+		}
+		out = append(out, t)
+	}
+	return out, nil
+}
+
+// clip shortens s to at most n runes.
+func clip(s string, n int) string {
+	runes := []rune(s)
+	if len(runes) <= n {
+		return s
+	}
+	return string(runes[:n])
 }
