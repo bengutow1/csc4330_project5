@@ -1,4 +1,10 @@
-import { errorMessage, isNotFound, isUnreachable, usePlateMeal } from "@fries-in-the-bag/api";
+import {
+  errorMessage,
+  isFailedPrecondition,
+  isNotFound,
+  isUnreachable,
+  usePlateMeal,
+} from "@fries-in-the-bag/api";
 import { Image } from "expo-image";
 import { Stack, useRouter } from "expo-router";
 import { type ReactNode, useEffect, useState } from "react";
@@ -35,8 +41,9 @@ interface PlatePhoto {
 /**
  * PlateScreen is plate it, then the receipt (C4, C5): one photo of the dish, which the server
  * checks against the recipe, then what the plate paid. A plate the check turns down says why and
- * offers another photo. Skip, Done and the close cross all end on Snap, the app's kitchen while
- * the kitchen home is on hold (docs/design.md).
+ * offers another photo. One refused because its meal window already paid offers only Done, since
+ * no photo would do better. Skip, Done and the close cross all end on Snap, the app's kitchen
+ * while the kitchen home is on hold (docs/design.md).
  */
 export function PlateScreen(props: { recipeId: string | undefined }) {
   const recipeId = parseId(props.recipeId);
@@ -148,8 +155,11 @@ function Plating(props: { recipeId: bigint }) {
       return <NotFound />;
     }
     const message = isUnreachable(plate.error) ? NO_CONNECTION : errorMessage(plate.error);
+    // A meal window that already paid refuses every plate until the next one, and only after the
+    // check has run: another photo would spend a check and fail the same way.
+    const retry = isFailedPrecondition(plate.error) ? undefined : again;
     return (
-      <Retry top={insets.top} photo={photo} message={message} onRetry={again} onSkip={leave} />
+      <Retry top={insets.top} photo={photo} message={message} onRetry={retry} onSkip={leave} />
     );
   }
   return (
@@ -176,12 +186,15 @@ function Plating(props: { recipeId: bigint }) {
   );
 }
 
-/** Retry is a plate that didn't pay: the photo, why, and another go or a way out. */
+/**
+ * Retry is a plate that didn't pay: the photo, why, and another go or a way out. With no other go
+ * (onRetry left out), Done is the one way out.
+ */
 function Retry(props: {
   top: number;
   photo: PlatePhoto | null;
   message: string;
-  onRetry: () => void;
+  onRetry?: () => void;
   onSkip: () => void;
 }) {
   return (
@@ -198,15 +211,19 @@ function Retry(props: {
         <Text style={styles.message}>{props.message}</Text>
       </View>
       <BottomBar>
-        <View style={styles.ways}>
-          <Button label="Try again" onPress={props.onRetry} />
-          <Button
-            label="Skip (no points)"
-            variant="secondary"
-            size="small"
-            onPress={props.onSkip}
-          />
-        </View>
+        {props.onRetry ? (
+          <View style={styles.ways}>
+            <Button label="Try again" onPress={props.onRetry} />
+            <Button
+              label="Skip (no points)"
+              variant="secondary"
+              size="small"
+              onPress={props.onSkip}
+            />
+          </View>
+        ) : (
+          <Button label="Done" onPress={props.onSkip} />
+        )}
       </BottomBar>
     </Frame>
   );
