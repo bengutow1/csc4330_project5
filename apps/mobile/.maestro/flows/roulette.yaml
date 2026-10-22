@@ -1,0 +1,40 @@
+# Run against the places mock. Spinning only picks; Go opens the existing spot sheet.
+appId: com.cadenlund.friesinthebag
+---
+- setLocation:
+    latitude: 30.4133
+    longitude: -91.18
+- launchApp:
+    clearState: true
+- runFlow: subflows/sign-up.yaml
+- openLink: friesinthebag://fries
+- tapOn:
+    text: "Open"
+    optional: true
+- tapOn: "Find food"
+- tapOn:
+    text: "Allow While Using App"
+    optional: true
+- tapOn:
+    text: "While using the app"
+    optional: true
+- extendedWaitUntil:
+    visible: "Night Owl Fries.*"
+    timeout: 10000
+- tapOn: 'Under \$10'
+- extendedWaitUntil:
+    visible: "Sunny Side Taco Truck.*"
+    timeout: 10000
+- tapOn: "Fry Roulette"
+- tapOn: "Spin"
+- extendedWaitUntil:
+    visible: "Here's your pick."
+    timeout: 10000
+- tapOn: "Spin again"
+- extendedWaitUntil:
+    visible: "Here's your pick."
+    timeout: 10000
+- tapOn: "Go"
+- assertVisible: "Get directions"
+- assertVisible: "Log fry run"
+- assertNotVisible: "Fry run logged."
