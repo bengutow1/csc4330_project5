@@ -75,6 +75,10 @@ type making struct {
 	sets map[setKey]chan struct{}
 }
 
+// setDeadline bounds a claimed set once its own caller hangs up: one model call and two writes, well
+// inside the server's 90 s WriteTimeout.
+const setDeadline = 60 * time.Second
+
 // setKey names one version of one scan's list, which gets one set.
 type setKey struct {
 	scanID  int64
@@ -222,9 +226,13 @@ func (h *Cook) ensureSet(ctx context.Context, me repository.Account, scan reposi
 }
 
 // makeClaimed makes the set this request claimed, unless another request stored it between the
-// look and the claim.
+// look and the claim. It finishes even if this request's caller hangs up, which a chip tapped
+// while the shelves load makes the app do, because the requests waiting on the claim still need
+// the set.
 func (h *Cook) makeClaimed(ctx context.Context, me repository.Account, scan repository.Scan, key setKey) error {
 	defer h.making.release(key)
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), setDeadline)
+	defer cancel()
 	has, err := h.repo.HasRecipes(ctx, me.AccountID, scan.ScanID, scan.ItemsVersion)
 	if err != nil || has {
 		return err
