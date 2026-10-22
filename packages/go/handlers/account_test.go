@@ -436,8 +436,9 @@ func TestDeletingAnAccountTakesEverythingOfTheirsAndNothingElse(t *testing.T) {
 	// Every table the setup writes, so a step that wrote nothing can't pass for a clean delete.
 	mayasBefore := holdings(t, srv, mayaID, mayaScan)
 	for _, table := range []string{
-		"app.account (account_id)", "app.scan (account_id)", "app.fry_run (account_id)",
-		"app.scan_item (scan_id)", "app.recipe_set (scan_id)", "app.recipe (scan_id)",
+		"app.account (account_id)", "app.scan (account_id)", "app.plate (account_id)",
+		"app.point_event (account_id)", "app.fry_run (account_id)", "app.scan_item (scan_id)",
+		"app.recipe_set (scan_id)", "app.recipe (scan_id)",
 	} {
 		if mayasBefore[table] == 0 {
 			t.Fatalf("%s holds none of maya's rows before the delete", table)
@@ -701,17 +702,19 @@ func everyServiceStack(t *testing.T) stack {
 }
 
 // keepEverything gives p a row in every table a feature writes, through the real rpcs: a scan and
-// its items, the recipes for it, and a fry run. It returns the scan's id.
+// its items, the recipes for it, a plate of one of them with the points it paid, and a fry run.
+// It returns the scan's id.
 func keepEverything(t *testing.T, srv stack, p person) int64 {
 	t.Helper()
 	phone := &http.Client{Jar: p.jar}
-	scanID := createScan(t, scanv1connect.NewScanServiceClient(phone, srv.url)).GetScanId()
-	_, err := cookv1connect.NewCookServiceClient(phone, srv.url).ListRecipes(t.Context(),
-		connect.NewRequest(&cookv1.ListRecipesRequest{ScanId: scanID}))
-	if err != nil {
-		t.Fatalf("list recipes: %v", err)
+	cook := cookPlayer{
+		scan: scanv1connect.NewScanServiceClient(phone, srv.url),
+		cook: cookv1connect.NewCookServiceClient(phone, srv.url),
 	}
-	_, err = friesv1connect.NewFriesServiceClient(phone, srv.url).LogFryRun(t.Context(),
+	scanID := scanFridge(t, cook).GetScanId()
+	shelves := listRecipes(t, cook, &cookv1.ListRecipesRequest{ScanId: scanID})
+	plateMeal(t, cook, firstOn(t, shelves.GetMakeItNow()).GetRecipeId(), fmt.Sprintf("plate of scan %d", scanID))
+	_, err := friesv1connect.NewFriesServiceClient(phone, srv.url).LogFryRun(t.Context(),
 		connect.NewRequest(nightOwlRun()))
 	if err != nil {
 		t.Fatalf("log fry run: %v", err)
