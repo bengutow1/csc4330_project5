@@ -7,12 +7,13 @@ calls); read both before editing anything in this folder.
 Status: the shell, behind a device account. The root layout asks `WhoAmI` and guards the routes
 with `Stack.Protected`: no account opens the plain handle screen at `onboarding/index` (#14
 designs onboarding), and every other Core route needs one. A new route that needs an account goes
-into that guard's list in `src/app/_layout.tsx`, or anyone can open it. The tabs are Snap (the
-camera), Board and Me, with the verdict, cooking, Fries mode and Combo as flows over them, and
-every Core route in `docs/contracts.md` mounts `PlaceholderScreen`, which names the issue that
-builds it. Each issue replaces its route's mount with a screen from the design
-(`docs/design.md`). `src/app/status.tsx` (open it with `friesinthebag://status`) asks the API
-whether it can serve, with or without an account.
+into that guard's list in `src/app/_layout.tsx`, or anyone can open it. A route meant for anyone
+also goes in `OPEN_ROUTES` (`src/lib/launch.ts`), or the launch cover hides it until the server
+answers. The tabs are Snap (the camera), Board and Me, with the verdict, cooking, Fries mode and
+Combo as flows over them, and every Core route in `docs/contracts.md` mounts `PlaceholderScreen`,
+which names the issue that builds it. Each issue replaces its route's mount with a screen from
+the design (`docs/design.md`). `src/app/status.tsx` (open it with `friesinthebag://status`) asks
+the API whether it can serve, with or without an account.
 
 ## Running it
 

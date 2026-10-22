@@ -5,7 +5,6 @@ import (
 	"maps"
 	"net/http"
 	"net/http/cookiejar"
-	"net/http/httptest"
 	"net/url"
 	"slices"
 	"strings"
@@ -13,9 +12,6 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
-	"github.com/alexedwards/scs/pgxstore"
-	"github.com/alexedwards/scs/v2"
-	"github.com/jackc/pgx/v5/pgxpool"
 
 	accountv1 "github.com/bengutow1/csc4330_project5/packages/go/apigen/account/v1"
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/account/v1/accountv1connect"
@@ -116,6 +112,42 @@ func TestWhoAmIAfterTheAccountIsGoneIsUnauthenticated(t *testing.T) {
 
 	if connect.CodeOf(err) != connect.CodeUnauthenticated {
 		t.Fatalf("got code %v (%v), want unauthenticated", connect.CodeOf(err), err)
+	}
+}
+
+// TestASessionThatCannotBeSavedLeavesTheHandleFree: the cookie is the account's only way in, so an
+// account whose session was never saved can never be reached. It must not keep the handle, or the
+// player's next try with the same name says it is taken.
+func TestASessionThatCannotBeSavedLeavesTheHandleFree(t *testing.T) {
+	t.Parallel()
+	srv := accountStack(t, account.Limits{})
+	// Without the sessions table the account's insert works and its session's save fails, as in
+	// a database blip between the two.
+	_, err := srv.pool.Exec(t.Context(), `drop table sessions`)
+	if err != nil {
+		t.Fatalf("drop sessions: %v", err)
+	}
+	maya := newcomer(t, srv.url)
+
+	_, err = maya.CreateAccount(t.Context(), connect.NewRequest(&accountv1.CreateAccountRequest{
+		Handle: "test_maya",
+		Avatar: "🌮",
+	}))
+
+	// Unknown, not internal: the middleware's own save fails too, and its bare 500 goes out before
+	// the handler's error. Any refusal before the insert would come back as another code. (CodeOf
+	// says unknown for no error at all, hence the nil check.)
+	if err == nil || connect.CodeOf(err) != connect.CodeUnknown {
+		t.Fatalf("got code %v (%v), want unknown (the failed save's bare 500)", connect.CodeOf(err), err)
+	}
+	checked, err := maya.CheckHandle(t.Context(), connect.NewRequest(&accountv1.CheckHandleRequest{
+		Handle: "test_maya",
+	}))
+	if err != nil {
+		t.Fatalf("check handle: %v", err)
+	}
+	if !checked.Msg.Available {
+		t.Error("the handle is still held by an account nobody can reach")
 	}
 }
 
@@ -308,34 +340,14 @@ func assertDefaultKitchen(t *testing.T, name string, k *accountv1.Kitchen) {
 	}
 }
 
-// stack is AccountService served the way main.go serves it.
-type stack struct {
-	url  string
-	pool *pgxpool.Pool
-}
-
 // accountStack mounts AccountService behind the session middleware, over the test's own
 // database, which holds the sessions too.
 func accountStack(t *testing.T, limits account.Limits) stack {
 	t.Helper()
-	pool := newPool(t)
-	repo := repository.New(pool)
-	sessions := scs.New()
-	// The cleanup goroutine is off: the test's database is gone before it would first run.
-	sessions.Store = pgxstore.NewWithCleanupInterval(pool, 0)
-	sessions.Lifetime = auth.Lifetime
-	// httptest serves plain http, which a Secure cookie never comes back over.
-	sessions.Cookie.Secure = false
-	svc := account.NewAccount(account.Config{
-		Repo:   repo,
-		Auth:   auth.New(sessions, repo),
-		Limits: limits,
+	return sessionStack(t, func(mux *http.ServeMux, repo *repository.Repository, authn *auth.Auth) {
+		svc := account.NewAccount(account.Config{Repo: repo, Auth: authn, Limits: limits})
+		mux.Handle(accountv1connect.NewAccountServiceHandler(svc))
 	})
-	mux := http.NewServeMux()
-	mux.Handle(accountv1connect.NewAccountServiceHandler(svc))
-	srv := httptest.NewServer(sessions.LoadAndSave(mux))
-	t.Cleanup(srv.Close)
-	return stack{url: srv.URL, pool: pool}
 }
 
 // person is one phone: a client and the cookie jar it keeps between calls.

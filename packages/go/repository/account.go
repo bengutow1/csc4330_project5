@@ -106,6 +106,17 @@ func (r *Repository) AccountByID(ctx context.Context, accountID int64) (Account,
 	return a, nil
 }
 
+// DeleteAccount deletes the caller's account and says whether there was one to delete.
+func (r *Repository) DeleteAccount(ctx context.Context, accountID int64) (bool, error) {
+	tag, err := r.db.Exec(ctx, `
+		delete from app.account a
+		 where a.account_id = $1`, accountID)
+	if err != nil {
+		return false, known(fmt.Sprintf("delete account account=%d", accountID), err)
+	}
+	return tag.RowsAffected() > 0, nil
+}
+
 // HandleTaken says whether an account already holds handle, so onboarding can say so while the
 // player types. CreateAccount never relies on it: between this answer and the insert, someone
 // else can take the handle.

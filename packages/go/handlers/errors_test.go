@@ -16,6 +16,7 @@ import (
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers"
 	"github.com/bengutow1/csc4330_project5/packages/go/places"
 	"github.com/bengutow1/csc4330_project5/packages/go/repository"
+	"github.com/bengutow1/csc4330_project5/packages/go/vision"
 )
 
 // TestConnectErrMapsEverySentinelToItsCode: a sentinel that loses its arm reaches the client as a
@@ -33,6 +34,7 @@ func TestConnectErrMapsEverySentinelToItsCode(t *testing.T) {
 		{name: "too many requests", sentinel: handlers.ErrTooManyRequests, code: connect.CodeResourceExhausted},
 		{name: "not authenticated", sentinel: auth.ErrNotAuthenticated, code: connect.CodeUnauthenticated},
 		{name: "forbidden", sentinel: auth.ErrForbidden, code: connect.CodePermissionDenied},
+		{name: "vision unavailable", sentinel: vision.ErrUnavailable, code: connect.CodeUnavailable},
 		{name: "places unavailable", sentinel: places.ErrUnavailable, code: connect.CodeUnavailable},
 	}
 	for _, c := range cases {

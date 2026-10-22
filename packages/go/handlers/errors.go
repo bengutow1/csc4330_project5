@@ -1,7 +1,7 @@
 // Author: Caden Lund
 // Package handlers holds what every Connect service shares: the one error boundary, field
-// violations, validation, the gate and the limiter. Each product surface is a subpackage (healthz,
-// account and fries now, then scan, cook, combo and board).
+// violations, validation, the gate and the limiter. Each product surface is a subpackage
+// (healthz, account, scan and fries now, then cook, combo and board).
 package handlers
 
 import (
@@ -15,6 +15,7 @@ import (
 	"github.com/bengutow1/csc4330_project5/packages/go/auth"
 	"github.com/bengutow1/csc4330_project5/packages/go/places"
 	"github.com/bengutow1/csc4330_project5/packages/go/repository"
+	"github.com/bengutow1/csc4330_project5/packages/go/vision"
 )
 
 var (
@@ -59,6 +60,11 @@ func ConnectErr(log *slog.Logger, op string, err error) error {
 	// PermissionDenied, not NotFound: the caller can see the thing, they just may not do this.
 	case errors.Is(err, auth.ErrForbidden):
 		return connect.NewError(connect.CodePermissionDenied, auth.ErrForbidden)
+
+	// vision
+	// Unavailable: the model failed or timed out, and the same photos may well work a moment later.
+	case errors.Is(err, vision.ErrUnavailable):
+		return connect.NewError(connect.CodeUnavailable, vision.ErrUnavailable)
 
 	// places
 	// Unavailable: the provider failed or timed out, and the player's next tap may well work.

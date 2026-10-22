@@ -32,8 +32,8 @@ func known(op string, err error) error {
 	return fmt.Errorf("%s: %w", op, err)
 }
 
-// isNoRows reports whether err is a query finding no row, for a query where no row is an answer
-// rather than a missing thing, so the caller need not import pgx.
+// isNoRows reports whether a read matched no row, for the reads where none is an answer rather
+// than a missing thing (a player's last scan before their first, a fry run already logged).
 func isNoRows(err error) bool {
 	return errors.Is(err, pgx.ErrNoRows)
 }
