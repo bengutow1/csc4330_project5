@@ -4,6 +4,7 @@ import {
   COMMON,
   type Item,
   listErrors,
+  refusalOf,
   suggest,
   withIngredient,
   withoutIngredient,
@@ -154,5 +155,27 @@ describe("listErrors", () => {
 
   it("is empty when nothing was refused", () => {
     expect(listErrors({})).toEqual({ list: undefined, items: new Map() });
+  });
+});
+
+describe("refusalOf", () => {
+  const sent = [item("Eggs", Category.PROTEIN), item("Milk", Category.DAIRY)];
+  const refused = new Error("refused");
+
+  it("is the refusal while the draft is still the list that was sent", () => {
+    expect(refusalOf(sent, sent, refused)).toBe(refused);
+  });
+
+  it("is null once the draft changed, since the refusal names places in the list that was sent", () => {
+    expect(refusalOf(withoutIngredient(sent, 0), sent, refused)).toBeNull();
+    expect(refusalOf(withIngredient(sent, "Lemons"), sent, refused)).toBeNull();
+  });
+
+  it("keeps the refusal when an add changed nothing, as a name already on the list does", () => {
+    expect(refusalOf(withIngredient(sent, "eggs"), sent, refused)).toBe(refused);
+  });
+
+  it("is null before anything was sent", () => {
+    expect(refusalOf(sent, null, refused)).toBeNull();
   });
 });

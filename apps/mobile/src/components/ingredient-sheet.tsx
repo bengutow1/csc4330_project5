@@ -9,6 +9,7 @@ import { categoryLook, groupByCategory } from "@/lib/categories";
 import {
   type Item,
   listErrors,
+  refusalOf,
   suggest,
   withIngredient,
   withoutIngredient,
@@ -37,16 +38,22 @@ export function IngredientSheet(props: {
   const staples = STAPLES.filter((staple) => kitchen?.staples.includes(staple.value));
   const [draft, setDraft] = useState<readonly Item[]>(props.ingredients);
   const [typed, setTyped] = useState("");
-  const errors = listErrors(fieldErrors(edit.error));
+  // The list the last Save sent. A refusal names ingredients by their place in it, so it shows only
+  // while the draft is still that list: an edit after it would move its messages onto others.
+  const [sent, setSent] = useState<readonly Item[] | null>(null);
+  const refusal = refusalOf(draft, sent, edit.error);
+  const errors = listErrors(fieldErrors(refusal));
   // A refusal no field explains (the server out of reach) goes under Save.
-  const failed = edit.isError && errors.list === undefined && errors.items.size === 0;
+  const failed = refusal !== null && errors.list === undefined && errors.items.size === 0;
 
   const add = (name: string) => {
     setDraft((list) => withIngredient(list, name));
     setTyped("");
   };
-  const save = () =>
+  const save = () => {
+    setSent(draft);
     edit.mutate({ scanId: props.scanId, ingredients: [...draft] }, { onSuccess: props.onClose });
+  };
 
   return (
     <Sheet visible title="Fix the list" onClose={props.onClose}>
@@ -111,7 +118,7 @@ export function IngredientSheet(props: {
           <Text style={styles.suggestionName}>{common.name}</Text>
         </Pressable>
       ))}
-      {failed ? <Text style={styles.error}>{errorMessage(edit.error)}</Text> : null}
+      {failed ? <Text style={styles.error}>{errorMessage(refusal)}</Text> : null}
       <Button label="Save" pending={edit.isPending} pendingLabel="Saving…" onPress={save} />
     </Sheet>
   );
