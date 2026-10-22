@@ -49,10 +49,23 @@ export function ProfileScreen() {
   const shown = seeAll ? loaded : loaded.slice(0, FIRST_ROW);
   const top = { paddingTop: insets.top };
 
+  // The gear shows in every state, so Settings (Delete my data among it) stays in reach while the
+  // profile loads or when it won't.
+  const gear = (
+    <View style={styles.bar}>
+      <IconButton
+        icon="settings-outline"
+        label="Settings"
+        onPress={() => router.navigate("/settings")}
+      />
+    </View>
+  );
+
   const me = profile.data?.profile;
   if (profile.isPending) {
     return (
       <View style={[styles.root, styles.padded, top]}>
+        {gear}
         <View style={styles.skeleton}>
           <Skeleton height={TOP_SKELETON} radius={RADII.xl} />
           <Skeleton height={STATS_SKELETON} radius={RADII.lg} />
@@ -63,6 +76,7 @@ export function ProfileScreen() {
   if (me === undefined) {
     return (
       <View style={[styles.root, styles.padded, top]}>
+        {gear}
         <ErrorState
           title="Couldn't load your profile"
           error={profile.error}
@@ -97,13 +111,7 @@ export function ProfileScreen() {
 
   const header = (
     <View>
-      <View style={styles.bar}>
-        <IconButton
-          icon="settings-outline"
-          label="Settings"
-          onPress={() => router.navigate("/settings")}
-        />
-      </View>
+      {gear}
       <ProfileTop me={me} />
       <StatsRow me={me} />
       <View style={styles.heading}>
@@ -226,7 +234,7 @@ function PlateTile(props: { plate: Plate }) {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg },
   padded: { paddingHorizontal: SPACE.lg },
-  skeleton: { gap: SPACE.md, paddingTop: SPACE.xxl },
+  skeleton: { gap: SPACE.md },
   bar: { flexDirection: "row", justifyContent: "flex-end" },
   top: { alignItems: "center", gap: SPACE.xs + SPACE.xxs },
   avatar: {
