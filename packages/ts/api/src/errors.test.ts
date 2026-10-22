@@ -54,7 +54,6 @@ describe("predicates", () => {
     { name: "isNotFound", is: isNotFound, code: Code.NotFound },
     { name: "isFailedPrecondition", is: isFailedPrecondition, code: Code.FailedPrecondition },
     { name: "isUnavailable", is: isUnavailable, code: Code.Unavailable },
-    { name: "isUnreachable", is: isUnreachable, code: Code.Unknown },
   ];
 
   it.each(cases)("$name matches its own code and nothing else", ({ is, code }) => {
@@ -83,6 +82,12 @@ describe("isUnreachable", () => {
     expect(isUnreachable(err)).toBe(true);
   });
 
+  it("is no other error", () => {
+    expect(isUnreachable(new ConnectError("x", Code.Unknown))).toBe(false);
+    expect(isUnreachable(new ConnectError("x", Code.Internal))).toBe(false);
+    expect(isUnreachable(new TypeError("Network request failed"))).toBe(false);
+  });
+
   it("is not a server that answered, even to say it cannot serve right now", async () => {
     const answer = JSON.stringify({ code: "unavailable", message: "The judge is out." });
     const err = await failureFrom(
@@ -91,6 +96,20 @@ describe("isUnreachable", () => {
     );
 
     expect(isUnavailable(err)).toBe(true);
+    expect(isUnreachable(err)).toBe(false);
+  });
+
+  it("is not a server that crashed and still answered, in plain text", async () => {
+    // What the api's panic recoverer sends (http.Error), and what a proxy's error page looks like
+    // to connect: an answer it can't read, which it calls Unknown too.
+    const err = await failureFrom(
+      async () =>
+        new Response("internal error\n", {
+          status: 500,
+          headers: { "content-type": "text/plain; charset=utf-8" },
+        }),
+    );
+
     expect(isUnreachable(err)).toBe(false);
   });
 });
