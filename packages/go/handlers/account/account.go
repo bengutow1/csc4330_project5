@@ -88,12 +88,16 @@ func (h *Account) fail(op string, err error) error {
 }
 
 // undoCreate deletes the account CreateAccount just made, once its sign-in has failed. It outlives
-// the request, so a client that hung up mid-sign-in still gets its handle back.
-func (h *Account) undoCreate(ctx context.Context, accountID int64) error {
+// the request, so a client that hung up mid-sign-in still gets its handle back. A failed delete is
+// logged here rather than returned: the caller answers with the sign-in's error, which is never
+// logged when the client hung up.
+func (h *Account) undoCreate(ctx context.Context, accountID int64) {
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), undoTimeout)
 	defer cancel()
 	_, err := h.repo.DeleteAccount(ctx, accountID)
-	return err
+	if err != nil {
+		h.log.Warn("undo create account", "account_id", accountID, "err", err)
+	}
 }
 
 // CreateAccount makes the device account and signs the session in.
@@ -129,7 +133,8 @@ func (h *Account) CreateAccount(
 	// can't be saved the account goes too, and the handle is free for the next try
 	err = h.auth.SignIn(ctx, acct.AccountID)
 	if err != nil {
-		return nil, h.fail(op, errors.Join(err, h.undoCreate(ctx, acct.AccountID)))
+		h.undoCreate(ctx, acct.AccountID)
+		return nil, h.fail(op, err)
 	}
 
 	account, err := toProtoAccount(acct)
