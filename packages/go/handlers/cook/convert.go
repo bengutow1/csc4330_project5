@@ -117,9 +117,11 @@ func toProtoReceipt(message string, p paidPlate) (*cookv1.Receipt, error) {
 		Passed:     true,
 		Message:    message,
 		StreakDays: int32(p.streak), // a count of days, far under int32
-		RankBefore: toProtoRank(points.RankOf(p.totalBefore)),
-		RankAfter:  toProtoRank(points.RankOf(p.totalAfter)),
-		NewBadges:  newBadges(statsOf(p.before), statsOf(p.after)),
+		RankBefore: handlers.ToProtoRank(points.RankOf(p.totalBefore)),
+		RankAfter:  handlers.ToProtoRank(points.RankOf(p.totalAfter)),
+		// A plate never changes the weeks a player topped the Hall of Fries, so neither side counts
+		// them: no badge that reads them can be new on a receipt.
+		NewBadges: newBadges(handlers.StatsOf(p.before, 0), handlers.StatsOf(p.after, 0)),
 	}
 	for _, line := range p.lines {
 		reason, ok := pointReasons[line.Reason]
@@ -139,35 +141,8 @@ func newBadges(before, after points.Stats) []*cookv1.Badge {
 	var out []*cookv1.Badge
 	for i, b := range points.Badges(after) {
 		if b.Earned && !had[i].Earned {
-			out = append(out, &cookv1.Badge{Name: b.Name, HowToEarn: b.HowToEarn, Earned: true})
+			out = append(out, handlers.ToProtoBadge(b))
 		}
 	}
 	return out
-}
-
-// statsOf is a player's counts as the badges read them. The Hall of Fries has no weeks to count
-// until the board (#30) keeps them.
-func statsOf(s repository.PlayerStats) points.Stats {
-	return points.Stats{
-		Scans:                 s.Scans,
-		BestScore:             s.BestScore,
-		Cooks:                 s.Cooks,
-		CooksUnder35:          s.CooksUnder35,
-		CooksWithThreeOrFewer: s.CooksWithThreeOrFewer,
-		ComboCooks:            s.ComboCooks,
-		LongestStreak:         s.LongestStreak,
-		LateNightPlates:       s.LateNightPlates,
-		MicrowaveOnlyCooks:    s.MicrowaveOnlyCooks,
-		BiggestWeeklyRise:     s.BiggestWeeklyRise,
-	}
-}
-
-// toProtoRank maps a rank to the wire.
-func toProtoRank(r points.Rank) *cookv1.Rank {
-	return &cookv1.Rank{
-		Name:     r.Name,
-		Next:     r.Next,
-		ToNext:   int32(r.ToNext), // at most the 10000 to the top title
-		Progress: r.Progress,
-	}
 }

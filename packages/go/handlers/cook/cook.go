@@ -350,7 +350,7 @@ func (h *Cook) plate(
 		}
 
 		// 4. The awards. The streak counts today, and only the day's first plate pays it
-		days, err := campusDays(cooked)
+		days, err := handlers.CampusDays(cooked)
 		if err != nil {
 			return err
 		}
@@ -394,12 +394,12 @@ func (h *Cook) failedReceipt(
 	if err != nil {
 		return nil, err
 	}
-	days, err := campusDays(cooked)
+	days, err := handlers.CampusDays(cooked)
 	if err != nil {
 		return nil, err
 	}
 	_, today := points.MealWindow(now)
-	rank := toProtoRank(points.RankOf(total))
+	rank := handlers.ToProtoRank(points.RankOf(total))
 	return &cookv1.Receipt{
 		Passed:     false,
 		Message:    fmt.Sprintf("That doesn't look like %s. Try another angle.", title),
@@ -407,20 +407,6 @@ func (h *Cook) failedReceipt(
 		RankBefore: rank,
 		RankAfter:  rank,
 	}, nil
-}
-
-// campusDays reads the ledger's days ("2026-10-21") as campus midnights, which is what the
-// points rules count days in.
-func campusDays(days []string) ([]time.Time, error) {
-	out := make([]time.Time, 0, len(days))
-	for _, d := range days {
-		t, err := time.ParseInLocation(time.DateOnly, d, points.Campus())
-		if err != nil {
-			return nil, fmt.Errorf("cook: read cook day %q: %w", d, err)
-		}
-		out = append(out, t)
-	}
-	return out, nil
 }
 
 // clip shortens s to at most n runes.
