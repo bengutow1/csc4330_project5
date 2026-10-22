@@ -57,3 +57,4 @@ export {
 export { ApiProvider } from "./provider.tsx";
 export { makeQueryClient, type ToastHandlers } from "./query-client.ts";
 export { type ApiTransportOptions, createApiTransport } from "./transport.ts";
+export { useSettled } from "./use-settled.ts";
