@@ -10,6 +10,7 @@ import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { Skeleton } from "@/components/skeleton";
 import {
+  type EmptyReason,
   emptyReason,
   type OffAction,
   offAction,
@@ -35,8 +36,8 @@ const NEAREST_ICON = 14;
 /**
  * SpotsScreen is the list of spots (F2, screen 9): the server's order and filters, chips that ask
  * the server again, and the nearest fries one tap away. With location off it says why the point
- * helps and offers a search box instead. When nothing is open it says so, and offers the last
- * scan's recipes. A spot opens its sheet.
+ * helps and offers a search box instead. When nothing is open, or nothing is near, it says so and
+ * offers the last scan's recipes. A spot opens its sheet.
  */
 export function SpotsScreen() {
   const place = usePlayerPoint();
@@ -72,26 +73,14 @@ export function SpotsScreen() {
       />
     );
   } else if (searching && list.length === 0) {
-    const reason = emptyReason(sent.filters, sent.query);
-    if (reason === "closed") {
-      body = <ClosedState lastScanId={lastScanId} />;
-    } else if (reason === "searched") {
-      body = (
-        <EmptyState
-          title="Nothing matches that search."
-          line="Try other words."
-          action={{ label: "Clear the search", onPress: () => setQuery("") }}
-        />
-      );
-    } else {
-      body = (
-        <EmptyState
-          title="Nothing fits those chips."
-          line="Turn a few off to see more spots."
-          action={{ label: "Clear the chips", onPress: () => setFilters([]) }}
-        />
-      );
-    }
+    body = (
+      <EmptyList
+        reason={emptyReason(sent.filters, sent.query)}
+        lastScanId={lastScanId}
+        onClearChips={() => setFilters([])}
+        onClearSearch={() => setQuery("")}
+      />
+    );
   }
 
   const header = (
@@ -211,25 +200,81 @@ function LocationOff(props: {
 }
 
 /**
- * ClosedState is the list when nothing near is open. With a last scan it links to that fridge's
- * recipes, for the least sad thing it can make; before a first scan it offers one instead.
+ * EmptyList is the list with nothing in it, saying why as far as what it sent can tell. Its button
+ * widens what was sent, or, when there is no food to go to, turns back to the fridge.
  */
-function ClosedState(props: { lastScanId: bigint | undefined }) {
+function EmptyList(props: {
+  reason: EmptyReason;
+  lastScanId: bigint | undefined;
+  onClearChips: () => void;
+  onClearSearch: () => void;
+}) {
+  const clearChips = { label: "Clear the chips", onPress: props.onClearChips };
+  switch (props.reason) {
+    case "closed":
+      return (
+        <NoFoodState
+          title="Even the fries are closed."
+          why="Nothing near you is open right now."
+          lastScanId={props.lastScanId}
+        />
+      );
+    case "nothing near":
+      return (
+        <NoFoodState
+          title="No food near you."
+          why="Nothing came up around you."
+          lastScanId={props.lastScanId}
+        />
+      );
+    case "words":
+      return (
+        <EmptyState
+          title="Nothing matches that search."
+          line="Try other words."
+          action={{ label: "Clear the search", onPress: props.onClearSearch }}
+        />
+      );
+    case "words and chips":
+      return (
+        <EmptyState
+          title="Nothing matches that search."
+          line="Turn a few chips off, or try other words."
+          action={clearChips}
+        />
+      );
+    case "chips":
+      return (
+        <EmptyState
+          title="Nothing fits those chips."
+          line="Turn a few off to see more spots."
+          action={clearChips}
+        />
+      );
+  }
+}
+
+/**
+ * NoFoodState is the list when there is no food to go to: nothing near is open, or nothing is near
+ * at all. With a last scan it links to that fridge's recipes, for the least sad thing it can make;
+ * before a first scan it offers one instead.
+ */
+function NoFoodState(props: { title: string; why: string; lastScanId: bigint | undefined }) {
   const router = useRouter();
-  const { lastScanId } = props;
+  const { title, why, lastScanId } = props;
   if (lastScanId === undefined) {
     return (
       <EmptyState
-        title="Even the fries are closed."
-        line="Nothing near you is open right now. Your fridge might have one more meal in it."
+        title={title}
+        line={`${why} Your fridge might have one more meal in it.`}
         action={{ label: "Snap your fridge", onPress: () => router.navigate("/") }}
       />
     );
   }
   return (
     <EmptyState
-      title="Even the fries are closed."
-      line="Nothing near you is open right now. Your last fridge can still make something."
+      title={title}
+      line={`${why} Your last fridge can still make something.`}
       action={{
         label: "Cook the least sad thing",
         onPress: () =>

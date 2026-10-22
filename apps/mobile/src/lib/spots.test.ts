@@ -177,19 +177,24 @@ describe("emptyReason", () => {
   });
 
   it("blames the chips when another one is on too, since it may be the reason", () => {
-    expect(emptyReason([SpotFilter.OPEN_NOW, SpotFilter.CHEAP], "")).toBe("filtered");
-    expect(emptyReason([SpotFilter.OPEN_NOW, SpotFilter.WALKABLE], "")).toBe("filtered");
+    expect(emptyReason([SpotFilter.OPEN_NOW, SpotFilter.CHEAP], "")).toBe("chips");
+    expect(emptyReason([SpotFilter.OPEN_NOW, SpotFilter.WALKABLE], "")).toBe("chips");
+    expect(emptyReason([SpotFilter.CHEAP], "")).toBe("chips");
   });
 
-  it("blames the search when typed words narrowed the list, chips or not", () => {
-    expect(emptyReason([SpotFilter.OPEN_NOW], "sushi")).toBe("searched");
-    expect(emptyReason([SpotFilter.CHEAP], "sushi")).toBe("searched");
-    expect(emptyReason([], "sushi")).toBe("searched");
+  it("blames the words when no chip is on", () => {
+    expect(emptyReason([], "sushi")).toBe("words");
   });
 
-  it("blames the chips without Open now", () => {
-    expect(emptyReason([SpotFilter.CHEAP], "")).toBe("filtered");
-    expect(emptyReason([], "")).toBe("filtered");
+  it("names the words and the chips when both narrowed the list, since either may be why", () => {
+    // "fries" at 3 AM: Open now may have emptied it, or the words may have.
+    expect(emptyReason([SpotFilter.OPEN_NOW], "fries")).toBe("words and chips");
+    expect(emptyReason([SpotFilter.CHEAP], "sushi")).toBe("words and chips");
+  });
+
+  it("finds nothing near when no chip and no words narrowed the list", () => {
+    expect(emptyReason([], "")).toBe("nothing near");
+    expect(emptyReason([], "  ")).toBe("nothing near");
   });
 });
 

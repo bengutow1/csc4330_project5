@@ -124,17 +124,24 @@ export function offAction(place: { granted: boolean; canAsk: boolean }): OffActi
   return place.canAsk ? "ask" : "settings";
 }
 
+/** EmptyReason is why an empty list is empty, as far as the chips and words it sent can tell. */
+export type EmptyReason = "closed" | "chips" | "words" | "words and chips" | "nothing near";
+
 /**
- * emptyReason says which empty state an empty list shows, from the chips and words it sent. Typed
- * words that found nothing are the search's to answer for, chips or not. Without words, the hour
- * is to blame only when Open now is all that narrowed the list ("Even the fries are closed.");
- * otherwise the chips are, with a way to clear them.
+ * emptyReason says which empty state an empty list shows, from the chips and words it sent. The
+ * hour is to blame only when Open now is all that narrowed it ("Even the fries are closed."). Any
+ * other narrowing is named as it was sent, the chips, the words or both, since the list can't tell
+ * which one emptied it; with neither, nothing is near at all.
  */
-export function emptyReason(on: readonly SpotFilter[], words: string) {
-  if (words.trim() !== "") {
-    return "searched";
+export function emptyReason(on: readonly SpotFilter[], words: string): EmptyReason {
+  const searched = words.trim() !== "";
+  if (on.length === 0) {
+    return searched ? "words" : "nothing near";
   }
-  return on.length === 1 && on[0] === SpotFilter.OPEN_NOW ? "closed" : "filtered";
+  if (searched) {
+    return "words and chips";
+  }
+  return on.length === 1 && on[0] === SpotFilter.OPEN_NOW ? "closed" : "chips";
 }
 
 // Four decimals of a degree is about 11 m: finer than a spot's distance needs.
