@@ -8,8 +8,8 @@ import (
 )
 
 // board.go reads the boards. A board ranks every player at once, so these queries read across
-// accounts by design: a row is a handle, an avatar and a count, and the Fridge of the Week is one
-// scan's score and roast, which every player may see. Ranks come from a window function over the
+// accounts by design: a row is a handle, an avatar and a value (points, or fry runs), and the
+// Fridge of the Week is one scan's score and roast, which every player may see. Ranks come from a window function over the
 // whole board, so ties share a rank and a page never renumbers them. A page resumes after its last
 // row with a keyset over (value, handle).
 
@@ -123,4 +123,72 @@ func (r *Repository) FridgeOfTheWeek(ctx context.Context, since time.Time) (Frid
 		return FridgeRow{}, false, known("fridge of the week", err)
 	}
 	return f, true, nil
+}
+
+// Chefs ranks players by the points their ledgers earned since since (the zero time counts them
+// all) and returns up to limit rows, best first, after after (nil for the first page). Only
+// players with points in the range are ranked.
+func (r *Repository) Chefs(ctx context.Context, since time.Time, after *BoardKey, limit int) ([]BoardRow, error) {
+	// A null key reads the first page. Value runs high to low and handle low to high, so the row
+	// comparison negates the value to put both in one direction.
+	var afterValue *int64
+	var afterHandle *string
+	if after != nil {
+		afterValue, afterHandle = &after.Value, &after.Handle
+	}
+	rows, err := r.db.Query(ctx, `
+		  with ranked as (
+		select e.account_id, sum(e.points) as value, rank() over (order by sum(e.points) desc) as rank
+		  from app.point_event e
+		 where e.created_at >= $1
+		 group by e.account_id
+		)
+		select r.rank, r.account_id, a.handle, a.avatar, r.value
+		  from ranked r
+		  join app.account a on a.account_id = r.account_id
+		 where $2::bigint is null or (-r.value, a.handle) > (-$2::bigint, $3::text)
+		 order by r.value desc, a.handle
+		 limit $4`, since, afterValue, afterHandle, limit)
+	if err != nil {
+		return nil, known("chefs", err)
+	}
+	defer rows.Close()
+	var out []BoardRow
+	for rows.Next() {
+		var b BoardRow
+		err = rows.Scan(&b.Rank, &b.AccountID, &b.Handle, &b.Avatar, &b.Value)
+		if err != nil {
+			return nil, known("chefs", err)
+		}
+		out = append(out, b)
+	}
+	err = rows.Err()
+	if err != nil {
+		return nil, known("chefs", err)
+	}
+	return out, nil
+}
+
+// ChefsRow is accountID's own row on Chefs since since, ranked on the whole board; false when they
+// have no points in the range.
+func (r *Repository) ChefsRow(ctx context.Context, accountID int64, since time.Time) (BoardRow, bool, error) {
+	var b BoardRow
+	err := r.db.QueryRow(ctx, `
+		  with ranked as (
+		select e.account_id, sum(e.points) as value, rank() over (order by sum(e.points) desc) as rank
+		  from app.point_event e
+		 where e.created_at >= $2
+		 group by e.account_id
+		)
+		select r.rank, r.account_id, a.handle, a.avatar, r.value
+		  from ranked r
+		  join app.account a on a.account_id = r.account_id
+		 where r.account_id = $1`, accountID, since).Scan(&b.Rank, &b.AccountID, &b.Handle, &b.Avatar, &b.Value)
+	if isNoRows(err) {
+		return BoardRow{}, false, nil
+	}
+	if err != nil {
+		return BoardRow{}, false, known(fmt.Sprintf("chefs row account=%d", accountID), err)
+	}
+	return b, true, nil
 }

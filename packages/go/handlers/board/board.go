@@ -5,7 +5,7 @@ package board
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -81,6 +81,15 @@ func (h *Board) GetBoard(
 	var mine repository.BoardRow
 	var ranked bool
 	switch in.board {
+	case boardv1.Board_BOARD_CHEFS:
+		rows, err = h.repo.Chefs(ctx, since, in.after, in.limit+1)
+		if err != nil {
+			return nil, h.fail(op, err)
+		}
+		mine, ranked, err = h.repo.ChefsRow(ctx, me.AccountID, since)
+		if err != nil {
+			return nil, h.fail(op, err)
+		}
 	case boardv1.Board_BOARD_HALL_OF_FRIES:
 		rows, err = h.repo.HallOfFries(ctx, since, in.after, in.limit+1)
 		if err != nil {
@@ -90,10 +99,11 @@ func (h *Board) GetBoard(
 		if err != nil {
 			return nil, h.fail(op, err)
 		}
-	case boardv1.Board_BOARD_CHEFS, boardv1.Board_BOARD_UNSPECIFIED:
-		// Chefs sums #23's points ledger, which is still to come. Validation already refused
-		// unspecified.
-		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("the chefs board is still to come"))
+	case boardv1.Board_BOARD_UNSPECIFIED:
+		fallthrough
+	default:
+		// buildGetBoard refused every other value, so reaching here is a bug, not a request.
+		return nil, h.fail(op, fmt.Errorf("board %v passed validation", in.board))
 	}
 
 	return connect.NewResponse(toProtoBoard(in, rows, mine, ranked)), nil

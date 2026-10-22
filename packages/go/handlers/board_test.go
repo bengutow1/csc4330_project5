@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -26,6 +27,7 @@ import (
 )
 
 const (
+	chefs       = boardv1.Board_BOARD_CHEFS
 	hallOfFries = boardv1.Board_BOARD_HALL_OF_FRIES
 	thisWeek    = boardv1.Range_RANGE_THIS_WEEK
 	allTime     = boardv1.Range_RANGE_ALL_TIME
@@ -34,26 +36,43 @@ const (
 // wednesday is when most of these tests stand: midweek, so this week's runs are behind them.
 var wednesday = time.Date(2026, 10, 21, 18, 0, 0, 0, points.Campus())
 
-// TestTheBoardRanksTiesTogetherAndCrownsTheLeader: players with as many runs share a rank, the
-// next rank skips past them, ties go by handle, and every rank-1 player on the Hall of Fries wears
-// the crown.
+// boardKinds is each board, how a test gives a player n of what that board counts, and whether
+// its rank-1 rows wear the crown. The tests below run on both, so the two boards cannot drift.
+var boardKinds = []struct {
+	name   string
+	board  boardv1.Board
+	give   func(s boardServer, t *testing.T, handle string, n int, at time.Time)
+	crowns bool
+}{
+	{name: "chefs", board: chefs, give: boardServer.cooks, crowns: false},
+	{name: "hall of fries", board: hallOfFries, give: boardServer.runs, crowns: true},
+}
+
+// TestTheBoardRanksTiesTogetherAndCrownsTheLeader: players with as much share a rank, the next
+// rank skips past them, ties go by handle, and every rank-1 player on the Hall of Fries wears the
+// crown, never on Chefs.
 func TestTheBoardRanksTiesTogetherAndCrownsTheLeader(t *testing.T) {
 	t.Parallel()
-	srv := boardStack(t, wednesday)
-	maya := boardPlayer(t, srv, "test_maya")
-	srv.runs(t, "test_maya", 3, wednesday.AddDate(0, 0, -2))
-	srv.runs(t, "test_ben", 3, wednesday.AddDate(0, 0, -2))
-	srv.runs(t, "test_cal", 2, wednesday.AddDate(0, 0, -2))
+	for _, k := range boardKinds {
+		t.Run(k.name, func(t *testing.T) {
+			t.Parallel()
+			srv := boardStack(t, wednesday)
+			maya := boardPlayer(t, srv, "test_maya")
+			k.give(srv, t, "test_maya", 3, wednesday.AddDate(0, 0, -2))
+			k.give(srv, t, "test_ben", 3, wednesday.AddDate(0, 0, -2))
+			k.give(srv, t, "test_cal", 2, wednesday.AddDate(0, 0, -2))
 
-	got := getBoard(t, maya, &boardv1.GetBoardRequest{Board: hallOfFries, Range: thisWeek})
+			got := getBoard(t, maya, &boardv1.GetBoardRequest{Board: k.board, Range: thisWeek})
 
-	want := []string{"1 test_ben 3 crown", "1 test_maya 3 crown", "3 test_cal 2"}
-	rows := boardRows(got.Rows)
-	if !slices.Equal(rows, want) {
-		t.Errorf("rows = %v, want %v", rows, want)
-	}
-	if got.NextCursor != "" {
-		t.Errorf("next_cursor = %q, want \"\": the board fits one page", got.NextCursor)
+			want := crowned(k.crowns, "1 test_ben 3", "1 test_maya 3", "3 test_cal 2")
+			rows := boardRows(got.Rows)
+			if !slices.Equal(rows, want) {
+				t.Errorf("rows = %v, want %v", rows, want)
+			}
+			if got.NextCursor != "" {
+				t.Errorf("next_cursor = %q, want \"\": the board fits one page", got.NextCursor)
+			}
+		})
 	}
 }
 
@@ -61,66 +80,76 @@ func TestTheBoardRanksTiesTogetherAndCrownsTheLeader(t *testing.T) {
 // boundary, the ranks stay the whole board's, and the walk ends.
 func TestPagingTheBoardWalksToTheEndWithNoGapsOrRepeats(t *testing.T) {
 	t.Parallel()
-	srv := boardStack(t, wednesday)
-	maya := boardPlayer(t, srv, "test_maya")
-	for handle, n := range map[string]int{"test_ann": 3, "test_bob": 3, "test_cat": 2, "test_dan": 2, "test_eli": 1} {
-		srv.runs(t, handle, n, wednesday.AddDate(0, 0, -2))
-	}
-	srv.runs(t, "test_maya", 1, wednesday.AddDate(0, 0, -2))
-	want := []string{
-		"1 test_ann 3 crown", "1 test_bob 3 crown", "3 test_cat 2", "3 test_dan 2", "5 test_eli 1", "5 test_maya 1",
-	}
+	for _, k := range boardKinds {
+		t.Run(k.name, func(t *testing.T) {
+			t.Parallel()
+			srv := boardStack(t, wednesday)
+			maya := boardPlayer(t, srv, "test_maya")
+			for handle, n := range map[string]int{"test_ann": 3, "test_bob": 3, "test_cat": 2, "test_dan": 2, "test_eli": 1} {
+				k.give(srv, t, handle, n, wednesday.AddDate(0, 0, -2))
+			}
+			k.give(srv, t, "test_maya", 1, wednesday.AddDate(0, 0, -2))
+			want := crowned(k.crowns,
+				"1 test_ann 3", "1 test_bob 3", "3 test_cat 2", "3 test_dan 2", "5 test_eli 1", "5 test_maya 1",
+			)
 
-	var walked []string
-	req := &boardv1.GetBoardRequest{Board: hallOfFries, Range: thisWeek, Limit: 2}
-	for pages := 0; ; pages++ {
-		if pages > 5 {
-			t.Fatalf("still paging after %d pages: %v", pages, walked)
-		}
-		got := getBoard(t, maya, req)
-		walked = append(walked, boardRows(got.Rows)...)
-		if got.NextCursor == "" {
-			break
-		}
-		req.Cursor = got.NextCursor
-	}
+			var walked []string
+			req := &boardv1.GetBoardRequest{Board: k.board, Range: thisWeek, Limit: 2}
+			for pages := 0; ; pages++ {
+				if pages > 5 {
+					t.Fatalf("still paging after %d pages: %v", pages, walked)
+				}
+				got := getBoard(t, maya, req)
+				walked = append(walked, boardRows(got.Rows)...)
+				if got.NextCursor == "" {
+					break
+				}
+				req.Cursor = got.NextCursor
+			}
 
-	if !slices.Equal(walked, want) {
-		t.Errorf("walked %v, want %v", walked, want)
+			if !slices.Equal(walked, want) {
+				t.Errorf("walked %v, want %v", walked, want)
+			}
+		})
 	}
 }
 
 // TestMyRowRidesEveryPage: the caller's own row comes back on every page, ranked on the whole
-// board, even when the page doesn't show it; a player with no runs has none.
+// board, even when the page doesn't show it; a player with nothing in the range has none.
 func TestMyRowRidesEveryPage(t *testing.T) {
 	t.Parallel()
-	srv := boardStack(t, wednesday)
-	maya := boardPlayer(t, srv, "test_maya")
-	eve := boardPlayer(t, srv, "test_eve")
-	for handle, n := range map[string]int{"test_ann": 3, "test_bob": 2} {
-		srv.runs(t, handle, n, wednesday.AddDate(0, 0, -2))
-	}
-	srv.runs(t, "test_maya", 1, wednesday.AddDate(0, 0, -2))
+	for _, k := range boardKinds {
+		t.Run(k.name, func(t *testing.T) {
+			t.Parallel()
+			srv := boardStack(t, wednesday)
+			maya := boardPlayer(t, srv, "test_maya")
+			eve := boardPlayer(t, srv, "test_eve")
+			for handle, n := range map[string]int{"test_ann": 3, "test_bob": 2} {
+				k.give(srv, t, handle, n, wednesday.AddDate(0, 0, -2))
+			}
+			k.give(srv, t, "test_maya", 1, wednesday.AddDate(0, 0, -2))
 
-	first := getBoard(t, maya, &boardv1.GetBoardRequest{Board: hallOfFries, Range: thisWeek, Limit: 1})
-	second := getBoard(t, maya, &boardv1.GetBoardRequest{
-		Board: hallOfFries, Range: thisWeek, Limit: 1, Cursor: first.NextCursor,
-	})
-	evesFirst := getBoard(t, eve, &boardv1.GetBoardRequest{Board: hallOfFries, Range: thisWeek, Limit: 1})
+			first := getBoard(t, maya, &boardv1.GetBoardRequest{Board: k.board, Range: thisWeek, Limit: 1})
+			second := getBoard(t, maya, &boardv1.GetBoardRequest{
+				Board: k.board, Range: thisWeek, Limit: 1, Cursor: first.NextCursor,
+			})
+			evesFirst := getBoard(t, eve, &boardv1.GetBoardRequest{Board: k.board, Range: thisWeek, Limit: 1})
 
-	for name, page := range map[string]*boardv1.GetBoardResponse{"page 1": first, "page 2": second} {
-		mine := boardRows([]*boardv1.Row{page.MyRow})
-		if page.MyRow == nil || !slices.Equal(mine, []string{"3 test_maya 1"}) {
-			t.Errorf("%s: my_row = %v, want 3 test_maya 1", name, mine)
-		}
-	}
-	if evesFirst.MyRow != nil {
-		t.Errorf("eve's my_row = %v, want none: she has no runs", evesFirst.MyRow)
+			for name, page := range map[string]*boardv1.GetBoardResponse{"page 1": first, "page 2": second} {
+				mine := boardRows([]*boardv1.Row{page.MyRow})
+				if page.MyRow == nil || !slices.Equal(mine, []string{"3 test_maya 1"}) {
+					t.Errorf("%s: my_row = %v, want 3 test_maya 1", name, mine)
+				}
+			}
+			if evesFirst.MyRow != nil {
+				t.Errorf("eve's my_row = %v, want none: she has nothing this week", evesFirst.MyRow)
+			}
+		})
 	}
 }
 
-// TestTheWeekStartsMondayAtMidnightCampusTime: a run at Sunday 23:59 counts for the week it ends,
-// and at Monday 00:00 the week starts fresh. All time counts both.
+// TestTheWeekStartsMondayAtMidnightCampusTime: something earned at Sunday 23:59 counts for the
+// week it ends, and at Monday 00:00 the week starts fresh. All time counts both.
 func TestTheWeekStartsMondayAtMidnightCampusTime(t *testing.T) {
 	t.Parallel()
 	sunday := time.Date(2026, 10, 25, 23, 59, 0, 0, points.Campus())
@@ -131,47 +160,55 @@ func TestTheWeekStartsMondayAtMidnightCampusTime(t *testing.T) {
 		rng  boardv1.Range
 		want []string
 	}{
-		{"Sunday night, this week", sunday.Add(30 * time.Second), thisWeek, []string{"1 test_sun 1 crown"}},
-		{"Monday morning, this week", monday.Add(time.Minute), thisWeek, []string{"1 test_mon 1 crown"}},
-		{"Monday morning, all time", monday.Add(time.Minute), allTime, []string{"1 test_mon 1 crown", "1 test_sun 1 crown"}},
+		{"Sunday night, this week", sunday.Add(30 * time.Second), thisWeek, []string{"1 test_sun 1"}},
+		{"Monday morning, this week", monday.Add(time.Minute), thisWeek, []string{"1 test_mon 1"}},
+		{"Monday morning, all time", monday.Add(time.Minute), allTime, []string{"1 test_mon 1", "1 test_sun 1"}},
 	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			t.Parallel()
-			srv := boardStack(t, c.now)
-			maya := boardPlayer(t, srv, "test_maya")
-			srv.runs(t, "test_sun", 1, sunday)
-			if c.now.After(monday) {
-				srv.runs(t, "test_mon", 1, monday)
-			}
+	for _, k := range boardKinds {
+		for _, c := range cases {
+			t.Run(k.name+", "+c.name, func(t *testing.T) {
+				t.Parallel()
+				srv := boardStack(t, c.now)
+				maya := boardPlayer(t, srv, "test_maya")
+				k.give(srv, t, "test_sun", 1, sunday)
+				if c.now.After(monday) {
+					k.give(srv, t, "test_mon", 1, monday)
+				}
 
-			got := getBoard(t, maya, &boardv1.GetBoardRequest{Board: hallOfFries, Range: c.rng})
+				got := getBoard(t, maya, &boardv1.GetBoardRequest{Board: k.board, Range: c.rng})
 
-			rows := boardRows(got.Rows)
-			if !slices.Equal(rows, c.want) {
-				t.Errorf("rows = %v, want %v", rows, c.want)
-			}
-		})
+				want := crowned(k.crowns, c.want...)
+				rows := boardRows(got.Rows)
+				if !slices.Equal(rows, want) {
+					t.Errorf("rows = %v, want %v", rows, want)
+				}
+			})
+		}
 	}
 }
 
-// TestAnEmptyWeekIsAnEmptyBoard: before anyone logs a run this week, the board is empty, with no
-// cursor and no row of the caller's, though last week's runs still count all time.
+// TestAnEmptyWeekIsAnEmptyBoard: before anyone earns anything this week, the board is empty, with
+// no cursor and no row of the caller's, though last week still counts all time.
 func TestAnEmptyWeekIsAnEmptyBoard(t *testing.T) {
 	t.Parallel()
-	srv := boardStack(t, wednesday)
-	maya := boardPlayer(t, srv, "test_maya")
-	srv.runs(t, "test_maya", 2, wednesday.AddDate(0, 0, -7))
+	for _, k := range boardKinds {
+		t.Run(k.name, func(t *testing.T) {
+			t.Parallel()
+			srv := boardStack(t, wednesday)
+			maya := boardPlayer(t, srv, "test_maya")
+			k.give(srv, t, "test_maya", 2, wednesday.AddDate(0, 0, -7))
 
-	week := getBoard(t, maya, &boardv1.GetBoardRequest{Board: hallOfFries, Range: thisWeek})
-	ever := getBoard(t, maya, &boardv1.GetBoardRequest{Board: hallOfFries, Range: allTime})
+			week := getBoard(t, maya, &boardv1.GetBoardRequest{Board: k.board, Range: thisWeek})
+			ever := getBoard(t, maya, &boardv1.GetBoardRequest{Board: k.board, Range: allTime})
 
-	if len(week.Rows) != 0 || week.NextCursor != "" || week.MyRow != nil {
-		t.Errorf("this week = %v, want an empty board", week)
-	}
-	rows := boardRows(ever.Rows)
-	if !slices.Equal(rows, []string{"1 test_maya 2 crown"}) {
-		t.Errorf("all time = %v, want test_maya's 2", rows)
+			if len(week.Rows) != 0 || week.NextCursor != "" || week.MyRow != nil {
+				t.Errorf("this week = %v, want an empty board", week)
+			}
+			rows := boardRows(ever.Rows)
+			if !slices.Equal(rows, crowned(k.crowns, "1 test_maya 2")) {
+				t.Errorf("all time = %v, want test_maya's 2", rows)
+			}
+		})
 	}
 }
 
@@ -343,6 +380,41 @@ func (s boardServer) runs(t *testing.T, handle string, n int, start time.Time) {
 	}
 }
 
+// cooks gives handle one plate worth n points, plated at at, making the account if it is new. The
+// plate's cook credit sits in at's own meal window.
+func (s boardServer) cooks(t *testing.T, handle string, n int, at time.Time) {
+	t.Helper()
+	accountID := s.account(t, handle)
+	made, err := s.repo.CreateScan(t.Context(), accountID, 70, "a fridge with dinner in it", nil)
+	if err != nil {
+		t.Fatalf("create scan for %s: %v", handle, err)
+	}
+	_, err = s.repo.CreateRecipes(t.Context(), accountID, made.ScanID, made.ItemsVersion, []repository.NewRecipe{{
+		Title: "Egg fried rice", Minutes: 15, Difficulty: repository.DifficultyEasy,
+		Uses: []string{"Eggs", "Rice"}, Steps: []string{"Fry the rice, then the eggs."},
+	}})
+	if err != nil {
+		t.Fatalf("create a recipe for %s: %v", handle, err)
+	}
+	recipes, err := s.repo.ListRecipes(t.Context(), accountID, made.ScanID, made.ItemsVersion, repository.RecipeFilter{})
+	if err != nil || len(recipes) != 1 {
+		t.Fatalf("list %s's recipe: %v (%d recipes)", handle, err, len(recipes))
+	}
+	photo := handle + " " + at.Format(time.RFC3339)
+	plateID, err := s.repo.CreatePlate(t.Context(), accountID, repository.NewPlate{
+		RecipeID: recipes[0].RecipeID, Photo: platePhoto(photo), PhotoSHA256: platePhotoHash(photo), At: at,
+	})
+	if err != nil {
+		t.Fatalf("plate for %s: %v", handle, err)
+	}
+	window, day := points.MealWindow(at)
+	err = s.repo.AwardPoints(t.Context(), accountID, plateID, day.Format(time.DateOnly)+" "+string(window), at,
+		[]repository.Award{{Reason: repository.ReasonCook, Points: n}})
+	if err != nil {
+		t.Fatalf("award %s's points: %v", handle, err)
+	}
+}
+
 // scan stores a scan of score for handle, with a roast that names the score, made at at. It makes
 // the account if it is new.
 func (s boardServer) scan(t *testing.T, handle string, score int, at time.Time) {
@@ -392,6 +464,18 @@ func getBoard(t *testing.T, c boardv1connect.BoardServiceClient, req *boardv1.Ge
 		t.Fatalf("get board: %v", err)
 	}
 	return resp.Msg
+}
+
+// crowned adds the crown to the rank-1 rows when the board crowns its leaders.
+func crowned(crowns bool, rows ...string) []string {
+	out := make([]string, 0, len(rows))
+	for _, r := range rows {
+		if crowns && strings.HasPrefix(r, "1 ") {
+			r += " crown"
+		}
+		out = append(out, r)
+	}
+	return out
 }
 
 // boardRows writes rows as "rank handle value", with "crown" after a crowned one.

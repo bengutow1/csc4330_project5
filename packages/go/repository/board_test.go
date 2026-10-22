@@ -132,6 +132,129 @@ func TestTheHallOfFriesCountsFromItsStart(t *testing.T) {
 	}
 }
 
+// TestChefsRanksPointsWithTiesTogether: each player's ledger in the range is summed, players with
+// as many points share a rank, the next rank skips past them, and rows that share a rank go by
+// handle. A player with no points is not ranked.
+func TestChefsRanksPointsWithTiesTogether(t *testing.T) {
+	t.Parallel()
+	repo := newRepo(t)
+	maya := createAccount(t, repo, "test_maya")
+	cooked(t, repo, maya, 100, monday, "2026-10-19 morning")
+	cooked(t, repo, maya, 50, monday.Add(5*time.Hour), "2026-10-19 midday")
+	cooked(t, repo, createAccount(t, repo, "test_ben"), 150, monday, "2026-10-19 morning")
+	cooked(t, repo, createAccount(t, repo, "test_cal"), 120, monday, "2026-10-19 morning")
+	cooked(t, repo, createAccount(t, repo, "test_dee"), 10, monday, "2026-10-19 morning")
+	createAccount(t, repo, "test_eve") // no points, so not on the board
+
+	got, err := repo.Chefs(t.Context(), monday.Add(-time.Hour), nil, 10)
+	if err != nil {
+		t.Fatalf("chefs: %v", err)
+	}
+
+	want := []string{"1 test_ben 150", "1 test_maya 150", "3 test_cal 120", "4 test_dee 10"}
+	rows := describe(got)
+	if !slices.Equal(rows, want) {
+		t.Errorf("rows = %v, want %v", rows, want)
+	}
+}
+
+// TestChefsPagesWithAKeyset: a page resumes after the last row it showed, across a tie, and the
+// ranks stay the whole board's.
+func TestChefsPagesWithAKeyset(t *testing.T) {
+	t.Parallel()
+	repo := newRepo(t)
+	cooked(t, repo, createAccount(t, repo, "test_maya"), 150, monday, "2026-10-19 morning")
+	cooked(t, repo, createAccount(t, repo, "test_ben"), 150, monday, "2026-10-19 morning")
+	cooked(t, repo, createAccount(t, repo, "test_cal"), 120, monday, "2026-10-19 morning")
+	since := monday.Add(-time.Hour)
+
+	first, err := repo.Chefs(t.Context(), since, nil, 1)
+	if err != nil {
+		t.Fatalf("first page: %v", err)
+	}
+	if len(first) == 0 {
+		t.Fatal("first page is empty, want test_ben")
+	}
+	last := first[len(first)-1]
+	rest, err := repo.Chefs(t.Context(), since, &repository.BoardKey{Value: last.Value, Handle: last.Handle}, 10)
+	if err != nil {
+		t.Fatalf("next page: %v", err)
+	}
+
+	firstRows := describe(first)
+	if !slices.Equal(firstRows, []string{"1 test_ben 150"}) {
+		t.Errorf("first page = %v, want test_ben alone", firstRows)
+	}
+	restRows := describe(rest)
+	if !slices.Equal(restRows, []string{"1 test_maya 150", "3 test_cal 120"}) {
+		t.Errorf("next page = %v, want the rest from test_maya, ranks unchanged", restRows)
+	}
+}
+
+// TestChefsRowIsTheCallersOwn: a player's row has their place on the whole board, and a player
+// with no points in the range has none.
+func TestChefsRowIsTheCallersOwn(t *testing.T) {
+	t.Parallel()
+	repo := newRepo(t)
+	cooked(t, repo, createAccount(t, repo, "test_maya"), 150, monday, "2026-10-19 morning")
+	dee := createAccount(t, repo, "test_dee")
+	cooked(t, repo, dee, 10, monday, "2026-10-19 morning")
+	eve := createAccount(t, repo, "test_eve")
+	since := monday.Add(-time.Hour)
+
+	row, found, err := repo.ChefsRow(t.Context(), dee.AccountID, since)
+	if err != nil {
+		t.Fatalf("dee's row: %v", err)
+	}
+	if !found || row.Rank != 2 || row.Handle != "test_dee" || row.Value != 10 {
+		t.Errorf("dee's row = %+v (found %v), want rank 2 with 10 points", row, found)
+	}
+	_, found, err = repo.ChefsRow(t.Context(), eve.AccountID, since)
+	if err != nil {
+		t.Fatalf("eve's row: %v", err)
+	}
+	if found {
+		t.Error("eve has a row, want none: she has no points")
+	}
+}
+
+// TestChefsCountsFromItsStart: points earned before the range starts are left out of it, so a new
+// week starts everyone at nothing, and all time counts them.
+func TestChefsCountsFromItsStart(t *testing.T) {
+	t.Parallel()
+	repo := newRepo(t)
+	maya := createAccount(t, repo, "test_maya")
+	cooked(t, repo, maya, 100, monday.AddDate(0, 0, -7), "2026-10-12 morning")
+	cooked(t, repo, maya, 30, monday, "2026-10-19 morning")
+	cooked(t, repo, createAccount(t, repo, "test_ben"), 130, monday.AddDate(0, 0, -7), "2026-10-12 morning")
+
+	week, err := repo.Chefs(t.Context(), monday.Add(-time.Hour), nil, 10)
+	if err != nil {
+		t.Fatalf("this week: %v", err)
+	}
+	allTime, err := repo.Chefs(t.Context(), time.Time{}, nil, 10)
+	if err != nil {
+		t.Fatalf("all time: %v", err)
+	}
+
+	mine, found, err := repo.ChefsRow(t.Context(), maya.AccountID, monday.Add(-time.Hour))
+	if err != nil {
+		t.Fatalf("maya's row this week: %v", err)
+	}
+
+	weekRows := describe(week)
+	if !slices.Equal(weekRows, []string{"1 test_maya 30"}) {
+		t.Errorf("this week = %v, want test_maya with this week's 30", weekRows)
+	}
+	allRows := describe(allTime)
+	if !slices.Equal(allRows, []string{"1 test_ben 130", "1 test_maya 130"}) {
+		t.Errorf("all time = %v, want both with 130", allRows)
+	}
+	if !found || mine.Value != 30 {
+		t.Errorf("maya's row this week = %+v (found %v), want this week's 30 alone", mine, found)
+	}
+}
+
 // TestTheFridgeOfTheWeekIsTheBestScanSinceItsStart: the highest score since the week started wins,
 // a scan made the moment the week starts counts, and a better one from the minute before does not.
 func TestTheFridgeOfTheWeekIsTheBestScanSinceItsStart(t *testing.T) {
@@ -227,4 +350,12 @@ func fridgeAt(t *testing.T, pool *pgxpool.Pool, repo *repository.Repository, a r
 	if err != nil {
 		t.Fatalf("stamp scan %d: %v", s.ScanID, err)
 	}
+}
+
+// cooked gives a one plate worth points, plated at at, with its cook credit in window.
+func cooked(t *testing.T, repo *repository.Repository, a repository.Account, points int, at time.Time, window string) {
+	t.Helper()
+	recipe := plateableRecipe(t, repo, a.AccountID, 70)
+	plate := createPlate(t, repo, a.AccountID, recipe, a.Handle+" "+window, at)
+	awardPoints(t, repo, a.AccountID, plate, window, at, repository.Award{Reason: repository.ReasonCook, Points: points})
 }
