@@ -1,5 +1,6 @@
 import * as Location from "expo-location";
 import { useEffect, useState } from "react";
+import { AppState } from "react-native";
 import { snapPoint } from "@/lib/spots";
 
 /** Point is where the phone is, in degrees. */
@@ -9,14 +10,28 @@ export type Point = { lat: number; lng: number };
  * usePlayerPoint is where the phone is, once the player has let the app look. It never asks by
  * itself: ask() shows the prompt, which the fries moment calls when the player taps Find food. A
  * phone that cannot fix its place (location services off) counts as off, so the screen offers the
- * search box, and lookAgain tries again (after the player turns location services back on). The
- * point stays on the phone except for the one ListSpots call that uses it.
+ * search box, and lookAgain tries again (after the player turns location services back on).
+ * Coming back to the app reads the permission again and retries a miss, since a trip to Settings
+ * may have changed either. The point stays on the phone except for the one ListSpots call that
+ * uses it.
  */
 export function usePlayerPoint() {
-  const [permission, requestPermission] = Location.useForegroundPermissions();
+  const [permission, requestPermission, readPermission] = Location.useForegroundPermissions();
   const [point, setPoint] = useState<Point>();
   const [unfixable, setUnfixable] = useState(false);
   const granted = permission?.granted === true;
+
+  // Back from Settings, the permission or location services may have changed.
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        // A failed read keeps the last answer, which is still the best the screen has.
+        readPermission().catch(() => undefined);
+        setUnfixable(false);
+      }
+    });
+    return () => subscription.remove();
+  }, [readPermission]);
 
   // Looks once the app may, and again each time a miss is cleared.
   useEffect(() => {
