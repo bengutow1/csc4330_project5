@@ -712,9 +712,9 @@ func TestAChipTappedWhileTheSetIsMadeWaitsForIt(t *testing.T) {
 	maya := cookPlayerFor(t, srv, "test_maya")
 	verdict := scanFridge(t, maya)
 
-	opened := listInBackground(t, maya, &cookv1.ListRecipesRequest{ScanId: verdict.GetScanId()})
+	opened := listInBackground(t.Context(), maya, &cookv1.ListRecipesRequest{ScanId: verdict.GetScanId()})
 	waitForChef(t, chef, 1)
-	tapped := listInBackground(t, maya, &cookv1.ListRecipesRequest{ScanId: verdict.GetScanId(), MaxMinutes: 10})
+	tapped := listInBackground(t.Context(), maya, &cookv1.ListRecipesRequest{ScanId: verdict.GetScanId(), MaxMinutes: 10})
 	stillWaiting(t, tapped, "the chip")
 	release()
 
@@ -735,6 +735,49 @@ func TestAChipTappedWhileTheSetIsMadeWaitsForIt(t *testing.T) {
 	}
 }
 
+// TestASetLandsWhenTheRequestMakingItHangsUp: in the app a chip's new query aborts the first
+// fetch, and the set that request was making must still land for the chip, not be made twice.
+func TestASetLandsWhenTheRequestMakingItHangsUp(t *testing.T) {
+	t.Parallel()
+	f, chef := kitchenFixture()
+	chef.hold = make(chan struct{})
+	f.limit = handlers.NewLimiter(1, time.Hour)
+	srv := cookStack(t, f)
+	release := releaseOnEnd(t, chef)
+	maya := cookPlayerFor(t, srv, "test_maya")
+	verdict := scanFridge(t, maya)
+
+	ctx, hangUp := context.WithCancel(t.Context())
+	opened := listInBackground(ctx, maya, &cookv1.ListRecipesRequest{ScanId: verdict.GetScanId()})
+	waitForChef(t, chef, 1)
+	tapped := listInBackground(t.Context(), maya, &cookv1.ListRecipesRequest{ScanId: verdict.GetScanId(), MaxMinutes: 10})
+	stillWaiting(t, tapped, "the chip")
+	hangUp()
+	<-opened
+	// The server hears the hang-up a moment later. A set made on the first request's context
+	// gives up then; the test waits a moment for that before letting the model answer.
+	for range 30 {
+		if chef.quits() > 0 {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	release()
+
+	chip := <-tapped
+	if chip.err != nil {
+		t.Fatalf("the chip: %v, want the set the first request went on making", chip.err)
+	}
+	want := listRecipes(t, maya, &cookv1.ListRecipesRequest{ScanId: verdict.GetScanId(), MaxMinutes: 10})
+	if len(want.GetMakeItNow()) == 0 || !proto.Equal(chip.msg, want) {
+		t.Errorf("the chip answered %v, want the stored set at 10 minutes %v", chip.msg, want)
+	}
+	asked, quit := len(chef.calls()), chef.quits()
+	if asked != 1 || quit != 0 {
+		t.Errorf("the model was asked %d times and %d gave up, want one call that finished", asked, quit)
+	}
+}
+
 // TestARequestWaitingOnAFailedSetMakesItItself: when the request making a set fails, one that
 // waited for it must make the set itself, not answer with empty shelves.
 func TestARequestWaitingOnAFailedSetMakesItItself(t *testing.T) {
@@ -747,9 +790,9 @@ func TestARequestWaitingOnAFailedSetMakesItItself(t *testing.T) {
 	maya := cookPlayerFor(t, srv, "test_maya")
 	verdict := scanFridge(t, maya)
 
-	opened := listInBackground(t, maya, &cookv1.ListRecipesRequest{ScanId: verdict.GetScanId()})
+	opened := listInBackground(t.Context(), maya, &cookv1.ListRecipesRequest{ScanId: verdict.GetScanId()})
 	waitForChef(t, chef, 1)
-	tapped := listInBackground(t, maya, &cookv1.ListRecipesRequest{ScanId: verdict.GetScanId(), MaxMinutes: 10})
+	tapped := listInBackground(t.Context(), maya, &cookv1.ListRecipesRequest{ScanId: verdict.GetScanId(), MaxMinutes: 10})
 	stillWaiting(t, tapped, "the chip")
 	release()
 
@@ -996,6 +1039,7 @@ type fakeChef struct {
 	mu     sync.Mutex
 	asked  []chefCall
 	looked []string // the recipe titles each plate check was for
+	quit   int      // held calls whose caller gave up
 }
 
 // chefCall is one call the fake answered.
@@ -1004,13 +1048,21 @@ type chefCall struct {
 	kitchen vision.Kitchen
 }
 
-func (f *fakeChef) Recipes(_ context.Context, items []vision.Item, kitchen vision.Kitchen) ([]vision.Recipe, error) {
+func (f *fakeChef) Recipes(ctx context.Context, items []vision.Item, kitchen vision.Kitchen) ([]vision.Recipe, error) {
 	f.mu.Lock()
 	f.asked = append(f.asked, chefCall{items: slices.Clone(items), kitchen: kitchen})
 	first := len(f.asked) == 1
 	f.mu.Unlock()
 	if f.hold != nil {
-		<-f.hold
+		// A held call gives up when its caller does, as the real client and the mock do.
+		select {
+		case <-f.hold:
+		case <-ctx.Done():
+			f.mu.Lock()
+			f.quit++
+			f.mu.Unlock()
+			return nil, fmt.Errorf("fake chef: %w", ctx.Err())
+		}
 	}
 	if f.err != nil {
 		return nil, f.err
@@ -1057,6 +1109,12 @@ func (f *fakeChef) plateChecks() []string {
 	return slices.Clone(f.looked)
 }
 
+func (f *fakeChef) quits() int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.quit
+}
+
 // releaseOnEnd returns what lets the held chef answer, and does it when the test ends too. A test
 // that fails while the chef is held would otherwise leave a handler waiting, and the server's Close
 // waiting on it. Called after the stack is built, so its cleanup runs before the server closes.
@@ -1085,13 +1143,12 @@ type listed struct {
 	err error
 }
 
-// listInBackground sends ListRecipes from its own goroutine and hands back its answer once it
-// comes.
-func listInBackground(t *testing.T, p cookPlayer, req *cookv1.ListRecipesRequest) <-chan listed {
-	t.Helper()
+// listInBackground sends ListRecipes under ctx from its own goroutine and hands back its answer
+// once it comes. Canceling ctx hangs up, as the app's aborted fetch does.
+func listInBackground(ctx context.Context, p cookPlayer, req *cookv1.ListRecipesRequest) <-chan listed {
 	out := make(chan listed, 1)
 	go func() {
-		got, err := p.cook.ListRecipes(t.Context(), connect.NewRequest(req))
+		got, err := p.cook.ListRecipes(ctx, connect.NewRequest(req))
 		if err != nil {
 			out <- listed{err: err}
 			return
