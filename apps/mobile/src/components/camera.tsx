@@ -29,7 +29,8 @@ export interface CameraShot {
  * shutter. It never asks for the camera on its own. It says why first and asks when the player
  * taps, and a refused camera gets the same why and the way to Settings. The preview runs only
  * while its screen is in front, because a phone runs one preview at a time and plate it opens over
- * the tabs.
+ * the tabs, or until a photo it is taking lands: a capture whose camera is torn down may never
+ * finish, and the screen waits for every photo.
  */
 export function Camera(props: {
   /** Why the camera is needed, in the screen's words. */
@@ -54,7 +55,7 @@ export function Camera(props: {
   const [broken, setBroken] = useState(false);
   const [shooting, setShooting] = useState(false);
   const granted = permission?.granted === true;
-  const live = granted && focused;
+  const live = granted && (focused || shooting);
 
   // The player can turn the camera on in Settings while the app is away, and Android doesn't
   // restart an app when it grants a permission, so the answer is read again on every return.
