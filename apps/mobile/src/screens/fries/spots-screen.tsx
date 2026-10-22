@@ -11,6 +11,7 @@ import { ErrorState } from "@/components/error-state";
 import { Skeleton } from "@/components/skeleton";
 import {
   emptyReason,
+  QUERY_MAX,
   SPOT_CHIPS,
   STARTING_FILTERS,
   sendableFilters,
@@ -175,6 +176,8 @@ function LocationOff(props: {
       <TextInput
         accessibilityLabel="Search for food"
         autoCorrect={false}
+        // The server refuses a longer search, which would turn the whole list into its error.
+        maxLength={QUERY_MAX}
         onChangeText={props.onQuery}
         placeholder="Search a place or a dish"
         placeholderTextColor={COLORS.muted}

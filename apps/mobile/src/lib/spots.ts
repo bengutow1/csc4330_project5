@@ -12,6 +12,9 @@ export const SPOT_CHIPS = [
 /** The chips a search starts with: Open now is on, as the concept asks. */
 export const STARTING_FILTERS: readonly SpotFilter[] = [SpotFilter.OPEN_NOW];
 
+/** QUERY_MAX is the longest search ListSpots takes (its max=60 on query): keep the two in step. */
+export const QUERY_MAX = 60;
+
 // Screen 9's times put a car at about 400 m a minute in town and a walker at 80.
 const DRIVE_METERS_PER_MINUTE = 400;
 const WALK_METERS_PER_MINUTE = 80;
