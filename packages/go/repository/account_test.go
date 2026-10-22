@@ -293,8 +293,10 @@ func TestDeletingAnAccountCascadesThroughEveryTableThatHangsOffIt(t *testing.T) 
 	pool := newPool(t)
 	// owned is app.account and every table its delete cascades into, directly or through another.
 	// confdeltype: c is cascade. r (restrict) refuses at once, partway down the cascade. a (no
-	// action) is checked once the whole delete is done, so it refuses only when its rows outlive
-	// the cascade, from a table the account doesn't own.
+	// action) is checked once the whole delete is done, so one from a table the account doesn't
+	// own refuses it. One from an owned table refuses only if another player's row points at this
+	// player's, which the schema can't show: the rpc that writes the row keeps it to the caller's
+	// own (PlateMeal plates only the caller's recipes).
 	rows, err := pool.Query(t.Context(), `
 		with recursive owned(rel) as (
 		       select 'app.account'::regclass
