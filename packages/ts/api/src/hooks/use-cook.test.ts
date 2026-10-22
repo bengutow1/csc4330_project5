@@ -1,11 +1,13 @@
 import { createConnectQueryKey, skipToken } from "@connectrpc/connect-query";
 import { Diet, Equipment } from "@fries-in-the-bag/apigen/account/v1/account_pb";
+import { Board, BoardService, Range } from "@fries-in-the-bag/apigen/board/v1/board_pb";
 import { CookService } from "@fries-in-the-bag/apigen/cook/v1/cook_pb";
 import { ScanService } from "@fries-in-the-bag/apigen/scan/v1/scan_pb";
 import { partialMatchKey } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
 import { createApiTransport } from "../transport.ts";
 import {
+  PLATED,
   RECIPES,
   type RecipeFilters,
   recipeInput,
@@ -101,5 +103,30 @@ describe("RECIPES", () => {
       cardinality: "finite",
     });
     expect(partialMatchKey(lastScan, RECIPES)).toBe(false);
+  });
+});
+
+describe("PLATED", () => {
+  const transport = createApiTransport({ baseUrl: "http://api.test.invalid" });
+
+  it("covers the Chefs board at every page, so a new plate's points show on the next look", () => {
+    const chefs = createConnectQueryKey({
+      schema: BoardService.method.getBoard,
+      input: { board: Board.CHEFS, range: Range.THIS_WEEK, cursor: "" },
+      transport,
+      cardinality: "infinite",
+      pageParamKey: "cursor",
+    });
+    expect(PLATED.some((family) => partialMatchKey(chefs, family))).toBe(true);
+  });
+
+  it("leaves the recipes alone, which a plate does not change", () => {
+    const shelves = createConnectQueryKey({
+      schema: CookService.method.listRecipes,
+      input: recipesInput(42n, ANY),
+      transport,
+      cardinality: "finite",
+    });
+    expect(PLATED.some((family) => partialMatchKey(shelves, family))).toBe(false);
   });
 });
