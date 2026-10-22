@@ -184,3 +184,16 @@ export function listErrors(invalid: Record<string, string>): ListErrors {
   }
   return { list: invalid.ingredients, items };
 }
+
+/**
+ * refusalOf is a refused save's error for as long as the draft is the list that was sent, and null
+ * once it changed: the refusal names ingredients by their place in that list, and an edit moves
+ * them. withIngredient and withoutIngredient hand back a new list for every change they make.
+ */
+export function refusalOf<E>(
+  draft: readonly Item[],
+  sent: readonly Item[] | null,
+  error: E,
+): E | null {
+  return draft === sent ? error : null;
+}
