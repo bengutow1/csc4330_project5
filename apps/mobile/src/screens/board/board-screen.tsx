@@ -1,13 +1,15 @@
-import { type Row, useBoard } from "@fries-in-the-bag/api";
+import { type Row, useBoard, useMyCrews } from "@fries-in-the-bag/api";
 import { FlashList, type FlashListRef, type ViewToken } from "@shopify/flash-list";
 import { useRouter } from "expo-router";
 import { type ReactNode, useCallback, useRef, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Divider } from "@/components/card";
+import { FilterChip } from "@/components/chip";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { Header } from "@/components/header";
+import { IconButton } from "@/components/icon-button";
 import { SegmentedControl } from "@/components/segmented-control";
 import { Skeleton } from "@/components/skeleton";
 import { UnderlineTabs } from "@/components/underline-tabs";
@@ -26,6 +28,7 @@ import {
   rangeOf,
   subtitle,
 } from "@/lib/board";
+import { CAMPUS, scopeOf } from "@/lib/crews";
 import { BoardRow } from "@/screens/board/board-row";
 import { FridgeCard } from "@/screens/board/fridge-card";
 import { HallOfFriesCard } from "@/screens/board/hall-of-fries-card";
@@ -49,7 +52,8 @@ const SIDE = SPACE.lg + SPACE.xs;
  * ranks and pages, switched between Chefs and the Hall of Fries and between this week and all
  * time. The first three stand on the podium, the rest list below, and the player's own row is
  * pinned to the bottom whenever it is off screen. Under Chefs, a card names this week's Hall of
- * Fries leader.
+ * Fries leader. Chips switch the board between the campus and each of the player's crews (B3),
+ * whose members the server ranks among themselves; the crew icon opens their crews.
  */
 export function BoardScreen() {
   const insets = useSafeAreaInsets();
@@ -57,7 +61,12 @@ export function BoardScreen() {
   const list = useRef<FlashListRef<BoardItem<Row>>>(null);
   const [boardKey, setBoardKey] = useState<BoardKey>("chefs");
   const [rangeKey, setRangeKey] = useState<RangeKey>("this_week");
-  const board = useBoard(boardOf(boardKey), rangeOf(rangeKey));
+  const crews = useMyCrews();
+  const [picked, setPicked] = useState(CAMPUS);
+  // A crew the player has since left falls back to the campus, during render.
+  const scope = scopeOf(crews.data?.crews, picked);
+  const campus = scope === CAMPUS;
+  const board = useBoard(boardOf(boardKey), rangeOf(rangeKey), scope);
   const pages = board.data?.pages ?? [];
   const items = boardItems(distinctRows(pages.flatMap((page) => page.rows)));
   const myRow = pages[0]?.myRow;
@@ -96,10 +105,34 @@ export function BoardScreen() {
     );
   }
 
+  const myCrews = crews.data?.crews ?? [];
+  const scopeName = myCrews.find((crew) => crew.crewId === scope)?.name;
   const header = (
     <View style={styles.header}>
-      <Header root title="Leaderboard" subtitle={subtitle(rangeKey)} />
-      <FridgeCard />
+      <View style={styles.bar}>
+        <IconButton icon="people-outline" label="Crews" onPress={() => router.navigate("/crews")} />
+      </View>
+      <Header root title="Leaderboard" subtitle={subtitle(rangeKey, scopeName)} />
+      {/* The campus and then each crew. With no crews, the campus is the only board. */}
+      {myCrews.length > 0 ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.scopes}
+        >
+          <FilterChip label="Campus" selected={campus} onPress={() => setPicked(CAMPUS)} />
+          {myCrews.map((crew) => (
+            <FilterChip
+              key={String(crew.crewId)}
+              label={crew.name}
+              selected={scope === crew.crewId}
+              onPress={() => setPicked(crew.crewId)}
+            />
+          ))}
+        </ScrollView>
+      ) : null}
+      {/* The Fridge of the Week is the whole campus's, so a crew's board leaves it out. */}
+      {campus ? <FridgeCard /> : null}
       <View>
         <SegmentedControl options={BOARD_OPTIONS} value={boardKey} onChange={setBoardKey} />
         <UnderlineTabs options={RANGE_OPTIONS} value={rangeKey} onChange={setRangeKey} />
@@ -136,11 +169,12 @@ export function BoardScreen() {
           )
         }
         // Which row is last, and whose, changes as pages land: every visible row draws again.
-        extraData={`${boardKey}:${items.length}:${myRow?.handle ?? ""}`}
+        extraData={`${boardKey}:${scope}:${items.length}:${myRow?.handle ?? ""}`}
         ListHeaderComponent={header}
         ListEmptyComponent={body}
         ListFooterComponent={
-          boardKey === "chefs" ? (
+          // The card names the campus's leader, so a crew's board leaves it out.
+          boardKey === "chefs" && campus ? (
             <HallOfFriesCard
               onPress={() => {
                 // The card names this week's leader, so the board it opens is this week's too,
@@ -193,6 +227,8 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg },
   content: { paddingHorizontal: SIDE },
   header: { gap: SPACE.md + SPACE.xxs, paddingBottom: SPACE.md + SPACE.xxs },
+  bar: { flexDirection: "row", justifyContent: "flex-end" },
+  scopes: { gap: SPACE.sm },
   rowCard: {
     paddingHorizontal: SPACE.md + SPACE.xxs,
     borderLeftWidth: 1,

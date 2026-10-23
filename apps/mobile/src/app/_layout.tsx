@@ -88,6 +88,7 @@ function RootStack() {
           <Stack.Screen name="plate/[recipeId]" />
           <Stack.Screen name="fries" options={{ headerShown: false }} />
           <Stack.Screen name="settings" />
+          <Stack.Screen name="crews" />
         </Stack.Protected>
       </Stack>
       {covered ? (

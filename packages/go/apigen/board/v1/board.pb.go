@@ -221,7 +221,10 @@ type GetBoardRequest struct {
 	// The next_cursor of the page before; "" for the first page.
 	Cursor string `protobuf:"bytes,3,opt,name=cursor,proto3" json:"cursor,omitempty"`
 	// The most rows on this page, from 1 to 50, where more is clamped to 50; 0 = 20.
-	Limit         int32 `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,omitempty"`
+	Limit int32 `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,omitempty"`
+	// Rank only this crew's members, among themselves (crew.v1). The caller must be in it, or the
+	// board is not_found. 0 = the whole campus.
+	CrewId        int64 `protobuf:"varint,5,opt,name=crew_id,json=crewId,proto3" json:"crew_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -280,6 +283,13 @@ func (x *GetBoardRequest) GetCursor() string {
 func (x *GetBoardRequest) GetLimit() int32 {
 	if x != nil {
 		return x.Limit
+	}
+	return 0
+}
+
+func (x *GetBoardRequest) GetCrewId() int64 {
+	if x != nil {
+		return x.CrewId
 	}
 	return 0
 }
@@ -512,12 +522,13 @@ const file_board_v1_board_proto_rawDesc = "" +
 	"\x06handle\x18\x02 \x01(\tR\x06handle\x12\x16\n" +
 	"\x06avatar\x18\x03 \x01(\tR\x06avatar\x12\x14\n" +
 	"\x05value\x18\x04 \x01(\x03R\x05value\x12\x14\n" +
-	"\x05crown\x18\x05 \x01(\bR\x05crown\"\x8d\x01\n" +
+	"\x05crown\x18\x05 \x01(\bR\x05crown\"\xa6\x01\n" +
 	"\x0fGetBoardRequest\x12%\n" +
 	"\x05board\x18\x01 \x01(\x0e2\x0f.board.v1.BoardR\x05board\x12%\n" +
 	"\x05range\x18\x02 \x01(\x0e2\x0f.board.v1.RangeR\x05range\x12\x16\n" +
 	"\x06cursor\x18\x03 \x01(\tR\x06cursor\x12\x14\n" +
-	"\x05limit\x18\x04 \x01(\x05R\x05limit\"|\n" +
+	"\x05limit\x18\x04 \x01(\x05R\x05limit\x12\x17\n" +
+	"\acrew_id\x18\x05 \x01(\x03R\x06crewId\"|\n" +
 	"\x10GetBoardResponse\x12!\n" +
 	"\x04rows\x18\x01 \x03(\v2\r.board.v1.RowR\x04rows\x12\x1f\n" +
 	"\vnext_cursor\x18\x02 \x01(\tR\n" +

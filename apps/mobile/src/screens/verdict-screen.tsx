@@ -1,5 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { isNotFound, useScan } from "@fries-in-the-bag/api";
+import { isNotFound, useScan, useWhoAmI } from "@fries-in-the-bag/api";
 import { Stack, useRouter } from "expo-router";
 import { type ReactNode, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
@@ -12,6 +12,8 @@ import { ErrorState } from "@/components/error-state";
 import { Header } from "@/components/header";
 import { IconButton } from "@/components/icon-button";
 import { IngredientSheet } from "@/components/ingredient-sheet";
+import { RoastCard } from "@/components/share-card";
+import { ShareSheet } from "@/components/share-sheet";
 import { Skeleton } from "@/components/skeleton";
 import { TierPill } from "@/components/tier-pill";
 import { categoryLook, groupByCategory } from "@/lib/categories";
@@ -30,7 +32,7 @@ const BAR_HEIGHT = 44;
  * (docs/design.md): the score counting up, the tier's pill, the roast, and what the scan spotted
  * by category. The tier decides the two ways on, cook from this fridge or put the fries in the
  * bag, and which one is big. Fix the list opens the sheet that corrects the list, which changes
- * the recipes and never the score.
+ * the recipes and never the score. Share previews the verdict as a roast card, then shares it.
  */
 export function VerdictScreen(props: { id: string | undefined }) {
   const scanId = parseId(props.id);
@@ -38,6 +40,9 @@ export function VerdictScreen(props: { id: string | undefined }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [fixing, setFixing] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  // The handle is the one thing about the player a card carries.
+  const me = useWhoAmI();
 
   // Back to a fresh camera, wherever the verdict was opened from.
   const scanAgain = () => router.dismissTo("/");
@@ -112,13 +117,22 @@ export function VerdictScreen(props: { id: string | undefined }) {
         ) : (
           <Sections list={verdict.ingredients} />
         )}
-        <Button
-          label="Fix the list"
-          variant="secondary"
-          size="small"
-          icon="create-outline"
-          onPress={() => setFixing(true)}
-        />
+        <View style={styles.extras}>
+          <Button
+            label="Fix the list"
+            variant="secondary"
+            size="small"
+            icon="create-outline"
+            onPress={() => setFixing(true)}
+          />
+          <Button
+            label="Share"
+            variant="secondary"
+            size="small"
+            icon="share-outline"
+            onPress={() => setSharing(true)}
+          />
+        </View>
       </ScrollView>
       <BottomBar>
         <View style={styles.ways}>
@@ -139,6 +153,19 @@ export function VerdictScreen(props: { id: string | undefined }) {
           onClose={() => setFixing(false)}
         />
       ) : null}
+      <ShareSheet
+        visible={sharing}
+        title="Share your verdict"
+        label="Your verdict card"
+        onClose={() => setSharing(false)}
+      >
+        <RoastCard
+          score={verdict.score}
+          tier={verdict.tier}
+          roast={verdict.roast}
+          handle={me.data?.account?.handle}
+        />
+      </ShareSheet>
     </View>
   );
 }
@@ -268,5 +295,6 @@ const styles = StyleSheet.create({
   name: { ...TYPE.caption, color: COLORS.ink, textAlign: "center" },
   quantity: { ...TYPE.caption, color: COLORS.muted, textAlign: "center" },
   ways: { gap: SPACE.sm },
+  extras: { flexDirection: "row", justifyContent: "center", gap: SPACE.sm },
   loading: { gap: SPACE.xl, padding: SPACE.lg },
 });

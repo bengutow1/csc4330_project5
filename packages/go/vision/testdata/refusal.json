@@ -1,0 +1,11 @@
+{
+  "id": "msg_test_refusal",
+  "type": "message",
+  "role": "assistant",
+  "model": "claude-opus-5-5",
+  "content": [],
+  "stop_reason": "refusal",
+  "stop_details": {"type": "refusal", "category": null, "explanation": "declined"},
+  "stop_sequence": null,
+  "usage": {"input_tokens": 1820, "output_tokens": 0}
+}

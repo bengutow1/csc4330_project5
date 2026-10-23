@@ -29,6 +29,7 @@ export {
   type Rank,
   type Recipe,
 } from "@fries-in-the-bag/apigen/cook/v1/cook_pb";
+export type { Crew } from "@fries-in-the-bag/apigen/crew/v1/crew_pb";
 export { type Spot, SpotFilter } from "@fries-in-the-bag/apigen/fries/v1/fries_pb";
 export type { Plate, Profile } from "@fries-in-the-bag/apigen/profile/v1/profile_pb";
 export { Category, PhotoKind, Tier } from "@fries-in-the-bag/apigen/scan/v1/scan_pb";
@@ -62,6 +63,13 @@ export {
   useRecipe,
   useRecipes,
 } from "./hooks/use-cook.ts";
+export {
+  useCreateCrew,
+  useInvalidateCrews,
+  useJoinCrew,
+  useLeaveCrew,
+  useMyCrews,
+} from "./hooks/use-crew.ts";
 export {
   type SpotsSearch,
   useInvalidateFryRuns,

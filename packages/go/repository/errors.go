@@ -21,6 +21,11 @@ var (
 	ErrPlateSeen = errors.New("we've seen this plate before")
 	// ErrMealWindowCooked fires when the player already has this meal window's cook credit.
 	ErrMealWindowCooked = errors.New("you already cooked this meal window")
+	// ErrNoCrewForCode fires when no crew holds the code a player typed to join.
+	ErrNoCrewForCode = errors.New("no crew has that code, check it and try again")
+	// ErrTooManyCrews fires when a player already in the most crews one can be in makes or joins
+	// another.
+	ErrTooManyCrews = errors.New("you're in as many crews as you can be, leave one first")
 )
 
 // uniqueRefusals are the unique constraints whose refusal the player reads in words of its own,

@@ -32,6 +32,8 @@ func TestConnectErrMapsEverySentinelToItsCode(t *testing.T) {
 		{name: "duplicate", sentinel: repository.ErrDuplicate, code: connect.CodeAlreadyExists},
 		{name: "plate seen", sentinel: repository.ErrPlateSeen, code: connect.CodeAlreadyExists},
 		{name: "meal window cooked", sentinel: repository.ErrMealWindowCooked, code: connect.CodeFailedPrecondition},
+		{name: "no crew for code", sentinel: repository.ErrNoCrewForCode, code: connect.CodeNotFound},
+		{name: "too many crews", sentinel: repository.ErrTooManyCrews, code: connect.CodeResourceExhausted},
 		{name: "not ready", sentinel: handlers.ErrNotReady, code: connect.CodeUnavailable},
 		{name: "too many requests", sentinel: handlers.ErrTooManyRequests, code: connect.CodeResourceExhausted},
 		{name: "not authenticated", sentinel: auth.ErrNotAuthenticated, code: connect.CodeUnauthenticated},
