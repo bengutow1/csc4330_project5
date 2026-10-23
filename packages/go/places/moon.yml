@@ -7,3 +7,12 @@ language: 'go'
 project:
   name: 'go-places'
   description: 'Finds food near a point through the places provider, and the mock the API serves without a key.'
+
+tasks:
+  # One live call to Google with the key from the shell, so the real client can be checked by hand.
+  # Not named test, so `moon run :test` never spends a call, and never in CI, which has no key.
+  e2e:
+    command: 'go test -tags e2e -run TestTheLiveAPIListsSpotsNearCampus -count=1 -v .'
+    options:
+      cache: false
+      runInCI: false
