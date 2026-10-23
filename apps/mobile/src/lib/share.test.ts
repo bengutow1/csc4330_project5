@@ -9,16 +9,23 @@ describe("CARD", () => {
 });
 
 describe("captureSize", () => {
-  it("comes out at exactly a story's pixels on every common screen density", () => {
-    for (const ratio of [1, 2, 2.625, 3, 3.5]) {
-      const size = captureSize(ratio);
+  it("asks iOS for points, which it renders at the screen's scale, so it comes out a story", () => {
+    for (const ratio of [2, 3]) {
+      const size = captureSize("ios", ratio);
       expect(size.width * ratio).toBeCloseTo(STORY.width);
       expect(size.height * ratio).toBeCloseTo(STORY.height);
     }
   });
 
-  it("is the card itself on a 3x phone, so nothing is resized", () => {
-    expect(captureSize(3)).toEqual(CARD);
+  it("asks Android for the story's own pixels, which it scales the snapshot to as given", () => {
+    // A Pixel 7 is 2.625x: dividing there gave a 411 by 731 card.
+    for (const ratio of [2, 2.625, 3.5]) {
+      expect(captureSize("android", ratio)).toEqual(STORY);
+    }
+  });
+
+  it("is the card itself on a 3x iPhone, so nothing is resized", () => {
+    expect(captureSize("ios", 3)).toEqual(CARD);
   });
 });
 

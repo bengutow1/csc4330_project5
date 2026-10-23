@@ -47,7 +47,7 @@ export function ShareSheet(props: {
       const uri = await captureRef(cardRef, {
         format: "png",
         result: "tmpfile",
-        ...captureSize(PixelRatio.get()),
+        ...captureSize(process.env.EXPO_OS, PixelRatio.get()),
       });
       await Sharing.shareAsync(uri, {
         mimeType: "image/png",

@@ -14,11 +14,15 @@ export interface Box {
 export const CARD: Box = { width: STORY.width / 3, height: STORY.height / 3 };
 
 /**
- * captureSize is what to ask the capture for on a phone with this many pixels to a point. The
- * capture's size is in points and comes out in pixels, so a story is the story's pixels over the
- * ratio (the Expo docs' captureRef example).
+ * captureSize is what to ask the capture for, so the picture comes out a story on this platform.
+ * iOS takes points and renders them at the screen's scale, so it gets the story over the ratio
+ * (the Expo docs' captureRef example). Android takes pixels and scales the snapshot to exactly
+ * that, so it gets the story as is: dividing there shrank a Pixel 7's card to 411 by 731.
  */
-export function captureSize(pixelRatio: number): Box {
+export function captureSize(os: string | undefined, pixelRatio: number): Box {
+  if (os === "android") {
+    return STORY;
+  }
   return { width: STORY.width / pixelRatio, height: STORY.height / pixelRatio };
 }
 
