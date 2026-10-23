@@ -6,6 +6,7 @@
       "location": { "latitude": 30.424092, "longitude": -91.18 },
       "shortFormattedAddress": "77 Maple Dr, Baton Rouge",
       "types": ["fast_food_restaurant", "restaurant", "food", "point_of_interest", "establishment"],
+      "primaryTypeDisplayName": { "text": "Fast Food Restaurant", "languageCode": "en" },
       "priceLevel": "PRICE_LEVEL_INEXPENSIVE",
       "utcOffsetMinutes": -300,
       "currentOpeningHours": {
@@ -26,6 +27,7 @@
       "location": { "latitude": 30.407454, "longitude": -91.18 },
       "shortFormattedAddress": "402 Oak Ave, Baton Rouge",
       "types": ["ramen_restaurant", "restaurant", "food", "point_of_interest", "establishment"],
+      "primaryTypeDisplayName": { "text": "Ramen Restaurant", "languageCode": "en" },
       "priceLevel": "PRICE_LEVEL_MODERATE",
       "utcOffsetMinutes": -300,
       "currentOpeningHours": {
@@ -49,6 +51,7 @@
       "location": { "latitude": 30.415998, "longitude": -91.18 },
       "shortFormattedAddress": "18 Elm St, Baton Rouge",
       "types": ["breakfast_restaurant", "restaurant", "food", "point_of_interest", "establishment"],
+      "primaryTypeDisplayName": { "text": "Breakfast Restaurant", "languageCode": "en" },
       "utcOffsetMinutes": -300,
       "currentOpeningHours": {
         "openNow": false,
@@ -67,6 +70,7 @@
       "location": { "latitude": 30.391716, "longitude": -91.18 },
       "shortFormattedAddress": "560 Main St, Baton Rouge",
       "types": ["american_restaurant", "restaurant", "food", "point_of_interest", "establishment"],
+      "primaryTypeDisplayName": { "text": "Restaurant", "languageCode": "en" },
       "priceLevel": "PRICE_LEVEL_EXPENSIVE",
       "utcOffsetMinutes": -300,
       "currentOpeningHours": {
