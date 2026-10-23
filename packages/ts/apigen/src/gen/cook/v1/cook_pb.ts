@@ -17,7 +17,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file cook/v1/cook.proto.
  */
 export const file_cook_v1_cook: GenFile = /*@__PURE__*/
-  fileDesc("ChJjb29rL3YxL2Nvb2sucHJvdG8SB2Nvb2sudjEiRQoEUmFuaxIMCgRuYW1lGAEgASgJEgwKBG5leHQYAiABKAkSDwoHdG9fbmV4dBgDIAEoBRIQCghwcm9ncmVzcxgEIAEoASI6CgVCYWRnZRIMCgRuYW1lGAEgASgJEhMKC2hvd190b19lYXJuGAIgASgJEg4KBmVhcm5lZBgDIAEoCCLUAQoGUmVjaXBlEhEKCXJlY2lwZV9pZBgBIAEoAxINCgV0aXRsZRgCIAEoCRIPCgdtaW51dGVzGAMgASgFEicKCmRpZmZpY3VsdHkYBCABKA4yEy5jb29rLnYxLkRpZmZpY3VsdHkSKAoJZXF1aXBtZW50GAUgAygOMhUuYWNjb3VudC52MS5FcXVpcG1lbnQSDAoEdXNlcxgGIAMoCRIPCgdtaXNzaW5nGAcgAygJEg0KBXN0ZXBzGAggAygJEhYKDnBvaW50c19wcmV2aWV3GAkgASgFIoQBChJMaXN0UmVjaXBlc1JlcXVlc3QSDwoHc2Nhbl9pZBgBIAEoAxITCgttYXhfbWludXRlcxgCIAEoBRIoCgllcXVpcG1lbnQYAyADKA4yFS5hY2NvdW50LnYxLkVxdWlwbWVudBIeCgRkaWV0GAQgASgOMhAuYWNjb3VudC52MS5EaWV0ImMKE0xpc3RSZWNpcGVzUmVzcG9uc2USJAoLbWFrZV9pdF9ub3cYASADKAsyDy5jb29rLnYxLlJlY2lwZRImCg1vbmVfaXRlbV9hd2F5GAIgAygLMg8uY29vay52MS5SZWNpcGUiJQoQR2V0UmVjaXBlUmVxdWVzdBIRCglyZWNpcGVfaWQYASABKAMiNAoRR2V0UmVjaXBlUmVzcG9uc2USHwoGcmVjaXBlGAEgASgLMg8uY29vay52MS5SZWNpcGUiNAoQUGxhdGVNZWFsUmVxdWVzdBIRCglyZWNpcGVfaWQYASABKAMSDQoFcGhvdG8YAiABKAwiNgoRUGxhdGVNZWFsUmVzcG9uc2USIQoHcmVjZWlwdBgBIAEoCzIQLmNvb2sudjEuUmVjZWlwdCLcAQoHUmVjZWlwdBIOCgZwYXNzZWQYASABKAgSDwoHbWVzc2FnZRgCIAEoCRIhCgVsaW5lcxgDIAMoCzISLmNvb2sudjEuQXdhcmRMaW5lEg0KBXRvdGFsGAQgASgFEhMKC3N0cmVha19kYXlzGAUgASgFEiIKCm5ld19iYWRnZXMYBiADKAsyDi5jb29rLnYxLkJhZGdlEiIKC3JhbmtfYmVmb3JlGAcgASgLMg0uY29vay52MS5SYW5rEiEKCnJhbmtfYWZ0ZXIYCCABKAsyDS5jb29rLnYxLlJhbmsiQQoJQXdhcmRMaW5lEiQKBnJlYXNvbhgBIAEoDjIULmNvb2sudjEuUG9pbnRSZWFzb24SDgoGcG9pbnRzGAIgASgFKmkKCkRpZmZpY3VsdHkSGgoWRElGRklDVUxUWV9VTlNQRUNJRklFRBAAEhMKD0RJRkZJQ1VMVFlfRUFTWRABEhUKEURJRkZJQ1VMVFlfTUVESVVNEAISEwoPRElGRklDVUxUWV9IQVJEEAMquwEKC1BvaW50UmVhc29uEhwKGFBPSU5UX1JFQVNPTl9VTlNQRUNJRklFRBAAEhUKEVBPSU5UX1JFQVNPTl9DT09LEAESHgoaUE9JTlRfUkVBU09OX1NDUkFQUFlfQk9OVVMQAhIhCh1QT0lOVF9SRUFTT05fQUdBSU5TVF9BTExfT0REUxADEhcKE1BPSU5UX1JFQVNPTl9TVFJFQUsQBBIbChdQT0lOVF9SRUFTT05fQ09NQk9fQ09PSxAFMt8BCgtDb29rU2VydmljZRJICgtMaXN0UmVjaXBlcxIbLmNvb2sudjEuTGlzdFJlY2lwZXNSZXF1ZXN0GhwuY29vay52MS5MaXN0UmVjaXBlc1Jlc3BvbnNlEkIKCUdldFJlY2lwZRIZLmNvb2sudjEuR2V0UmVjaXBlUmVxdWVzdBoaLmNvb2sudjEuR2V0UmVjaXBlUmVzcG9uc2USQgoJUGxhdGVNZWFsEhkuY29vay52MS5QbGF0ZU1lYWxSZXF1ZXN0GhouY29vay52MS5QbGF0ZU1lYWxSZXNwb25zZUKeAQoLY29tLmNvb2sudjFCCUNvb2tQcm90b1ABWkdnaXRodWIuY29tL2Jlbmd1dG93MS9jc2M0MzMwX3Byb2plY3Q1L3BhY2thZ2VzL2dvL2FwaWdlbi9jb29rL3YxO2Nvb2t2MaICA0NYWKoCB0Nvb2suVjHKAgdDb29rXFYx4gITQ29va1xWMVxHUEJNZXRhZGF0YeoCCENvb2s6OlYxYgZwcm90bzM", [file_account_v1_account]);
+  fileDesc("ChJjb29rL3YxL2Nvb2sucHJvdG8SB2Nvb2sudjEiRQoEUmFuaxIMCgRuYW1lGAEgASgJEgwKBG5leHQYAiABKAkSDwoHdG9fbmV4dBgDIAEoBRIQCghwcm9ncmVzcxgEIAEoASI6CgVCYWRnZRIMCgRuYW1lGAEgASgJEhMKC2hvd190b19lYXJuGAIgASgJEg4KBmVhcm5lZBgDIAEoCCJQCgtDb29raW5nU3RlcBITCgtpbnN0cnVjdGlvbhgBIAEoCRIaCg10aW1lcl9zZWNvbmRzGAIgASgFSACIAQFCEAoOX3RpbWVyX3NlY29uZHMigQIKBlJlY2lwZRIRCglyZWNpcGVfaWQYASABKAMSDQoFdGl0bGUYAiABKAkSDwoHbWludXRlcxgDIAEoBRInCgpkaWZmaWN1bHR5GAQgASgOMhMuY29vay52MS5EaWZmaWN1bHR5EigKCWVxdWlwbWVudBgFIAMoDjIVLmFjY291bnQudjEuRXF1aXBtZW50EgwKBHVzZXMYBiADKAkSDwoHbWlzc2luZxgHIAMoCRINCgVzdGVwcxgIIAMoCRIWCg5wb2ludHNfcHJldmlldxgJIAEoBRIrCg1jb29raW5nX3N0ZXBzGAogAygLMhQuY29vay52MS5Db29raW5nU3RlcCKEAQoSTGlzdFJlY2lwZXNSZXF1ZXN0Eg8KB3NjYW5faWQYASABKAMSEwoLbWF4X21pbnV0ZXMYAiABKAUSKAoJZXF1aXBtZW50GAMgAygOMhUuYWNjb3VudC52MS5FcXVpcG1lbnQSHgoEZGlldBgEIAEoDjIQLmFjY291bnQudjEuRGlldCJjChNMaXN0UmVjaXBlc1Jlc3BvbnNlEiQKC21ha2VfaXRfbm93GAEgAygLMg8uY29vay52MS5SZWNpcGUSJgoNb25lX2l0ZW1fYXdheRgCIAMoCzIPLmNvb2sudjEuUmVjaXBlIiUKEEdldFJlY2lwZVJlcXVlc3QSEQoJcmVjaXBlX2lkGAEgASgDIjQKEUdldFJlY2lwZVJlc3BvbnNlEh8KBnJlY2lwZRgBIAEoCzIPLmNvb2sudjEuUmVjaXBlIjQKEFBsYXRlTWVhbFJlcXVlc3QSEQoJcmVjaXBlX2lkGAEgASgDEg0KBXBob3RvGAIgASgMIjYKEVBsYXRlTWVhbFJlc3BvbnNlEiEKB3JlY2VpcHQYASABKAsyEC5jb29rLnYxLlJlY2VpcHQi3AEKB1JlY2VpcHQSDgoGcGFzc2VkGAEgASgIEg8KB21lc3NhZ2UYAiABKAkSIQoFbGluZXMYAyADKAsyEi5jb29rLnYxLkF3YXJkTGluZRINCgV0b3RhbBgEIAEoBRITCgtzdHJlYWtfZGF5cxgFIAEoBRIiCgpuZXdfYmFkZ2VzGAYgAygLMg4uY29vay52MS5CYWRnZRIiCgtyYW5rX2JlZm9yZRgHIAEoCzINLmNvb2sudjEuUmFuaxIhCgpyYW5rX2FmdGVyGAggASgLMg0uY29vay52MS5SYW5rIkEKCUF3YXJkTGluZRIkCgZyZWFzb24YASABKA4yFC5jb29rLnYxLlBvaW50UmVhc29uEg4KBnBvaW50cxgCIAEoBSppCgpEaWZmaWN1bHR5EhoKFkRJRkZJQ1VMVFlfVU5TUEVDSUZJRUQQABITCg9ESUZGSUNVTFRZX0VBU1kQARIVChFESUZGSUNVTFRZX01FRElVTRACEhMKD0RJRkZJQ1VMVFlfSEFSRBADKrsBCgtQb2ludFJlYXNvbhIcChhQT0lOVF9SRUFTT05fVU5TUEVDSUZJRUQQABIVChFQT0lOVF9SRUFTT05fQ09PSxABEh4KGlBPSU5UX1JFQVNPTl9TQ1JBUFBZX0JPTlVTEAISIQodUE9JTlRfUkVBU09OX0FHQUlOU1RfQUxMX09ERFMQAxIXChNQT0lOVF9SRUFTT05fU1RSRUFLEAQSGwoXUE9JTlRfUkVBU09OX0NPTUJPX0NPT0sQBTLfAQoLQ29va1NlcnZpY2USSAoLTGlzdFJlY2lwZXMSGy5jb29rLnYxLkxpc3RSZWNpcGVzUmVxdWVzdBocLmNvb2sudjEuTGlzdFJlY2lwZXNSZXNwb25zZRJCCglHZXRSZWNpcGUSGS5jb29rLnYxLkdldFJlY2lwZVJlcXVlc3QaGi5jb29rLnYxLkdldFJlY2lwZVJlc3BvbnNlEkIKCVBsYXRlTWVhbBIZLmNvb2sudjEuUGxhdGVNZWFsUmVxdWVzdBoaLmNvb2sudjEuUGxhdGVNZWFsUmVzcG9uc2VCngEKC2NvbS5jb29rLnYxQglDb29rUHJvdG9QAVpHZ2l0aHViLmNvbS9iZW5ndXRvdzEvY3NjNDMzMF9wcm9qZWN0NS9wYWNrYWdlcy9nby9hcGlnZW4vY29vay92MTtjb29rdjGiAgNDWFiqAgdDb29rLlYxygIHQ29va1xWMeICE0Nvb2tcVjFcR1BCTWV0YWRhdGHqAghDb29rOjpWMWIGcHJvdG8z", [file_account_v1_account]);
 
 /**
  * Rank is the title a player's all-time points earn and the way to the next one. The profile
@@ -94,6 +94,34 @@ export const BadgeSchema: GenMessage<Badge> = /*@__PURE__*/
   messageDesc(file_cook_v1_cook, 1);
 
 /**
+ * CookingStep is one instruction, with an optional foreground timer.
+ *
+ * @generated from message cook.v1.CookingStep
+ */
+export type CookingStep = Message<"cook.v1.CookingStep"> & {
+  /**
+   * One instruction, in display order, up to 300 characters.
+   *
+   * @generated from field: string instruction = 1;
+   */
+  instruction: string;
+
+  /**
+   * Seconds to count down, from 1 to 14400; unset means no timer.
+   *
+   * @generated from field: optional int32 timer_seconds = 2;
+   */
+  timerSeconds?: number | undefined;
+};
+
+/**
+ * Describes the message cook.v1.CookingStep.
+ * Use `create(CookingStepSchema)` to create a new message.
+ */
+export const CookingStepSchema: GenMessage<CookingStep> = /*@__PURE__*/
+  messageDesc(file_cook_v1_cook, 2);
+
+/**
  * Recipe is one dish for one of the caller's scans, already checked against its list, the staples
  * and the caller's allergies.
  *
@@ -156,6 +184,13 @@ export type Recipe = Message<"cook.v1.Recipe"> & {
    * @generated from field: int32 points_preview = 9;
    */
   pointsPreview: number;
+
+  /**
+   * Structured instructions for step-by-step cooking. steps stays for older clients.
+   *
+   * @generated from field: repeated cook.v1.CookingStep cooking_steps = 10;
+   */
+  cookingSteps: CookingStep[];
 };
 
 /**
@@ -163,7 +198,7 @@ export type Recipe = Message<"cook.v1.Recipe"> & {
  * Use `create(RecipeSchema)` to create a new message.
  */
 export const RecipeSchema: GenMessage<Recipe> = /*@__PURE__*/
-  messageDesc(file_cook_v1_cook, 2);
+  messageDesc(file_cook_v1_cook, 3);
 
 /**
  * @generated from message cook.v1.ListRecipesRequest
@@ -203,7 +238,7 @@ export type ListRecipesRequest = Message<"cook.v1.ListRecipesRequest"> & {
  * Use `create(ListRecipesRequestSchema)` to create a new message.
  */
 export const ListRecipesRequestSchema: GenMessage<ListRecipesRequest> = /*@__PURE__*/
-  messageDesc(file_cook_v1_cook, 3);
+  messageDesc(file_cook_v1_cook, 4);
 
 /**
  * The shelves come whole, without a cursor: they hold one scan's recipes, a handful from the
@@ -232,7 +267,7 @@ export type ListRecipesResponse = Message<"cook.v1.ListRecipesResponse"> & {
  * Use `create(ListRecipesResponseSchema)` to create a new message.
  */
 export const ListRecipesResponseSchema: GenMessage<ListRecipesResponse> = /*@__PURE__*/
-  messageDesc(file_cook_v1_cook, 4);
+  messageDesc(file_cook_v1_cook, 5);
 
 /**
  * @generated from message cook.v1.GetRecipeRequest
@@ -249,7 +284,7 @@ export type GetRecipeRequest = Message<"cook.v1.GetRecipeRequest"> & {
  * Use `create(GetRecipeRequestSchema)` to create a new message.
  */
 export const GetRecipeRequestSchema: GenMessage<GetRecipeRequest> = /*@__PURE__*/
-  messageDesc(file_cook_v1_cook, 5);
+  messageDesc(file_cook_v1_cook, 6);
 
 /**
  * @generated from message cook.v1.GetRecipeResponse
@@ -266,7 +301,7 @@ export type GetRecipeResponse = Message<"cook.v1.GetRecipeResponse"> & {
  * Use `create(GetRecipeResponseSchema)` to create a new message.
  */
 export const GetRecipeResponseSchema: GenMessage<GetRecipeResponse> = /*@__PURE__*/
-  messageDesc(file_cook_v1_cook, 6);
+  messageDesc(file_cook_v1_cook, 7);
 
 /**
  * @generated from message cook.v1.PlateMealRequest
@@ -292,7 +327,7 @@ export type PlateMealRequest = Message<"cook.v1.PlateMealRequest"> & {
  * Use `create(PlateMealRequestSchema)` to create a new message.
  */
 export const PlateMealRequestSchema: GenMessage<PlateMealRequest> = /*@__PURE__*/
-  messageDesc(file_cook_v1_cook, 7);
+  messageDesc(file_cook_v1_cook, 8);
 
 /**
  * @generated from message cook.v1.PlateMealResponse
@@ -309,7 +344,7 @@ export type PlateMealResponse = Message<"cook.v1.PlateMealResponse"> & {
  * Use `create(PlateMealResponseSchema)` to create a new message.
  */
 export const PlateMealResponseSchema: GenMessage<PlateMealResponse> = /*@__PURE__*/
-  messageDesc(file_cook_v1_cook, 8);
+  messageDesc(file_cook_v1_cook, 9);
 
 /**
  * Receipt is what one plate earned, line by line.
@@ -379,7 +414,7 @@ export type Receipt = Message<"cook.v1.Receipt"> & {
  * Use `create(ReceiptSchema)` to create a new message.
  */
 export const ReceiptSchema: GenMessage<Receipt> = /*@__PURE__*/
-  messageDesc(file_cook_v1_cook, 9);
+  messageDesc(file_cook_v1_cook, 10);
 
 /**
  * AwardLine is one award: a line on the receipt and a row in the ledger.
@@ -403,7 +438,7 @@ export type AwardLine = Message<"cook.v1.AwardLine"> & {
  * Use `create(AwardLineSchema)` to create a new message.
  */
 export const AwardLineSchema: GenMessage<AwardLine> = /*@__PURE__*/
-  messageDesc(file_cook_v1_cook, 10);
+  messageDesc(file_cook_v1_cook, 11);
 
 /**
  * Difficulty is how hard a recipe is to make.

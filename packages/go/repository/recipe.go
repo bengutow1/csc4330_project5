@@ -31,6 +31,7 @@ type NewRecipe struct {
 	Allergens  []string // the Allergy consts it contains
 	Diets      []string // the Diet consts besides none that it fits
 	Steps      []string
+	StepTimers []int // aligned seconds; 0 is untimed, empty means all untimed
 }
 
 // Recipe is one stored dish, as the shelves and the recipe page read it.
@@ -43,7 +44,8 @@ type Recipe struct {
 	Uses       []string
 	Missing    []string // none, or one
 	Steps      []string
-	ScanScore  int // the score of the recipe's scan, which sets what plating it pays
+	StepTimers []int // aligned seconds; 0 is untimed, empty means all untimed
+	ScanScore  int   // the score of the recipe's scan, which sets what plating it pays
 }
 
 // RecipeFilter narrows a set. Each zero value filters nothing.
@@ -88,6 +90,7 @@ type recipeRow struct {
 	Allergens  []string `json:"allergens"`
 	Diets      []string `json:"diets"`
 	Steps      []string `json:"steps"`
+	StepTimers []int    `json:"step_timers"`
 }
 
 // errSetTaken unwinds CreateRecipes' transaction when the version already has its set.
@@ -107,7 +110,7 @@ func (r *Repository) CreateRecipes(
 		rows[i] = recipeRow{
 			Position: i + 1, Title: n.Title, Minutes: n.Minutes, Difficulty: n.Difficulty,
 			Equipment: n.Equipment, Uses: n.Uses, Missing: n.Missing, Allergens: n.Allergens,
-			Diets: n.Diets, Steps: n.Steps,
+			Diets: n.Diets, Steps: n.Steps, StepTimers: n.StepTimers,
 		}
 	}
 	payload, err := json.Marshal(rows)
@@ -139,13 +142,13 @@ func (r *Repository) CreateRecipes(
 		// ones fall back to empty; uses and steps stay null, which the table refuses
 		_, err = tx.db.Exec(ctx, `
 			insert into app.recipe (scan_id, items_version, position, title, minutes, difficulty,
-			                        equipment, uses, missing, allergens, diets, steps)
+			                        equipment, uses, missing, allergens, diets, steps, step_timers)
 			select $1, $2, x.position, x.title, x.minutes, x.difficulty,
 			       coalesce(x.equipment, '{}'), x.uses, coalesce(x.missing, '{}'),
-			       coalesce(x.allergens, '{}'), coalesce(x.diets, '{}'), x.steps
+			       coalesce(x.allergens, '{}'), coalesce(x.diets, '{}'), x.steps, coalesce(x.step_timers, '{}')
 			  from jsonb_to_recordset($3::jsonb)
 			       as x (position int, title text, minutes int, difficulty text, equipment text[],
-			             uses text[], missing text[], allergens text[], diets text[], steps text[])`,
+			             uses text[], missing text[], allergens text[], diets text[], steps text[], step_timers int[])`,
 			scanID, itemsVersion, payload)
 		if err != nil {
 			return known(op, err)
@@ -174,7 +177,7 @@ func (r *Repository) ListRecipes(
 	}
 	rows, err := r.db.Query(ctx, `
 		select r.recipe_id, r.title, r.minutes, r.difficulty, r.equipment, r.uses, r.missing,
-		       r.steps, s.score
+		       r.steps, r.step_timers, s.score
 		  from app.recipe r
 		  join app.scan s on s.scan_id = r.scan_id
 		  join app.account a on a.account_id = s.account_id
@@ -196,7 +199,7 @@ func (r *Repository) ListRecipes(
 	for rows.Next() {
 		var rec Recipe
 		err = rows.Scan(&rec.RecipeID, &rec.Title, &rec.Minutes, &rec.Difficulty, &rec.Equipment,
-			&rec.Uses, &rec.Missing, &rec.Steps, &rec.ScanScore)
+			&rec.Uses, &rec.Missing, &rec.Steps, &rec.StepTimers, &rec.ScanScore)
 		if err != nil {
 			return nil, known(op, err)
 		}
@@ -216,7 +219,7 @@ func (r *Repository) RecipeByID(ctx context.Context, accountID, recipeID int64) 
 	var rec Recipe
 	err := r.db.QueryRow(ctx, `
 		select r.recipe_id, r.title, r.minutes, r.difficulty, r.equipment, r.uses, r.missing,
-		       r.steps, s.score
+		       r.steps, r.step_timers, s.score
 		  from app.recipe r
 		  join app.scan s on s.scan_id = r.scan_id
 		  join app.account a on a.account_id = s.account_id
@@ -224,7 +227,7 @@ func (r *Repository) RecipeByID(ctx context.Context, accountID, recipeID int64) 
 		   and r.recipe_id = $2
 		   and not r.allergens && a.allergies`, accountID, recipeID).Scan(
 		&rec.RecipeID, &rec.Title, &rec.Minutes, &rec.Difficulty, &rec.Equipment, &rec.Uses,
-		&rec.Missing, &rec.Steps, &rec.ScanScore)
+		&rec.Missing, &rec.Steps, &rec.StepTimers, &rec.ScanScore)
 	if err != nil {
 		return Recipe{}, known(fmt.Sprintf("recipe by id account=%d recipe=%d", accountID, recipeID), err)
 	}
