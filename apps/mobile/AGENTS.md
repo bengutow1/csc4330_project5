@@ -13,7 +13,9 @@ it. A route meant for anyone also goes in `OPEN_ROUTES` (`src/lib/launch.ts`), o
 hides it until the server answers. The tabs are Snap (the camera), Board and Me, with the verdict,
 cooking, Fries mode and Combo as flows over them. Every Core route in `docs/contracts.md` is built
 from the design (`docs/design.md`), and Next issues add their own routes. Settings (P3,
-`src/app/settings.tsx`) opens from the gear on the Me tab and reuses O3's `KitchenForm`.
+`src/app/settings.tsx`) opens from the gear on the Me tab and reuses O3's `KitchenForm`, and the
+badges screen (P2, `src/app/badges.tsx`) from the badge shelf's See all. Any board row opens its
+player's card (B2), a sheet over the board.
 `src/app/status.tsx` (open it with `friesinthebag://status`) asks the API whether it can serve, with
 or without an account.
 

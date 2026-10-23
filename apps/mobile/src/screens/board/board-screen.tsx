@@ -32,6 +32,7 @@ import { CAMPUS, scopeOf } from "@/lib/crews";
 import { BoardRow } from "@/screens/board/board-row";
 import { FridgeCard } from "@/screens/board/fridge-card";
 import { HallOfFriesCard } from "@/screens/board/hall-of-fries-card";
+import { PlayerCardSheet } from "@/screens/board/player-card-sheet";
 import { Podium } from "@/screens/board/podium";
 import { COLORS, RADII, SPACE } from "@/theme";
 
@@ -53,7 +54,8 @@ const SIDE = SPACE.lg + SPACE.xs;
  * time. The first three stand on the podium, the rest list below, and the player's own row is
  * pinned to the bottom whenever it is off screen. Under Chefs, a card names this week's Hall of
  * Fries leader. Chips switch the board between the campus and each of the player's crews (B3),
- * whose members the server ranks among themselves; the crew icon opens their crews.
+ * whose members the server ranks among themselves; the crew icon opens their crews. Any row, on
+ * the podium or below it, opens that player's card (B2).
  */
 export function BoardScreen() {
   const insets = useSafeAreaInsets();
@@ -67,6 +69,8 @@ export function BoardScreen() {
   const scope = scopeOf(crews.data?.crews, picked);
   const campus = scope === CAMPUS;
   const board = useBoard(boardOf(boardKey), rangeOf(rangeKey), scope);
+  // The player whose card (B2) is open, or undefined when none is.
+  const [cardHandle, setCardHandle] = useState<string>();
   const pages = board.data?.pages ?? [];
   const items = boardItems(distinctRows(pages.flatMap((page) => page.rows)));
   const myRow = pages[0]?.myRow;
@@ -151,7 +155,12 @@ export function BoardScreen() {
         renderItem={({ item, index }) =>
           item.kind === "podium" ? (
             <View>
-              <Podium board={boardKey} rows={item.rows} myHandle={myRow?.handle} />
+              <Podium
+                board={boardKey}
+                rows={item.rows}
+                myHandle={myRow?.handle}
+                onOpen={setCardHandle}
+              />
               {/* Nobody below the podium: the board's card is only its floor. */}
               {index === last ? <View style={styles.floor} /> : null}
             </View>
@@ -163,7 +172,12 @@ export function BoardScreen() {
                 index === last && styles.rowCardLast,
               ]}
             >
-              <BoardRow board={boardKey} row={item.row} mine={item.row.handle === myRow?.handle} />
+              <BoardRow
+                board={boardKey}
+                row={item.row}
+                mine={item.row.handle === myRow?.handle}
+                onOpen={setCardHandle}
+              />
               {index === last ? null : <Divider />}
             </View>
           )
@@ -204,9 +218,10 @@ export function BoardScreen() {
       />
       {pinned ? (
         <View testID="pinned-row" style={[styles.pinned, board.isPlaceholderData && styles.stale]}>
-          <BoardRow board={boardKey} row={pinned} mine />
+          <BoardRow board={boardKey} row={pinned} mine onOpen={setCardHandle} />
         </View>
       ) : null}
+      <PlayerCardSheet handle={cardHandle} onClose={() => setCardHandle(undefined)} />
     </View>
   );
 }

@@ -1,6 +1,7 @@
-// profile.v1: who the caller is in the game, for the Me tab. The server works out every number:
-// all-time points from the ledger, the rank they earn, the stats and every badge, earned or
-// locked. The plates come back a page at a time, newest first, each with its photo.
+// profile.v1: who the caller is in the game, for the Me tab, and the public card of any player,
+// for the board. The server works out every number: all-time points from the ledger, the rank they
+// earn, the stats and every badge, earned or locked. The caller's plates come back a page at a
+// time, newest first, each with its photo.
 syntax = "proto3";
 
 package profile.v1;
@@ -8,12 +9,16 @@ package profile.v1;
 import "cook/v1/cook.proto";
 import "google/protobuf/timestamp.proto";
 
-// ProfileService serves the caller's own profile. Every rpc acts for the account in the session.
+// ProfileService serves the caller's own profile, and any player's public card. Every rpc needs a
+// signed-in account in the session.
 service ProfileService {
   // GetProfile returns the caller's rank, stats and badges.
   rpc GetProfile(GetProfileRequest) returns (GetProfileResponse);
   // ListPlates returns a page of the caller's plates, newest first.
   rpc ListPlates(ListPlatesRequest) returns (ListPlatesResponse);
+  // GetPlayerCard returns one player's public card, found by their handle: how they got where
+  // they are on the board, and never their kitchen settings.
+  rpc GetPlayerCard(GetPlayerCardRequest) returns (GetPlayerCardResponse);
 }
 
 message GetProfileRequest {}
@@ -73,4 +78,31 @@ message Plate {
   // The recipe it was plated from.
   string recipe_title = 3;
   google.protobuf.Timestamp plated_at = 4;
+}
+
+message GetPlayerCardRequest {
+  // The player's handle as the board shows it: 3 to 20 lowercase letters, digits and underscores.
+  string handle = 1;
+}
+
+message GetPlayerCardResponse {
+  PlayerCard card = 1;
+}
+
+// PlayerCard is what any signed-in player may see of another. It holds nothing from their
+// kitchen settings: no equipment, diet, allergies, staples or roast level. A test fails if a field
+// of that kind is ever added here.
+message PlayerCard {
+  string handle = 1;
+  // One emoji.
+  string avatar = 2;
+  // All-time points: the sum of their ledger.
+  int64 points = 3;
+  // The title those points earn, and how far to the next.
+  cook.v1.Rank rank = 4;
+  Stats stats = 5;
+  // Their newest plates, newest first: at most 6, one card's worth, so the list has no cursor.
+  repeated Plate recent_plates = 6;
+  // Every badge, earned or locked, in the concept's order.
+  repeated cook.v1.Badge badges = 7;
 }

@@ -1,10 +1,10 @@
 import type { Row } from "@fries-in-the-bag/api";
 import { Image } from "expo-image";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { type BoardKey, podiumOrder, podiumStep, rowLabel } from "@/lib/board";
 import { groupDigits } from "@/lib/format";
 import { Avatar } from "@/screens/board/avatar";
-import { CROWN } from "@/screens/board/board-row";
+import { CROWN, PRESSED_OPACITY } from "@/screens/board/board-row";
 import { COLORS, RADII, SPACE, TYPE } from "@/theme";
 
 // The podium's three places, left to right.
@@ -19,7 +19,12 @@ const STEP_NUMBER = 22;
  * step, second on the left, third on the right. A step's height comes from its rank, so players
  * tied for first stand equally tall, and both wear the crown.
  */
-export function Podium(props: { board: BoardKey; rows: readonly Row[]; myHandle?: string }) {
+export function Podium(props: {
+  board: BoardKey;
+  rows: readonly Row[];
+  myHandle?: string;
+  onOpen: (handle: string) => void;
+}) {
   const order = podiumOrder(props.rows);
   return (
     <View style={styles.podium}>
@@ -35,6 +40,7 @@ export function Podium(props: { board: BoardKey; rows: readonly Row[]; myHandle?
             row={row}
             mine={row.handle === props.myHandle}
             middle={column === "middle"}
+            onOpen={props.onOpen}
           />
         );
       })}
@@ -42,11 +48,24 @@ export function Podium(props: { board: BoardKey; rows: readonly Row[]; myHandle?
   );
 }
 
-function Place(props: { board: BoardKey; row: Row; mine: boolean; middle: boolean }) {
+function Place(props: {
+  board: BoardKey;
+  row: Row;
+  mine: boolean;
+  middle: boolean;
+  onOpen: (handle: string) => void;
+}) {
   const { row, mine } = props;
   const step = podiumStep(row.rank);
+  // A place on the podium is a row too, and opens its player's card (B2).
   return (
-    <View accessible accessibilityLabel={rowLabel(props.board, row, mine)} style={styles.column}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={rowLabel(props.board, row, mine)}
+      accessibilityHint="Opens their player card"
+      onPress={() => props.onOpen(row.handle)}
+      style={({ pressed }) => [styles.column, pressed && styles.pressed]}
+    >
       {/* First place wears the crown on both boards, as screen 7 draws it. The rows below
           follow the server's flag, which crowns only the Hall of Fries leader. */}
       {row.rank === 1 ? <Image source={CROWN} style={styles.crown} /> : null}
@@ -62,13 +81,14 @@ function Place(props: { board: BoardKey; row: Row; mine: boolean; middle: boolea
           {row.rank}
         </Text>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   podium: { flexDirection: "row", alignItems: "flex-end", gap: SPACE.sm + SPACE.xxs },
   column: { flex: 1, alignItems: "center", gap: SPACE.xs },
+  pressed: { opacity: PRESSED_OPACITY },
   crown: { width: CROWN_SIZE, height: CROWN_SIZE },
   handle: {
     ...TYPE.caption,

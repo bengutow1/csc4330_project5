@@ -1,0 +1,27 @@
+# The badges screen (P2), from the Me tab's See all. A new player has earned nothing yet: every one
+# of the eleven stickers is locked and says how to earn it, and Back returns to the Me tab. Earned
+# stickers need a checked plate (#24), so their screenshot is the checkpoint's. Needs the app
+# installed (moon run mobile:ios), Metro (moon run mobile:dev) and the api (moon run api:dev).
+#
+# A sticker is one element whose label reads "First Roast badge, locked. Scan your first fridge".
+appId: com.cadenlund.friesinthebag
+---
+- launchApp:
+    clearState: true
+- runFlow: subflows/sign-up.yaml
+- tapOn: "Me"
+- extendedWaitUntil:
+    visible: "Fry Cook"
+    timeout: 10000
+- scrollUntilVisible:
+    element: "See all badges"
+    direction: DOWN
+- tapOn: "See all badges"
+- assertVisible: "Badges"
+- assertVisible: "0 of 11 earned"
+- assertVisible: "First Roast badge, locked. Scan your first fridge"
+- scrollUntilVisible:
+    element: "Bag Secured badge, locked. Top the Hall of Fries for a week"
+    direction: DOWN
+- tapOn: "Back"
+- assertVisible: "Fry Cook"

@@ -1,4 +1,9 @@
-import { createConnectQueryKey, useInfiniteQuery, useQuery } from "@connectrpc/connect-query";
+import {
+  createConnectQueryKey,
+  skipToken,
+  useInfiniteQuery,
+  useQuery,
+} from "@connectrpc/connect-query";
 import {
   type ListPlatesResponse,
   ProfileService,
@@ -11,7 +16,10 @@ import { useCallback } from "react";
 const PROFILE_INPUT = {};
 const PLATES_INPUT = { cursor: "" };
 
-/** PROFILE is every profile read, the profile and its plates: the one key the family invalidates. */
+/**
+ * PROFILE is every profile read (the profile, its plates and any player card): the one key the
+ * family invalidates.
+ */
 export const PROFILE = createConnectQueryKey({ schema: ProfileService, cardinality: undefined });
 
 /** useProfile reads the caller's rank, stats and every badge, all decided by the server. */
@@ -30,6 +38,19 @@ export function usePlates() {
 /** nextPlatesCursor is the cursor for the page after this one; undefined ends the grid. */
 export function nextPlatesCursor(page: ListPlatesResponse) {
   return page.nextCursor === "" ? undefined : page.nextCursor;
+}
+
+/**
+ * usePlayerCard reads one player's public card by the handle the board shows: their rank, stats,
+ * newest plates and badges. It waits until a card is open.
+ */
+export function usePlayerCard(handle: string | undefined) {
+  return useQuery(ProfileService.method.getPlayerCard, playerCardInput(handle));
+}
+
+/** playerCardInput is what usePlayerCard sends: skipToken until there is a handle to ask about. */
+export function playerCardInput(handle: string | undefined) {
+  return handle === undefined || handle === "" ? skipToken : { handle };
 }
 
 /** useInvalidateProfile marks every profile read stale, after a write changed what it shows. */
