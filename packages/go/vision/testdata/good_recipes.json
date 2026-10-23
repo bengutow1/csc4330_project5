@@ -1,0 +1,6 @@
+{
+  "id": "msg_test_recipes", "type": "message", "role": "assistant", "model": "test-model",
+  "content": [{"type":"text","text":"{\"recipes\":[{\"title\":\"Scrambled eggs\",\"minutes\":5,\"difficulty\":\"easy\",\"equipment\":[\"stovetop\"],\"uses\":[\"Eggs\",\"oil\"],\"missing\":[],\"allergens\":[\"eggs\"],\"steps\":[\"Warm the oil.\",\"Stir the eggs until set.\"],\"step_timers\":[0,120]}]}"}],
+  "stop_reason": "end_turn", "stop_sequence": null,
+  "usage": {"input_tokens":120,"output_tokens":80}
+}

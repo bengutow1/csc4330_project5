@@ -4,6 +4,8 @@ package vision
 // Kitchen is what the model's recipes must respect, and all it learns about the player
 // (go-vendors.md). Each field holds values from its closed set in docs/contracts.md.
 type Kitchen struct {
+	// Staples are the pantry basics the player has enabled, from the contract's closed set.
+	Staples []string
 	// Equipment is microwave, stovetop, oven or air_fryer.
 	Equipment []string
 	// Diet is none, vegetarian, vegan or pescatarian.

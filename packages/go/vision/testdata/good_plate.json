@@ -1,0 +1,6 @@
+{
+  "id":"msg_test_plate", "type":"message", "role":"assistant", "model":"test-model",
+  "content":[{"type":"text","text":"{\"shows_food\":true,\"matches_recipe\":true,\"reason\":\"The photo shows scrambled eggs.\"}"}],
+  "stop_reason":"end_turn", "stop_sequence":null,
+  "usage":{"input_tokens":120,"output_tokens":20}
+}

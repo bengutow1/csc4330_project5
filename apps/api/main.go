@@ -74,8 +74,7 @@ func main() {
 
 	// The vision model. Without a key the API serves the mock's canned fridges, except in
 	// production, where a missing key stops the boot: a real deployment never hands out a fake
-	// verdict. With a key, scans go to the real client, and recipes and plate checks stay on the
-	// mock until the client learns them (#25).
+	// verdict. With a key, scans, recipes and plate checks all use the real client.
 	visionKey := os.Getenv("VISION_API_KEY")
 	visionPin := os.Getenv("VISION_MOCK")
 	platePin := os.Getenv("VISION_MOCK_PLATE")
@@ -86,21 +85,17 @@ func main() {
 		os.Exit(1)
 	}
 	var fridgeReader scan.Vision = visionMock
+	var recipeWriter cook.Vision = visionMock
 	switch {
-	case visionKey != "" && appEnv == "production":
-		// Recipes and plate checks would still come from the mock, and production never serves it.
-		log.Error("VISION_API_KEY is set, but recipes and plate checks have no real client yet (#25)")
-		os.Exit(1)
 	case visionKey != "":
 		model := cmp.Or(os.Getenv("VISION_MODEL"), vision.DefaultModel)
-		fridgeReader = vision.NewClient(vision.Config{APIKey: visionKey, Model: model})
-		log.Info("vision model is live for scans", "model", model)
-		if visionPin != "" {
-			// The pin picks a mock fridge, and scans no longer read from the mock.
-			log.Warn("VISION_MOCK is ignored for scans while VISION_API_KEY is set", "pin", visionPin)
+		client := vision.NewClient(vision.Config{APIKey: visionKey, Model: model})
+		fridgeReader = client
+		recipeWriter = client
+		log.Info("vision model is live for scans, recipes and plates", "model", model)
+		if visionPin != "" || platePin != "" {
+			log.Warn("vision mock pins are ignored while VISION_API_KEY is set")
 		}
-		log.Info("vision mock is live for recipes and plates until #25",
-			"plates", cmp.Or(platePin, "every plate passes"))
 	case appEnv == "production":
 		log.Error("VISION_API_KEY is required in production")
 		os.Exit(1)
@@ -168,7 +163,7 @@ func main() {
 	cookSvc := cook.NewCook(cook.Config{
 		Repo:       repo,
 		Auth:       authn,
-		Vision:     visionMock,
+		Vision:     recipeWriter,
 		Limit:      cook.DefaultLimit(),
 		PlateLimit: cook.DefaultPlateLimit(),
 		Log:        log,

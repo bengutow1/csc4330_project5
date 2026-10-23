@@ -286,6 +286,7 @@ func (h *Cook) checkedRecipes(ctx context.Context, me repository.Account, scan r
 
 	// 2. The model hears the list and the kitchen, and nothing else about the player
 	written, err := h.vision.Recipes(ctx, visionItems(scan.Items), vision.Kitchen{
+		Staples:   me.Staples,
 		Equipment: me.Equipment,
 		Diet:      me.Diet,
 		Allergies: me.Allergies,
