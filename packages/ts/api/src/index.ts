@@ -22,6 +22,13 @@ export {
   type Row,
 } from "@fries-in-the-bag/apigen/board/v1/board_pb";
 export {
+  type CombinedVerdict,
+  type Combo,
+  ComboState,
+  type OwnedIngredient,
+  type Player,
+} from "@fries-in-the-bag/apigen/combo/v1/combo_pb";
+export {
   type Badge,
   type CookingStep,
   Difficulty,
@@ -56,6 +63,7 @@ export {
   useFridgeOfTheWeek,
   useInvalidateBoard,
 } from "./hooks/use-board.ts";
+export { comboWaiting, useCombo } from "./hooks/use-combo.ts";
 export {
   type RecipeFilters,
   useInvalidateRecipes,

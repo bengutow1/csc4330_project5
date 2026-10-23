@@ -1,0 +1,19 @@
+# Combo reveal (X3): the reveal waits for the second fridge, then shows both scores, the combined
+# score and tier, and the merged foods with whose fridge each came from. Until #35's lobby lands,
+# the app cannot start or join a combo on its own, so the combo is set up through the API first:
+# the app's player starts it, a second player joins with its code and scans, and the app's
+# player scans last. Pass its id: maestro test -e COMBO_ID=<id> combo-reveal.yaml. Start the api
+# with VISION_MOCK=fries_in_the_bag for a combined score under 35, or certified_chef for one
+# above. Needs the app installed and signed in as the host, and Metro (moon run mobile:dev).
+appId: com.cadenlund.friesinthebag
+---
+- launchApp
+- assertVisible: "See what you have. Cook something great."
+- openLink: "friesinthebag://combo/${COMBO_ID}/reveal"
+- extendedWaitUntil:
+    visible: "combined score"
+    timeout: 15000
+- assertVisible: "Your fridge"
+- assertVisible: "Fridges merged\\..*"
+- assertVisible: ".*, from your fridge"
+- assertVisible: "You"
