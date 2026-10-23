@@ -17,10 +17,10 @@ import (
 	"github.com/anthropics/anthropic-sdk-go/option"
 )
 
-// DefaultModel is the Claude model a fridge read uses when main.go names none.
+// DefaultModel is the Claude model each vision call uses when main.go names none.
 const DefaultModel = "claude-opus-5-5"
 
-// readTimeout caps one fridge read: up to three photos usually take several seconds, and the
+// readTimeout caps one vision call: photos and recipes usually take several seconds, and the
 // cap stays well under the API's 90 s write timeout so a hung call cannot hold the request open.
 const readTimeout = 45 * time.Second
 
@@ -106,42 +106,12 @@ func (c *Client) ReadFridge(ctx context.Context, photos [][]byte, level RoastLev
 	}
 	content = append(content, anthropic.NewBetaTextBlock(roast))
 
-	// 3. One call. Low effort keeps the judging screen quick, and the default fallback lets
-	// another model answer if this one declines
-	msg, err := c.api.Beta.Messages.New(ctx, anthropic.BetaMessageNewParams{
-		Model:     c.model,
-		MaxTokens: readMaxTokens,
-		System:    []anthropic.BetaTextBlockParam{{Text: fridgePrompt}},
-		Messages:  []anthropic.BetaMessageParam{anthropic.NewBetaUserMessage(content...)},
-		OutputConfig: anthropic.BetaOutputConfigParam{
-			Effort: anthropic.BetaOutputConfigEffortLow,
-			Format: anthropic.BetaJSONOutputFormatParam{Schema: fridgeSchema},
-		},
-		Fallbacks: anthropic.BetaFallbacksParamOfDefault(),
-		Betas:     []anthropic.AnthropicBeta{anthropic.AnthropicBetaServerSideFallback2026_07_01},
-	})
+	// 3. Share the structured call and timeout behavior with recipes and plate checks.
+	text, err := c.structured(ctx, op, fridgePrompt, fridgeSchema, content)
 	if err != nil {
-		return Fridge{}, c.fail(ctx, op, err)
+		return Fridge{}, err
 	}
-
-	// 4. An answer that stopped early or was declined has no fridge in it
-	switch msg.StopReason {
-	case anthropic.BetaStopReasonEndTurn:
-	case anthropic.BetaStopReasonRefusal:
-		return Fridge{}, fmt.Errorf("%s: model declined: %w", op, ErrUnavailable)
-	default:
-		return Fridge{}, fmt.Errorf("%s: stopped on %q: %w", op, msg.StopReason, ErrUnavailable)
-	}
-
-	// 5. Decode the whole answer or none of it
-	var text strings.Builder
-	for _, block := range msg.Content {
-		b, ok := block.AsAny().(anthropic.BetaTextBlock)
-		if ok {
-			text.WriteString(b.Text)
-		}
-	}
-	fridge, err := decodeFridge(text.String())
+	fridge, err := decodeFridge(text)
 	if err != nil {
 		return Fridge{}, fmt.Errorf("%s: %w: %w", op, err, ErrUnavailable)
 	}
