@@ -1,0 +1,63 @@
+// crew.v1: crews, private boards for friend groups. A player makes a crew and shares its six-digit
+// code, and anyone with the code joins. The board ranks a crew's members among themselves when
+// board.v1 GetBoard names the crew. A player is in at most 10 crews.
+syntax = "proto3";
+
+package crew.v1;
+
+// CrewService makes, joins, leaves and lists the caller's crews.
+service CrewService {
+  // CreateCrew makes a crew with the caller as its first member, and a fresh code to share.
+  rpc CreateCrew(CreateCrewRequest) returns (CreateCrewResponse);
+  // JoinCrew adds the caller to the crew with this code; joining one they are in changes nothing.
+  rpc JoinCrew(JoinCrewRequest) returns (JoinCrewResponse);
+  // LeaveCrew takes the caller out of a crew; the last one out ends the crew.
+  rpc LeaveCrew(LeaveCrewRequest) returns (LeaveCrewResponse);
+  // ListMyCrews returns the crews the caller is in.
+  rpc ListMyCrews(ListMyCrewsRequest) returns (ListMyCrewsResponse);
+}
+
+// Crew is one crew, as its members see it.
+message Crew {
+  int64 crew_id = 1;
+  // 1 to 30 characters.
+  string name = 2;
+  // Six digits. Members share it to bring friends in; it never expires.
+  string code = 3;
+  // How many players are in it, the caller included.
+  int32 member_count = 4;
+}
+
+message CreateCrewRequest {
+  // 1 to 30 characters once trimmed.
+  string name = 1;
+}
+
+message CreateCrewResponse {
+  // The crew as stored, with its code.
+  Crew crew = 1;
+}
+
+message JoinCrewRequest {
+  // The six digits a member shared.
+  string code = 1;
+}
+
+message JoinCrewResponse {
+  // The crew joined, counting the caller.
+  Crew crew = 1;
+}
+
+message LeaveCrewRequest {
+  // A crew the caller is in.
+  int64 crew_id = 1;
+}
+
+message LeaveCrewResponse {}
+
+message ListMyCrewsRequest {}
+
+message ListMyCrewsResponse {
+  // The caller's crews, the one they joined first first. Not paged: a player is in at most 10.
+  repeated Crew crews = 1;
+}

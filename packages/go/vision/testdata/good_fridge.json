@@ -1,0 +1,13 @@
+{
+  "id": "msg_test_good",
+  "type": "message",
+  "role": "assistant",
+  "model": "claude-opus-5-5",
+  "content": [
+    {"type": "thinking", "thinking": "", "signature": "test_signature"},
+    {"type": "text", "text": "{\"items\":[{\"name\":\"Eggs\",\"category\":\"protein\",\"quantity\":\"x6\"},{\"name\":\"Spinach\",\"category\":\"vegetable\",\"quantity\":\"1 bag\"},{\"name\":\"Hot sauce\",\"category\":\"condiment\",\"quantity\":\"\"}],\"roast\":\"Eggs, spinach and hot sauce. This fridge has a plan, it just has not told anyone yet.\"}"}
+  ],
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "usage": {"input_tokens": 1820, "output_tokens": 96}
+}

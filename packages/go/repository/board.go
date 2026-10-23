@@ -9,7 +9,8 @@ import (
 
 // board.go reads the boards. A board ranks every player at once, so these queries read across
 // accounts by design: a row is a handle, an avatar and a value (points, or fry runs), and the
-// Fridge of the Week is one scan's score and roast, which every player may see. Ranks come from a window function over the
+// Fridge of the Week is one scan's score and roast, which every player may see. A crew's board
+// narrows the rows to its members before ranking; the handler checks the caller is one of them. Ranks come from a window function over the
 // whole board, so ties share a rank and a page never renumbers them. A page resumes after its last
 // row with a keyset over (value, handle).
 
@@ -30,8 +31,9 @@ type BoardKey struct {
 
 // HallOfFries ranks players by their fry runs since since (the zero time counts them all) and
 // returns up to limit rows, best first, after after (nil for the first page). Only players with a
-// run in the range are ranked.
-func (r *Repository) HallOfFries(ctx context.Context, since time.Time, after *BoardKey, limit int) ([]BoardRow, error) {
+// run in the range are ranked, and with a crewID only that crew's members, among themselves (0 is
+// the whole campus).
+func (r *Repository) HallOfFries(ctx context.Context, since time.Time, crewID int64, after *BoardKey, limit int) ([]BoardRow, error) {
 	// A null key reads the first page. Value runs high to low and handle low to high, so the row
 	// comparison negates the value to put both in one direction.
 	var afterValue *int64
@@ -44,6 +46,7 @@ func (r *Repository) HallOfFries(ctx context.Context, since time.Time, after *Bo
 		select f.account_id, count(*) as value, rank() over (order by count(*) desc) as rank
 		  from app.fry_run f
 		 where f.created_at >= $1
+		   and ($5::bigint = 0 or f.account_id in (select m.account_id from app.crew_member m where m.crew_id = $5))
 		 group by f.account_id
 		)
 		select r.rank, r.account_id, a.handle, a.avatar, r.value
@@ -51,7 +54,7 @@ func (r *Repository) HallOfFries(ctx context.Context, since time.Time, after *Bo
 		  join app.account a on a.account_id = r.account_id
 		 where $2::bigint is null or (-r.value, a.handle) > (-$2::bigint, $3::text)
 		 order by r.value desc, a.handle
-		 limit $4`, since, afterValue, afterHandle, limit)
+		 limit $4`, since, afterValue, afterHandle, limit, crewID)
 	if err != nil {
 		return nil, known("hall of fries", err)
 	}
@@ -73,20 +76,21 @@ func (r *Repository) HallOfFries(ctx context.Context, since time.Time, after *Bo
 }
 
 // HallOfFriesRow is accountID's own row on the Hall of Fries since since, ranked on the whole
-// board; false when they have no run in the range.
-func (r *Repository) HallOfFriesRow(ctx context.Context, accountID int64, since time.Time) (BoardRow, bool, error) {
+// board, or on crewID's when it is not 0; false when they have no run in the range.
+func (r *Repository) HallOfFriesRow(ctx context.Context, accountID int64, since time.Time, crewID int64) (BoardRow, bool, error) {
 	var b BoardRow
 	err := r.db.QueryRow(ctx, `
 		  with ranked as (
 		select f.account_id, count(*) as value, rank() over (order by count(*) desc) as rank
 		  from app.fry_run f
 		 where f.created_at >= $2
+		   and ($3::bigint = 0 or f.account_id in (select m.account_id from app.crew_member m where m.crew_id = $3))
 		 group by f.account_id
 		)
 		select r.rank, r.account_id, a.handle, a.avatar, r.value
 		  from ranked r
 		  join app.account a on a.account_id = r.account_id
-		 where r.account_id = $1`, accountID, since).Scan(&b.Rank, &b.AccountID, &b.Handle, &b.Avatar, &b.Value)
+		 where r.account_id = $1`, accountID, since, crewID).Scan(&b.Rank, &b.AccountID, &b.Handle, &b.Avatar, &b.Value)
 	if isNoRows(err) {
 		return BoardRow{}, false, nil
 	}
@@ -127,8 +131,9 @@ func (r *Repository) FridgeOfTheWeek(ctx context.Context, since time.Time) (Frid
 
 // Chefs ranks players by the points their ledgers earned since since (the zero time counts them
 // all) and returns up to limit rows, best first, after after (nil for the first page). Only
-// players with points in the range are ranked.
-func (r *Repository) Chefs(ctx context.Context, since time.Time, after *BoardKey, limit int) ([]BoardRow, error) {
+// players with points in the range are ranked, and with a crewID only that crew's members, among
+// themselves (0 is the whole campus).
+func (r *Repository) Chefs(ctx context.Context, since time.Time, crewID int64, after *BoardKey, limit int) ([]BoardRow, error) {
 	// A null key reads the first page. Value runs high to low and handle low to high, so the row
 	// comparison negates the value to put both in one direction.
 	var afterValue *int64
@@ -141,6 +146,7 @@ func (r *Repository) Chefs(ctx context.Context, since time.Time, after *BoardKey
 		select e.account_id, sum(e.points) as value, rank() over (order by sum(e.points) desc) as rank
 		  from app.point_event e
 		 where e.created_at >= $1
+		   and ($5::bigint = 0 or e.account_id in (select m.account_id from app.crew_member m where m.crew_id = $5))
 		 group by e.account_id
 		)
 		select r.rank, r.account_id, a.handle, a.avatar, r.value
@@ -148,7 +154,7 @@ func (r *Repository) Chefs(ctx context.Context, since time.Time, after *BoardKey
 		  join app.account a on a.account_id = r.account_id
 		 where $2::bigint is null or (-r.value, a.handle) > (-$2::bigint, $3::text)
 		 order by r.value desc, a.handle
-		 limit $4`, since, afterValue, afterHandle, limit)
+		 limit $4`, since, afterValue, afterHandle, limit, crewID)
 	if err != nil {
 		return nil, known("chefs", err)
 	}
@@ -169,21 +175,22 @@ func (r *Repository) Chefs(ctx context.Context, since time.Time, after *BoardKey
 	return out, nil
 }
 
-// ChefsRow is accountID's own row on Chefs since since, ranked on the whole board; false when they
-// have no points in the range.
-func (r *Repository) ChefsRow(ctx context.Context, accountID int64, since time.Time) (BoardRow, bool, error) {
+// ChefsRow is accountID's own row on Chefs since since, ranked on the whole board, or on crewID's
+// when it is not 0; false when they have no points in the range.
+func (r *Repository) ChefsRow(ctx context.Context, accountID int64, since time.Time, crewID int64) (BoardRow, bool, error) {
 	var b BoardRow
 	err := r.db.QueryRow(ctx, `
 		  with ranked as (
 		select e.account_id, sum(e.points) as value, rank() over (order by sum(e.points) desc) as rank
 		  from app.point_event e
 		 where e.created_at >= $2
+		   and ($3::bigint = 0 or e.account_id in (select m.account_id from app.crew_member m where m.crew_id = $3))
 		 group by e.account_id
 		)
 		select r.rank, r.account_id, a.handle, a.avatar, r.value
 		  from ranked r
 		  join app.account a on a.account_id = r.account_id
-		 where r.account_id = $1`, accountID, since).Scan(&b.Rank, &b.AccountID, &b.Handle, &b.Avatar, &b.Value)
+		 where r.account_id = $1`, accountID, since, crewID).Scan(&b.Rank, &b.AccountID, &b.Handle, &b.Avatar, &b.Value)
 	if isNoRows(err) {
 		return BoardRow{}, false, nil
 	}

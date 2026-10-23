@@ -53,7 +53,8 @@ func (h *Board) fail(op string, err error) error {
 	return handlers.ConnectErr(h.log, op, err)
 }
 
-// GetBoard returns a page of one board, best first, and the caller's own row on every page.
+// GetBoard returns a page of one board, best first, and the caller's own row on every page. With a
+// crew_id it ranks that crew's members among themselves.
 func (h *Board) GetBoard(
 	ctx context.Context, req *connect.Request[boardv1.GetBoardRequest],
 ) (*connect.Response[boardv1.GetBoardResponse], error) {
@@ -76,26 +77,34 @@ func (h *Board) GetBoard(
 		since = points.WeekStart(h.now())
 	}
 
-	// 3. The page, one row past it to know whether there is more, and the caller's own row
+	// 3. A crew's board is its members' alone: one the caller is not in reads as not found
+	if in.crewID != 0 {
+		_, err = h.repo.CrewByID(ctx, me.AccountID, in.crewID)
+		if err != nil {
+			return nil, h.fail(op, err)
+		}
+	}
+
+	// 4. The page, one row past it to know whether there is more, and the caller's own row
 	var rows []repository.BoardRow
 	var mine repository.BoardRow
 	var ranked bool
 	switch in.board {
 	case boardv1.Board_BOARD_CHEFS:
-		rows, err = h.repo.Chefs(ctx, since, in.after, in.limit+1)
+		rows, err = h.repo.Chefs(ctx, since, in.crewID, in.after, in.limit+1)
 		if err != nil {
 			return nil, h.fail(op, err)
 		}
-		mine, ranked, err = h.repo.ChefsRow(ctx, me.AccountID, since)
+		mine, ranked, err = h.repo.ChefsRow(ctx, me.AccountID, since, in.crewID)
 		if err != nil {
 			return nil, h.fail(op, err)
 		}
 	case boardv1.Board_BOARD_HALL_OF_FRIES:
-		rows, err = h.repo.HallOfFries(ctx, since, in.after, in.limit+1)
+		rows, err = h.repo.HallOfFries(ctx, since, in.crewID, in.after, in.limit+1)
 		if err != nil {
 			return nil, h.fail(op, err)
 		}
-		mine, ranked, err = h.repo.HallOfFriesRow(ctx, me.AccountID, since)
+		mine, ranked, err = h.repo.HallOfFriesRow(ctx, me.AccountID, since, in.crewID)
 		if err != nil {
 			return nil, h.fail(op, err)
 		}

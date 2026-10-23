@@ -43,6 +43,11 @@ describe("subtitle", () => {
   ] as const)("is $want for $range", ({ range, want }) => {
     expect(subtitle(range)).toBe(want);
   });
+
+  it("names the crew on a crew's board, never the campus it is not", () => {
+    expect(subtitle("this_week", "Test crew")).toBe("Test crew · this week");
+    expect(subtitle("all_time", "Test crew")).toBe("Test crew · all time");
+  });
 });
 
 describe("boardItems", () => {

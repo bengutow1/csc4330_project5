@@ -115,6 +115,7 @@ was built, and each owner replaced their own with its screen.
 | `plate/[recipeId]` | Plate it, then the receipt (C4, C5) | #24 |
 | `fries/index` | Fries moment (F1) | #27 |
 | `fries/spots` | Spots, with the spot sheet (F2, F3) | #27 |
+| `crews` | Crews: your crews, make one, join with a code (B3) | #38 |
 
 The app opens on the Snap tab, as the design draws it (`docs/design.md`), so the kitchen home (K1,
 #15) has no route while it is on hold. Next issues add their own routes (`combo/…`,

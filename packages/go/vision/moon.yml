@@ -7,3 +7,14 @@ language: 'go'
 project:
   name: 'go-vision'
   description: 'The vision model behind the API: reads kitchen photos into an ingredient list and a roast, with a mock for running without a key.'
+
+tasks:
+  # The live check: one real call per photo in testdata/e2e, behind the e2e build tag. It spends
+  # money and needs VISION_API_KEY from your shell (never this file), so it never runs in CI and
+  # is never named `test`, which `moon run :test` would pick up.
+  test-e2e:
+    # Flags take a space, not "=": moon splits `-count=1` into two arguments.
+    command: 'go test -tags e2e -run E2E -count 1 -v ./...'
+    options:
+      cache: false
+      runInCI: false

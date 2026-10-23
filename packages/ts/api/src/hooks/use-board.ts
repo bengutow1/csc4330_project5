@@ -13,13 +13,14 @@ const FRIDGE_INPUT = {};
 
 /**
  * useBoard reads one board a page at a time, ranked by the server, with the caller's own row on
- * every page. Switching board or range keeps the last rows on screen, marked isPlaceholderData,
- * until the new ones land.
+ * every page. With a crewId it ranks only that crew's members, among themselves; 0n is the whole
+ * campus. Switching board, range or crew keeps the last rows on screen, marked
+ * isPlaceholderData, until the new ones land.
  */
-export function useBoard(board: Board, range: Range) {
+export function useBoard(board: Board, range: Range, crewId = 0n) {
   return useInfiniteQuery(
     BoardService.method.getBoard,
-    { board, range, cursor: "" },
+    { board, range, crewId, cursor: "" },
     {
       pageParamKey: "cursor",
       getNextPageParam: nextBoardCursor,

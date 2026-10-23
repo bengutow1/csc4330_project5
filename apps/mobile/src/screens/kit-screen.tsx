@@ -18,6 +18,8 @@ import { PhotoCard } from "@/components/photo-card";
 import { PillToggle } from "@/components/pill-toggle";
 import { PointsBreakdown, type PointsLine } from "@/components/points-breakdown";
 import { SegmentedControl } from "@/components/segmented-control";
+import { PlateCard, RoastCard } from "@/components/share-card";
+import { ShareSheet } from "@/components/share-sheet";
 import { Sheet } from "@/components/sheet";
 import { Skeleton } from "@/components/skeleton";
 import { Sticker } from "@/components/sticker";
@@ -71,6 +73,7 @@ export function KitScreen() {
   const [emptyTap, setEmptyTap] = useState("nothing");
   const [cardTaps, setCardTaps] = useState(0);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleted, setDeleted] = useState(false);
@@ -330,6 +333,39 @@ export function KitScreen() {
         />
       </Section>
 
+      <Section title="Share cards">
+        {/* A card is a story's width, wider than a section, so they scroll side by side. */}
+        <ScrollView horizontal contentContainerStyle={styles.cards}>
+          <RoastCard
+            score={22}
+            tier={Tier.FRIES_IN_THE_BAG}
+            roast="Ketchup, one egg and a lemon from last semester. Put the fries in the bag."
+            handle="chef_maya"
+          />
+          <PlateCard
+            photo={STAND_IN_PHOTO}
+            caption="Tonight, 7:58 PM"
+            recipe="Creamy Tomato Pasta"
+            total={AWARDED}
+            handle="chef_maya"
+          />
+        </ScrollView>
+        <Button label="Share a roast card" variant="secondary" onPress={() => setShareOpen(true)} />
+        <ShareSheet
+          visible={shareOpen}
+          title="Share your verdict"
+          label="Your verdict card"
+          onClose={() => setShareOpen(false)}
+        >
+          <RoastCard
+            score={22}
+            tier={Tier.FRIES_IN_THE_BAG}
+            roast="Ketchup, one egg and a lemon from last semester. Put the fries in the bag."
+            handle="chef_maya"
+          />
+        </ShareSheet>
+      </Section>
+
       <Section title="Check pill">
         <CheckPill label="Looks like Creamy Tomato Pasta" />
       </Section>
@@ -426,6 +462,7 @@ const styles = StyleSheet.create({
   skeletonLines: { flex: 1, gap: SPACE.sm },
   moving: { gap: SPACE.xxl },
   stickers: { flexDirection: "row", justifyContent: "space-around", gap: SPACE.lg },
+  cards: { gap: SPACE.lg },
   counts: { flexDirection: "row", justifyContent: "space-around" },
   count: { alignItems: "center", gap: SPACE.xs },
   hero: { ...TYPE.hero, color: COLORS.ink },

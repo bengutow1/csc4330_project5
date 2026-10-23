@@ -1,0 +1,13 @@
+{
+  "id": "msg_test_empty",
+  "type": "message",
+  "role": "assistant",
+  "model": "claude-opus-5-5",
+  "content": [
+    {"type": "thinking", "thinking": "", "signature": "test_signature"},
+    {"type": "text", "text": "{\"items\":[],\"roast\":\"Just shelves and cold air. This fridge is mostly a light bulb.\"}"}
+  ],
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "usage": {"input_tokens": 1790, "output_tokens": 31}
+}

@@ -27,8 +27,8 @@ const (
 	scanWindow   = time.Hour
 )
 
-// Vision reads a kitchen's photos into the foods it can see and a roast. The vision mock serves
-// it until the real client (#20) exists.
+// Vision reads a kitchen's photos into the foods it can see and a roast: vision.Client with a
+// key, vision.Mock without one.
 type Vision interface {
 	ReadFridge(ctx context.Context, photos [][]byte, level vision.RoastLevel) (vision.Fridge, error)
 }

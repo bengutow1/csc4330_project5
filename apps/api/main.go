@@ -27,6 +27,7 @@ import (
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/board/v1/boardv1connect"
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/combo/v1/combov1connect"
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/cook/v1/cookv1connect"
+	"github.com/bengutow1/csc4330_project5/packages/go/apigen/crew/v1/crewv1connect"
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/fries/v1/friesv1connect"
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/health/v1/healthv1connect"
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/profile/v1/profilev1connect"
@@ -36,6 +37,7 @@ import (
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/board"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/combo"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/cook"
+	"github.com/bengutow1/csc4330_project5/packages/go/handlers/crew"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/fries"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/healthz"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/profile"
@@ -72,19 +74,10 @@ func main() {
 
 	// The vision model. Without a key the API serves the mock's canned fridges, except in
 	// production, where a missing key stops the boot: a real deployment never hands out a fake
-	// verdict.
+	// verdict. With a key, scans go to the real client, and recipes and plate checks stay on the
+	// mock until the client learns them (#25).
 	visionKey := os.Getenv("VISION_API_KEY")
 	visionPin := os.Getenv("VISION_MOCK")
-	switch {
-	case visionKey != "":
-		// The real client is still to come (#20), and serving the mock anyway would ignore the key
-		// without a word.
-		log.Error("VISION_API_KEY is set, but there is no vision client yet; unset it to serve the mock")
-		os.Exit(1)
-	case appEnv == "production":
-		log.Error("VISION_API_KEY is required in production")
-		os.Exit(1)
-	}
 	platePin := os.Getenv("VISION_MOCK_PLATE")
 	visionMock, err := vision.NewMock(visionPin, platePin)
 	if err != nil {
@@ -92,8 +85,29 @@ func main() {
 		log.Error("VISION_MOCK or VISION_MOCK_PLATE names no mock pin", "err", err)
 		os.Exit(1)
 	}
-	log.Info("vision mock is live", "serving", cmp.Or(visionPin, "every fridge in turn"),
-		"plates", cmp.Or(platePin, "every plate passes"))
+	var fridgeReader scan.Vision = visionMock
+	switch {
+	case visionKey != "" && appEnv == "production":
+		// Recipes and plate checks would still come from the mock, and production never serves it.
+		log.Error("VISION_API_KEY is set, but recipes and plate checks have no real client yet (#25)")
+		os.Exit(1)
+	case visionKey != "":
+		model := cmp.Or(os.Getenv("VISION_MODEL"), vision.DefaultModel)
+		fridgeReader = vision.NewClient(vision.Config{APIKey: visionKey, Model: model})
+		log.Info("vision model is live for scans", "model", model)
+		if visionPin != "" {
+			// The pin picks a mock fridge, and scans no longer read from the mock.
+			log.Warn("VISION_MOCK is ignored for scans while VISION_API_KEY is set", "pin", visionPin)
+		}
+		log.Info("vision mock is live for recipes and plates until #25",
+			"plates", cmp.Or(platePin, "every plate passes"))
+	case appEnv == "production":
+		log.Error("VISION_API_KEY is required in production")
+		os.Exit(1)
+	default:
+		log.Info("vision mock is live", "serving", cmp.Or(visionPin, "every fridge in turn"),
+			"plates", cmp.Or(platePin, "every plate passes"))
+	}
 
 	// The places provider. Without a key the API serves the mock's made-up spots, except in
 	// production, where a missing key stops the boot: a real deployment never lists fake spots.
@@ -147,7 +161,7 @@ func main() {
 	scanSvc := scan.NewScan(scan.Config{
 		Repo:   repo,
 		Auth:   authn,
-		Vision: visionMock,
+		Vision: fridgeReader,
 		Limit:  scan.DefaultLimit(),
 		Log:    log,
 	})
@@ -169,6 +183,7 @@ func main() {
 	boardSvc := board.NewBoard(board.Config{Repo: repo, Auth: authn, Log: log})
 	profileSvc := profile.NewProfile(profile.Config{Repo: repo, Auth: authn, Log: log})
 	comboSvc := combo.NewCombo(combo.Config{Repo: repo, Auth: authn, Limit: combo.DefaultLimit(), Log: log})
+	crewSvc := crew.NewCrew(crew.Config{Repo: repo, Auth: authn, Limits: crew.DefaultLimits(), Log: log})
 
 	// Every service reads request bodies under the same cap.
 	readCap := connect.WithReadMaxBytes(4 << 20)
@@ -187,6 +202,7 @@ func main() {
 	r.Mount(profilev1connect.NewProfileServiceHandler(profileSvc, readCap))
 	r.Mount(combov1connect.NewComboServiceHandler(comboSvc, readCap))
 	r.Mount(combov1connect.NewComboHostServiceHandler(comboSvc, readCap))
+	r.Mount(crewv1connect.NewCrewServiceHandler(crewSvc, readCap))
 
 	srv := &http.Server{
 		Addr:              addr,
