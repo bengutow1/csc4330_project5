@@ -9,8 +9,10 @@ import (
 // crew.go owns app.crew and app.crew_member: friend groups that get a board of their own, joined
 // by a six-digit code that is one crew's alone (crew_code_key). Every read is fenced by the
 // caller's membership in the SQL, so a crew a player is not in reads as missing. A player is in at
-// most a handful of crews: making and joining lock their account row first, so two taps at once
-// cannot both slip under the cap. The last member out deletes the crew.
+// most a handful of crews: making and joining lock their account row before reading anything, so
+// two taps at once can neither slip under the cap nor both read "not a member yet". The last
+// member out ends the crew, by leaving or by deleting their account: a trigger in 00008_crews.sql
+// deletes a crew once its last membership goes.
 
 // Crew is one crew, as a member sees it.
 type Crew struct {
@@ -27,7 +29,11 @@ func (r *Repository) CreateCrew(ctx context.Context, accountID int64, name, code
 	op := fmt.Sprintf("create crew account=%d", accountID)
 	var c Crew
 	err := r.InTx(ctx, func(tx *Repository) error {
-		err := tx.underCrewCap(ctx, accountID, maxCrews)
+		err := tx.lockForCrews(ctx, accountID)
+		if err != nil {
+			return err
+		}
+		err = tx.underCrewCap(ctx, accountID, maxCrews)
 		if err != nil {
 			return err
 		}
@@ -60,9 +66,16 @@ func (r *Repository) JoinCrew(ctx context.Context, accountID int64, code string,
 	op := fmt.Sprintf("join crew account=%d", accountID)
 	var c Crew
 	err := r.InTx(ctx, func(tx *Repository) error {
-		// 1. The crew, and whether they are in it already
+		// 1. The player's lock first, so whether they are in the crew already is read after any
+		// join of theirs that got there first: two taps at once both answer with the crew
+		err := tx.lockForCrews(ctx, accountID)
+		if err != nil {
+			return err
+		}
+
+		// 2. The crew, and whether they are in it already
 		var member bool
-		err := tx.db.QueryRow(ctx, `
+		err = tx.db.QueryRow(ctx, `
 			select c.crew_id,
 			       exists (select 1
 			                 from app.crew_member m
@@ -78,7 +91,7 @@ func (r *Repository) JoinCrew(ctx context.Context, accountID int64, code string,
 			return known(op, err)
 		}
 
-		// 2. A new member, under the cap
+		// 3. A new member, under the cap
 		if !member {
 			err = tx.underCrewCap(ctx, accountID, maxCrews)
 			if err != nil {
@@ -92,7 +105,7 @@ func (r *Repository) JoinCrew(ctx context.Context, accountID int64, code string,
 			}
 		}
 
-		// 3. The crew as its members now see it
+		// 4. The crew as its members now see it
 		c, err = tx.CrewByID(ctx, accountID, c.CrewID)
 		return err
 	})
@@ -102,21 +115,27 @@ func (r *Repository) JoinCrew(ctx context.Context, accountID int64, code string,
 	return c, nil
 }
 
-// underCrewCap locks accountID's row, so their other makes and joins wait their turn, then answers
-// ErrTooManyCrews when they are already in maxCrews. Run it inside a transaction: the lock lasts
-// until the transaction ends, and the count after it sees whatever the one before committed.
-func (r *Repository) underCrewCap(ctx context.Context, accountID int64, maxCrews int) error {
-	op := fmt.Sprintf("crew cap account=%d", accountID)
+// lockForCrews locks accountID's row, so their makes and joins take turns. Run it inside a
+// transaction and before reading their crews: the lock lasts until the transaction ends, and every
+// read after it sees what the one before committed.
+func (r *Repository) lockForCrews(ctx context.Context, accountID int64) error {
 	_, err := r.db.Exec(ctx, `
 		select 1
 		  from app.account a
 		 where a.account_id = $1
 		   for update`, accountID)
 	if err != nil {
-		return known(op, err)
+		return known(fmt.Sprintf("lock for crews account=%d", accountID), err)
 	}
+	return nil
+}
+
+// underCrewCap answers ErrTooManyCrews when accountID is already in maxCrews. Call it after
+// lockForCrews, so two at once cannot both count under the cap.
+func (r *Repository) underCrewCap(ctx context.Context, accountID int64, maxCrews int) error {
+	op := fmt.Sprintf("crew cap account=%d", accountID)
 	var n int
-	err = r.db.QueryRow(ctx, `
+	err := r.db.QueryRow(ctx, `
 		select count(*)
 		  from app.crew_member m
 		 where m.account_id = $1`, accountID).Scan(&n)
@@ -178,7 +197,7 @@ func (r *Repository) ListMyCrews(ctx context.Context, accountID int64) ([]Crew, 
 }
 
 // LeaveCrew takes accountID out of crewID and says whether they were in it. The last member out
-// deletes the crew, so its code is free and no crew is left with no one to see it.
+// ends the crew, through the crew_member_end_empty_crew trigger, so its code goes free.
 func (r *Repository) LeaveCrew(ctx context.Context, accountID, crewID int64) (bool, error) {
 	op := fmt.Sprintf("leave crew account=%d crew=%d", accountID, crewID)
 	var left bool
@@ -201,16 +220,6 @@ func (r *Repository) LeaveCrew(ctx context.Context, accountID, crewID int64) (bo
 			return known(op, err)
 		}
 		left = tag.RowsAffected() > 0
-		if !left {
-			return nil
-		}
-		_, err = tx.db.Exec(ctx, `
-			delete from app.crew c
-			 where c.crew_id = $1
-			   and not exists (select 1 from app.crew_member m where m.crew_id = c.crew_id)`, crewID)
-		if err != nil {
-			return known(op, err)
-		}
 		return nil
 	})
 	if err != nil {

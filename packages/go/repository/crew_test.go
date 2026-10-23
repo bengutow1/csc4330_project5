@@ -178,6 +178,69 @@ func TestJoinsAtOnceStayUnderTheCap(t *testing.T) {
 	}
 }
 
+// TestADoubleTappedJoinCountsTheMemberOnceAndRefusesNeither: joining a crew one is already in
+// changes nothing, so two taps at once must both answer with the crew, not one as a duplicate.
+func TestADoubleTappedJoinCountsTheMemberOnceAndRefusesNeither(t *testing.T) {
+	t.Parallel()
+	repo := newRepo(t)
+	maya := aCrewMaker(t, repo, "test_maya")
+	ben := aCrewMaker(t, repo, "test_ben")
+	made := aCrew(t, repo, maya, "Dorm 4B", "123456")
+
+	var wg sync.WaitGroup
+	for i := range 20 {
+		wg.Go(func() {
+			joined, err := repo.JoinCrew(t.Context(), ben, "123456", crewCap)
+			if err != nil {
+				t.Errorf("tap %d: %v", i, err)
+				return
+			}
+			if joined.Members != 2 {
+				t.Errorf("tap %d: members = %d, want 2", i, joined.Members)
+			}
+		})
+	}
+	wg.Wait()
+
+	still, err := repo.CrewByID(t.Context(), maya, made.CrewID)
+	if err != nil {
+		t.Fatalf("crew after the taps: %v", err)
+	}
+	if still.Members != 2 {
+		t.Errorf("members = %d, want 2", still.Members)
+	}
+}
+
+// TestACrewEndsWhenItsLastMembersAccountIsDeleted: the last one out ends a crew however they go.
+// Once its maker has left, nothing cascades from them, so deleting the last member's account must
+// still free the code rather than leave a crew with no one in it.
+func TestACrewEndsWhenItsLastMembersAccountIsDeleted(t *testing.T) {
+	t.Parallel()
+	repo := newRepo(t)
+	maya := aCrewMaker(t, repo, "test_maya")
+	ben := aCrewMaker(t, repo, "test_ben")
+	cal := aCrewMaker(t, repo, "test_cal")
+	made := aCrew(t, repo, maya, "Dorm 4B", "424242")
+	_, err := repo.JoinCrew(t.Context(), ben, "424242", crewCap)
+	if err != nil {
+		t.Fatalf("ben joins: %v", err)
+	}
+	left, err := repo.LeaveCrew(t.Context(), maya, made.CrewID)
+	if err != nil || !left {
+		t.Fatalf("maya leaves: left = %v, err = %v", left, err)
+	}
+
+	deleted, err := repo.DeleteAccount(t.Context(), ben)
+	if err != nil || !deleted {
+		t.Fatalf("delete ben: deleted = %v, err = %v", deleted, err)
+	}
+
+	_, err = repo.JoinCrew(t.Context(), cal, "424242", crewCap)
+	if !errors.Is(err, repository.ErrNoCrewForCode) {
+		t.Errorf("join the code of a crew with no one left: err = %v, want ErrNoCrewForCode", err)
+	}
+}
+
 // TestACrewReadsAsMissingToANonMember: another crew must answer exactly like one that never was,
 // so a crew id is no way in.
 func TestACrewReadsAsMissingToANonMember(t *testing.T) {
@@ -241,7 +304,8 @@ func TestLeavingKeepsTheCrewForTheRestAndTheLastOneOutEndsIt(t *testing.T) {
 }
 
 // TestDeletingAnAccountTakesItsMembershipsAndItsCrews: a deleted player must leave no trace in a
-// crew, and the crews they made go with them.
+// crew, and the crews they made go with them (docs/contracts.md: every table on app.account
+// cascades).
 func TestDeletingAnAccountTakesItsMembershipsAndItsCrews(t *testing.T) {
 	t.Parallel()
 	repo := newRepo(t)
