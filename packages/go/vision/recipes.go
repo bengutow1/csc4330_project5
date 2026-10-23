@@ -13,7 +13,8 @@ import (
 var mockRecipes = map[string][]Recipe{
 	"certified_chef": {
 		{
-			Title: "Chicken Fajita Bowl", Minutes: 25, Difficulty: "medium", Equipment: []string{"stovetop"},
+			StepTimers: []int{0, 0, 480, 180},
+			Title:      "Chicken Fajita Bowl", Minutes: 25, Difficulty: "medium", Equipment: []string{"stovetop"},
 			Uses: []string{"Chicken", "Bell peppers", "Rice", "Oil", "Spices"},
 			Steps: []string{
 				"Cook the rice.",
@@ -78,7 +79,8 @@ var mockRecipes = map[string][]Recipe{
 	},
 	"scrappy": {
 		{
-			Title: "Spicy Pea Ramen", Minutes: 6, Difficulty: "easy", Equipment: []string{"microwave"},
+			StepTimers: []int{0, 240, 0},
+			Title:      "Spicy Pea Ramen", Minutes: 6, Difficulty: "easy", Equipment: []string{"microwave"},
 			Uses: []string{"Instant ramen", "Frozen peas", "Hot sauce"}, Allergens: []string{"wheat", "soy"},
 			Steps: []string{
 				"Break the ramen into a microwave-safe bowl with a handful of peas.",
@@ -151,6 +153,7 @@ func cloneRecipes(rs []Recipe) []Recipe {
 		r.Missing = slices.Clone(r.Missing)
 		r.Allergens = slices.Clone(r.Allergens)
 		r.Steps = slices.Clone(r.Steps)
+		r.StepTimers = slices.Clone(r.StepTimers)
 		out[i] = r
 	}
 	return out

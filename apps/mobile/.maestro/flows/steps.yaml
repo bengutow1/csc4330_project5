@@ -1,0 +1,35 @@
+# API: VISION_MOCK=certified_chef. A full eight-minute step timer needs a longer flow timeout.
+appId: com.cadenlund.friesinthebag
+---
+- launchApp:
+    clearState: true
+- runFlow: subflows/sign-up.yaml
+- runFlow: subflows/judge-sample.yaml
+- tapOn: "Show me what I can cook"
+- extendedWaitUntil:
+    visible: "Chicken Fajita Bowl.*"
+    timeout: 15000
+- tapOn: "Chicken Fajita Bowl.*"
+- tapOn: "Cook step by step"
+- assertVisible: "Step 1 of 4"
+- assertNotVisible: "Start timer"
+- takeScreenshot: steps-without-timer
+- tapOn: "Next step"
+- assertVisible: "Step 2 of 4"
+- tapOn: "Previous step"
+- assertVisible: "Step 1 of 4"
+- tapOn: "Next step"
+- tapOn: "Next step"
+- assertVisible: "Step 3 of 4"
+- assertVisible: "Timer 8:00"
+- takeScreenshot: steps-with-timer
+- tapOn: "Start timer"
+- tapOn: "Pause timer"
+- tapOn: "Resume timer"
+- extendedWaitUntil:
+    visible: "Timer finished"
+    timeout: 490000
+- tapOn: "Next step"
+- assertVisible: "Step 4 of 4"
+- tapOn: "I made it"
+- assertVisible: "Plate it"

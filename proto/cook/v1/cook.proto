@@ -63,6 +63,14 @@ message Badge {
   bool earned = 3;
 }
 
+// CookingStep is one instruction, with an optional foreground timer.
+message CookingStep {
+  // One instruction, in display order, up to 300 characters.
+  string instruction = 1;
+  // Seconds to count down, from 1 to 14400; unset means no timer.
+  optional int32 timer_seconds = 2;
+}
+
 // Recipe is one dish for one of the caller's scans, already checked against its list, the staples
 // and the caller's allergies.
 message Recipe {
@@ -81,6 +89,8 @@ message Recipe {
   repeated string steps = 8;
   // The points plating it would earn from this scan's score, before any streak.
   int32 points_preview = 9;
+  // Structured instructions for step-by-step cooking. steps stays for older clients.
+  repeated CookingStep cooking_steps = 10;
 }
 
 message ListRecipesRequest {

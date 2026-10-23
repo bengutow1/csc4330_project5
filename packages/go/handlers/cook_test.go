@@ -189,6 +189,7 @@ func TestTheShelvesSplitByWhatThePlayerLacks(t *testing.T) {
 		Equipment:  []accountv1.Equipment{accountv1.Equipment_EQUIPMENT_STOVETOP},
 		Uses:       []string{"Eggs", "Butter"}, Missing: []string{"Bread"},
 		Steps:         []string{"Toast the bread.", "Fry the egg."},
+		CookingSteps:  []*cookv1.CookingStep{{Instruction: "Toast the bread."}, {Instruction: "Fry the egg."}},
 		PointsPreview: verdictPreview(verdict),
 	}
 	if toast.GetRecipeId() == 0 || !proto.Equal(toast, want) {

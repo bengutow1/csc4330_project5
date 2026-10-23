@@ -24,9 +24,10 @@ type recipeInput struct {
 	Equipment  []string `pfield:"equipment"  validate:"max=4,dive,oneof=microwave stovetop oven air_fryer"`
 	Uses       []string `pfield:"uses"       validate:"min=1,max=20,dive,required,max=40,plaintext"`
 	// More than one is the recipe check's to refuse, so that the log says why.
-	Missing   []string `pfield:"missing"   validate:"max=20,dive,required,max=40,plaintext"`
-	Allergens []string `pfield:"allergens" validate:"max=9,dive,oneof=peanuts tree_nuts milk eggs wheat soy fish shellfish sesame"`
-	Steps     []string `pfield:"steps"     validate:"min=1,max=20,dive,required,max=300,plaintext"`
+	Missing    []string `pfield:"missing"   validate:"max=20,dive,required,max=40,plaintext"`
+	Allergens  []string `pfield:"allergens" validate:"max=9,dive,oneof=peanuts tree_nuts milk eggs wheat soy fish shellfish sesame"`
+	Steps      []string `pfield:"steps"     validate:"min=1,max=20,dive,required,max=300,plaintext"`
+	StepTimers []int    `pfield:"step_timers" validate:"max=20,dive,min=0,max=14400"`
 }
 
 // listInput is a ListRecipes request, validated: the scan and the filters the SQL applies.
@@ -103,14 +104,15 @@ func keepModelRecipes(in []vision.Recipe) ([]repository.NewRecipe, int) {
 			Missing:    eachTrimmed(r.Missing),
 			Allergens:  eachWord(r.Allergens),
 			Steps:      eachTrimmed(r.Steps),
+			StepTimers: r.StepTimers,
 		}
-		if handlers.Validate(row) != nil {
+		if handlers.Validate(row) != nil || (len(row.StepTimers) != 0 && len(row.StepTimers) != len(row.Steps)) {
 			continue
 		}
 		kept = append(kept, repository.NewRecipe{
 			Title: row.Title, Minutes: row.Minutes, Difficulty: row.Difficulty,
 			Equipment: row.Equipment, Uses: row.Uses, Missing: row.Missing,
-			Allergens: row.Allergens, Steps: row.Steps,
+			Allergens: row.Allergens, Steps: row.Steps, StepTimers: row.StepTimers,
 		})
 	}
 	return kept, len(in) - len(kept)

@@ -31,6 +31,8 @@ type Recipe struct {
 	Allergens []string
 	// Steps are the instructions, in order.
 	Steps []string
+	// StepTimers aligns with Steps: seconds, 0 for no timer; empty means all untimed.
+	StepTimers []int
 }
 
 // PlateCheck is the model's word on a plate photo. The server decides what a pass earns.
