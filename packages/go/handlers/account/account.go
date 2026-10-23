@@ -113,8 +113,8 @@ func (h *Account) CreateAccount(
 	}
 
 	// 2. Normalize, then validate both fields, so the form shows every problem at once
-	handle, avatar := normalizeHandle(req.Msg.Handle), normalizeAvatar(req.Msg.Avatar)
-	invalid := append(handlers.Validate(handleInput{handle}), handlers.Validate(avatarInput{avatar})...)
+	handle, avatar := handlers.NormalizeHandle(req.Msg.Handle), normalizeAvatar(req.Msg.Avatar)
+	invalid := append(handlers.Validate(handlers.HandleInput{Handle: handle}), handlers.Validate(avatarInput{avatar})...)
 	if invalid != nil {
 		return nil, h.fail(op, invalid)
 	}
@@ -158,8 +158,8 @@ func (h *Account) CheckHandle(
 	}
 
 	// 2. Normalize, then validate, so a handle that could never be taken says why
-	handle := normalizeHandle(req.Msg.Handle)
-	invalid := handlers.Validate(handleInput{handle})
+	handle := handlers.NormalizeHandle(req.Msg.Handle)
+	invalid := handlers.Validate(handlers.HandleInput{Handle: handle})
 	if invalid != nil {
 		return nil, h.fail(op, invalid)
 	}
