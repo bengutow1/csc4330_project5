@@ -1,7 +1,7 @@
 // Author: Caden Lund
 // Package handlers holds what every Connect service shares: the one error boundary, field
 // violations, validation, the gate and the limiter. Each product surface is a subpackage
-// (healthz, account, scan and fries now, then cook, combo and board).
+// (healthz, account, scan, fries, cook, board, profile and crew, then combo).
 package handlers
 
 import (
@@ -58,6 +58,12 @@ func ConnectErr(log *slog.Logger, op string, err error) error {
 	// FailedPrecondition, not AlreadyExists: the plate is new, and the next meal window takes it.
 	case errors.Is(err, repository.ErrMealWindowCooked):
 		return connect.NewError(connect.CodeFailedPrecondition, repository.ErrMealWindowCooked)
+	// NotFound, in words of its own: the join screen tells a mistyped code apart from a lost one.
+	case errors.Is(err, repository.ErrNoCrewForCode):
+		return connect.NewError(connect.CodeNotFound, repository.ErrNoCrewForCode)
+	// ResourceExhausted: a limit was hit, and leaving a crew makes room.
+	case errors.Is(err, repository.ErrTooManyCrews):
+		return connect.NewError(connect.CodeResourceExhausted, repository.ErrTooManyCrews)
 
 	// auth
 	// The app reads Unauthenticated as "back to onboarding", with no toast.

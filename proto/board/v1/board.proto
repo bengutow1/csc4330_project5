@@ -55,6 +55,9 @@ message GetBoardRequest {
   string cursor = 3;
   // The most rows on this page, from 1 to 50, where more is clamped to 50; 0 = 20.
   int32 limit = 4;
+  // Rank only this crew's members, among themselves (crew.v1). The caller must be in it, or the
+  // board is not_found. 0 = the whole campus.
+  int64 crew_id = 5;
 }
 
 message GetBoardResponse {

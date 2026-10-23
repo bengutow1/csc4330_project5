@@ -1,0 +1,40 @@
+# Crews (B3): one player makes a crew, a second joins it with its code, and the Board tab switches
+# to the crew's board. Start the api (moon run api:dev); no vision pin is needed, since nobody
+# scans. Needs the app installed (moon run mobile:ios or mobile:android) and Metro (moon run
+# mobile:dev). A fresh crew has no points yet, so its board shows the empty Chefs board.
+appId: com.cadenlund.friesinthebag
+---
+# 1. The first player makes a crew and keeps its code
+- launchApp:
+    clearState: true
+- runFlow: subflows/sign-up.yaml
+- tapOn: "Board"
+- tapOn: "Crews"
+- assertVisible: "No crews yet"
+- tapOn: "Crew name"
+- inputText: "Test crew"
+- tapOn: "Make a crew"
+- assertVisible: "Test crew"
+- assertVisible: "1 member"
+- copyTextFrom:
+    text: "[0-9]{6}"
+
+# 2. A second player joins with it
+- launchApp:
+    clearState: true
+- runFlow: subflows/sign-up.yaml
+- tapOn: "Board"
+- tapOn: "Crews"
+- tapOn: "Crew code"
+- pasteText
+- tapOn: "Join"
+- assertVisible: "Test crew"
+- assertVisible: "2 members"
+
+# 3. The Board tab now offers the crew, and shows its board
+- tapOn: "Back"
+- assertVisible: "Campus"
+- tapOn: "Test crew"
+- assertVisible: "No chefs yet this week."
+- tapOn: "Campus"
+- assertVisible: "Leaderboard"

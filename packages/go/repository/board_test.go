@@ -27,7 +27,7 @@ func TestTheHallOfFriesRanksTiesTogether(t *testing.T) {
 	runs(t, repo, createAccount(t, repo, "test_dee"), 1, monday)
 	createAccount(t, repo, "test_eve") // no runs, so not on the board
 
-	got, err := repo.HallOfFries(t.Context(), monday.Add(-time.Hour), nil, 10)
+	got, err := repo.HallOfFries(t.Context(), monday.Add(-time.Hour), 0, nil, 10)
 	if err != nil {
 		t.Fatalf("hall of fries: %v", err)
 	}
@@ -50,7 +50,7 @@ func TestTheHallOfFriesPagesWithAKeyset(t *testing.T) {
 	runs(t, repo, createAccount(t, repo, "test_dee"), 1, monday)
 	since := monday.Add(-time.Hour)
 
-	first, err := repo.HallOfFries(t.Context(), since, nil, 1)
+	first, err := repo.HallOfFries(t.Context(), since, 0, nil, 1)
 	if err != nil {
 		t.Fatalf("first page: %v", err)
 	}
@@ -58,7 +58,7 @@ func TestTheHallOfFriesPagesWithAKeyset(t *testing.T) {
 		t.Fatal("first page is empty, want test_ben")
 	}
 	last := first[len(first)-1]
-	rest, err := repo.HallOfFries(t.Context(), since, &repository.BoardKey{Value: last.Value, Handle: last.Handle}, 10)
+	rest, err := repo.HallOfFries(t.Context(), since, 0, &repository.BoardKey{Value: last.Value, Handle: last.Handle}, 10)
 	if err != nil {
 		t.Fatalf("next page: %v", err)
 	}
@@ -85,14 +85,14 @@ func TestHallOfFriesRowIsTheCallersOwn(t *testing.T) {
 	eve := createAccount(t, repo, "test_eve")
 	since := monday.Add(-time.Hour)
 
-	row, found, err := repo.HallOfFriesRow(t.Context(), dee.AccountID, since)
+	row, found, err := repo.HallOfFriesRow(t.Context(), dee.AccountID, since, 0)
 	if err != nil {
 		t.Fatalf("dee's row: %v", err)
 	}
 	if !found || row.Rank != 3 || row.Handle != "test_dee" || row.Value != 1 {
 		t.Errorf("dee's row = %+v (found %v), want rank 3 with 1 run", row, found)
 	}
-	_, found, err = repo.HallOfFriesRow(t.Context(), eve.AccountID, since)
+	_, found, err = repo.HallOfFriesRow(t.Context(), eve.AccountID, since, 0)
 	if err != nil {
 		t.Fatalf("eve's row: %v", err)
 	}
@@ -113,11 +113,11 @@ func TestTheHallOfFriesCountsFromItsStart(t *testing.T) {
 	runs(t, repo, ben, 3, monday.AddDate(0, 0, -7))
 	thisWeek := monday.Add(-time.Hour)
 
-	got, err := repo.HallOfFries(t.Context(), thisWeek, nil, 10)
+	got, err := repo.HallOfFries(t.Context(), thisWeek, 0, nil, 10)
 	if err != nil {
 		t.Fatalf("this week: %v", err)
 	}
-	allTime, err := repo.HallOfFries(t.Context(), time.Time{}, nil, 10)
+	allTime, err := repo.HallOfFries(t.Context(), time.Time{}, 0, nil, 10)
 	if err != nil {
 		t.Fatalf("all time: %v", err)
 	}
@@ -146,7 +146,7 @@ func TestChefsRanksPointsWithTiesTogether(t *testing.T) {
 	cooked(t, repo, createAccount(t, repo, "test_dee"), 10, monday, "2026-10-19 morning")
 	createAccount(t, repo, "test_eve") // no points, so not on the board
 
-	got, err := repo.Chefs(t.Context(), monday.Add(-time.Hour), nil, 10)
+	got, err := repo.Chefs(t.Context(), monday.Add(-time.Hour), 0, nil, 10)
 	if err != nil {
 		t.Fatalf("chefs: %v", err)
 	}
@@ -168,7 +168,7 @@ func TestChefsPagesWithAKeyset(t *testing.T) {
 	cooked(t, repo, createAccount(t, repo, "test_cal"), 120, monday, "2026-10-19 morning")
 	since := monday.Add(-time.Hour)
 
-	first, err := repo.Chefs(t.Context(), since, nil, 1)
+	first, err := repo.Chefs(t.Context(), since, 0, nil, 1)
 	if err != nil {
 		t.Fatalf("first page: %v", err)
 	}
@@ -176,7 +176,7 @@ func TestChefsPagesWithAKeyset(t *testing.T) {
 		t.Fatal("first page is empty, want test_ben")
 	}
 	last := first[len(first)-1]
-	rest, err := repo.Chefs(t.Context(), since, &repository.BoardKey{Value: last.Value, Handle: last.Handle}, 10)
+	rest, err := repo.Chefs(t.Context(), since, 0, &repository.BoardKey{Value: last.Value, Handle: last.Handle}, 10)
 	if err != nil {
 		t.Fatalf("next page: %v", err)
 	}
@@ -202,14 +202,14 @@ func TestChefsRowIsTheCallersOwn(t *testing.T) {
 	eve := createAccount(t, repo, "test_eve")
 	since := monday.Add(-time.Hour)
 
-	row, found, err := repo.ChefsRow(t.Context(), dee.AccountID, since)
+	row, found, err := repo.ChefsRow(t.Context(), dee.AccountID, since, 0)
 	if err != nil {
 		t.Fatalf("dee's row: %v", err)
 	}
 	if !found || row.Rank != 2 || row.Handle != "test_dee" || row.Value != 10 {
 		t.Errorf("dee's row = %+v (found %v), want rank 2 with 10 points", row, found)
 	}
-	_, found, err = repo.ChefsRow(t.Context(), eve.AccountID, since)
+	_, found, err = repo.ChefsRow(t.Context(), eve.AccountID, since, 0)
 	if err != nil {
 		t.Fatalf("eve's row: %v", err)
 	}
@@ -228,16 +228,16 @@ func TestChefsCountsFromItsStart(t *testing.T) {
 	cooked(t, repo, maya, 30, monday, "2026-10-19 morning")
 	cooked(t, repo, createAccount(t, repo, "test_ben"), 130, monday.AddDate(0, 0, -7), "2026-10-12 morning")
 
-	week, err := repo.Chefs(t.Context(), monday.Add(-time.Hour), nil, 10)
+	week, err := repo.Chefs(t.Context(), monday.Add(-time.Hour), 0, nil, 10)
 	if err != nil {
 		t.Fatalf("this week: %v", err)
 	}
-	allTime, err := repo.Chefs(t.Context(), time.Time{}, nil, 10)
+	allTime, err := repo.Chefs(t.Context(), time.Time{}, 0, nil, 10)
 	if err != nil {
 		t.Fatalf("all time: %v", err)
 	}
 
-	mine, found, err := repo.ChefsRow(t.Context(), maya.AccountID, monday.Add(-time.Hour))
+	mine, found, err := repo.ChefsRow(t.Context(), maya.AccountID, monday.Add(-time.Hour), 0)
 	if err != nil {
 		t.Fatalf("maya's row this week: %v", err)
 	}

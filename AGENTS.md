@@ -5,27 +5,29 @@ If there isn't one, it tells you to put the fries in the bag and finds food near
 points on a campus leaderboard, and Combo mode lets two friends merge their fridges to cook
 together. `apps/` holds deployables, `packages/` holds shared code.
 
-Status: device accounts, scans, cooking for points, spots nearby, the board and the profile. The API
+Status: device accounts, scans, cooking for points, spots nearby, the board, crews and the profile. The API
 serves the health probes, `AccountService` (make a device account, check a handle, who am I, save
 the kitchen, delete the account and end its sessions), `ScanService` (judge a kitchen's photos with
 the vision mock, read a verdict, fix its list), `CookService` (a scan's recipes on two shelves, one
 recipe, and a plate the mock checks, paid in points on a receipt), `FriesService` (spots nearby from
 the places mock, and fry runs), `BoardService` (Chefs or the Hall of Fries, this week or all time,
-paged with the caller's own row, and the Fridge of the Week) and `ProfileService` (a player's rank,
-stats and badges, and their plates newest first), with sessions in Postgres. The Go packages hold
+paged with the caller's own row, campus-wide or one crew's, and the Fridge of the Week),
+`CrewService` (make a crew, join one by its code, leave, list mine) and `ProfileService` (a player's
+rank, stats and badges, and their plates newest first), with sessions in Postgres. The Go packages hold
 what every feature builds on (the error boundary, validation, the gate, the limiter, the session,
 the repository, logging), and the schema holds the `app` schema, its shared trigger, `app.account`,
-the sessions table, `app.scan` with its items, the recipes, the plates with their points ledger, and
-the fry runs: copy their shape.
+the sessions table, `app.scan` with its items, the recipes, the plates with their points ledger,
+the fry runs, and the crews with their members: copy their shape.
 `packages/ts/api` holds the transport, the query client, the foreground refetch, error decoding and
-the health, account, scan, cook, fries, board and profile hooks.
+the health, account, scan, cook, fries, board, crew and profile hooks.
 `apps/mobile` is the shell: a first launch goes through onboarding (welcome, handle and avatar,
 kitchen), then three tabs. Snap is the camera, which judges a kitchen and opens its verdict: the
 score, tier and roast, what was spotted, and a sheet that fixes the list. Cook mode takes a verdict
 to its recipes on two shelves, narrowed by chips the server applies, and to one recipe: what you
 have, what you need and its steps. Plate it photographs a cooked recipe and prints the points
 receipt. Fries mode is the fries moment and the spots nearby. Board ranks players by points or fry
-runs on a podium and pins the player's own row, and Me shows their rank, stats, plates and badges,
+runs on a podium and pins the player's own row, campus-wide or per crew, with crews (B3) behind its
+crew icon, and Me shows their rank, stats, plates and badges,
 with settings (P3) behind its gear. `/status` is wired to the API end to end. Each issue builds its
 screen from the design in `docs/design.md`.
 

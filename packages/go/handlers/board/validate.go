@@ -28,18 +28,21 @@ type getBoardInput struct {
 	rng   boardv1.Range
 	after *repository.BoardKey // nil on the first page
 	limit int
+	// crewID ranks only that crew's members; 0 is the whole campus.
+	crewID int64
 }
 
-// limitTag holds the limit to its bound.
-type limitTag struct {
-	Limit int32 `pfield:"limit" validate:"gte=0"`
+// boardTags holds the fields a validator tag can judge on its own.
+type boardTags struct {
+	Limit  int32 `pfield:"limit" validate:"gte=0"`
+	CrewID int64 `pfield:"crew_id" validate:"gte=0"`
 }
 
 // buildGetBoard validates a GetBoard request, all of it, so the client hears every problem at
 // once.
 func buildGetBoard(msg *boardv1.GetBoardRequest) (getBoardInput, handlers.FieldErrors) {
-	in := getBoardInput{board: msg.Board, rng: msg.Range, limit: defaultLimit}
-	invalid := handlers.Validate(limitTag{Limit: msg.Limit})
+	in := getBoardInput{board: msg.Board, rng: msg.Range, limit: defaultLimit, crewID: msg.CrewId}
+	invalid := handlers.Validate(boardTags{Limit: msg.Limit, CrewID: msg.CrewId})
 	refuse := func(field, message string) {
 		invalid = append(invalid, handlers.FieldError{Field: field, Message: message})
 	}
