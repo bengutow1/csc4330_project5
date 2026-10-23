@@ -1,5 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { CameraView, type FlashMode, useCameraPermissions } from "expo-camera";
+import { Image, type ImageSource } from "expo-image";
 import { useIsFocused } from "expo-router";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { AppState, Linking, Pressable, StyleSheet, Text, View } from "react-native";
@@ -46,6 +47,11 @@ export function Camera(props: {
   beside?: ReactNode;
   /** Between the viewfinder and the shutter: the screen's own controls. */
   children?: ReactNode;
+  /**
+   * A clip that plays under the preview, for a development build: the simulator has no camera,
+   * so it stands in for one there, and a real camera's preview covers it.
+   */
+  demo?: ImageSource;
 }) {
   const [permission, requestPermission, readPermission] = useCameraPermissions();
   const focused = useIsFocused();
@@ -98,6 +104,9 @@ export function Camera(props: {
       <View style={styles.viewfinder}>
         {permission === null ? null : granted ? (
           <>
+            {props.demo === undefined ? null : (
+              <Image source={props.demo} style={StyleSheet.absoluteFill} contentFit="cover" />
+            )}
             {live && !broken ? (
               <CameraView
                 ref={camera}

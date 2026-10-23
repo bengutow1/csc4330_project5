@@ -15,6 +15,7 @@ import { Card } from "@/components/card";
 import { FilterChip } from "@/components/chip";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
+import { FoodArt } from "@/components/food-art";
 import { Header } from "@/components/header";
 import { IconButton } from "@/components/icon-button";
 import { IngredientSheet } from "@/components/ingredient-sheet";
@@ -272,10 +273,10 @@ function RecipeCard(props: {
       onPress={props.onPress}
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
     >
-      {/* No recipe photos exist, so the tile shows a plate (docs/design.md). */}
-      <View style={styles.art}>
+      {/* The recipe's photo, or a plate when it has none. */}
+      <FoodArt name={recipe.title} style={styles.art}>
         <Ionicons name="restaurant-outline" size={ART_ICON} color={COLORS.muted} />
-      </View>
+      </FoodArt>
       <View style={styles.cardBody}>
         <Text numberOfLines={2} style={styles.cardTitle}>
           {recipe.title}

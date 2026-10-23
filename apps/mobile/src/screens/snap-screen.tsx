@@ -27,6 +27,8 @@ import { COLORS, RADII, SPACE, TYPE } from "@/theme";
 
 // The simulator has no camera, so a development build offers a bundled fridge to judge instead.
 const SAMPLE_PHOTO = __DEV__ ? require("../../assets/dev/fridge.jpg") : null;
+// What the viewfinder plays in a development build, where the simulator has no camera.
+const DEMO_VIEW = __DEV__ ? require("../../assets/dev/fridge-view.gif") : undefined;
 
 const WHY =
   "The camera sees what's in your fridge, freezer or pantry. Photos are judged, then deleted.";
@@ -133,6 +135,7 @@ export function SnapScreen() {
         // has landed: a capture whose camera is torn down may never finish.
         <Camera
           why={WHY}
+          demo={DEMO_VIEW}
           onShot={fromCamera}
           full={full}
           beside={
