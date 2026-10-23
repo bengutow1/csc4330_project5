@@ -31,9 +31,12 @@ export function rangeOf(key: RangeKey) {
   return RANGES[key];
 }
 
-/** subtitle is the line under the title, as screen 7 writes it ("Campus · this week"). */
-export function subtitle(range: RangeKey) {
-  return range === "this_week" ? "Campus · this week" : "Campus · all time";
+/**
+ * subtitle is the line under the title, as screen 7 writes it ("Campus · this week"): whose board
+ * it is, the campus or a crew by name, then the range.
+ */
+export function subtitle(range: RangeKey, scope = "Campus") {
+  return `${scope} · ${range === "this_week" ? "this week" : "all time"}`;
 }
 
 /** The fields of a board row these helpers read, so a test can build one by hand. */

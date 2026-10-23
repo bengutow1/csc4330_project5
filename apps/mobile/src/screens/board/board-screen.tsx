@@ -106,12 +106,13 @@ export function BoardScreen() {
   }
 
   const myCrews = crews.data?.crews ?? [];
+  const scopeName = myCrews.find((crew) => crew.crewId === scope)?.name;
   const header = (
     <View style={styles.header}>
       <View style={styles.bar}>
         <IconButton icon="people-outline" label="Crews" onPress={() => router.navigate("/crews")} />
       </View>
-      <Header root title="Leaderboard" subtitle={subtitle(rangeKey)} />
+      <Header root title="Leaderboard" subtitle={subtitle(rangeKey, scopeName)} />
       {/* The campus and then each crew. With no crews, the campus is the only board. */}
       {myCrews.length > 0 ? (
         <ScrollView

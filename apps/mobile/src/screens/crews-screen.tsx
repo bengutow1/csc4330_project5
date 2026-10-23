@@ -72,7 +72,8 @@ export function CrewsScreen() {
       <EmptyState
         title="No crews yet"
         line="Make one for your friends, or join theirs with a code."
-        action={{ label: "Make a crew", onPress: () => nameInput.current?.focus() }}
+        // Its own words: "Make a crew" is the form's button below, which a tap by label must find.
+        action={{ label: "Name your crew", onPress: () => nameInput.current?.focus() }}
       />
     );
   } else {
@@ -114,7 +115,7 @@ export function CrewsScreen() {
           {leave.isError ? <Text style={styles.error}>{errorMessage(leave.error)}</Text> : null}
         </FormSection>
 
-        <FormSection title="Make a crew" note="You get a code to share with your friends.">
+        <FormSection title="New crew" note="You get a code to share with your friends.">
           <TextInput
             ref={nameInput}
             accessibilityLabel="Crew name"
@@ -143,7 +144,8 @@ export function CrewsScreen() {
             maxLength={7}
             onChangeText={setCode}
             onSubmitEditing={joinWith}
-            placeholder="123456"
+            // Words, not digits: a crew's real code is the only six digits on this screen.
+            placeholder="Six-digit code"
             placeholderTextColor={COLORS.muted}
             returnKeyType="done"
             style={styles.input}
