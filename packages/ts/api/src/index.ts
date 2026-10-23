@@ -23,6 +23,7 @@ export {
 } from "@fries-in-the-bag/apigen/board/v1/board_pb";
 export {
   type Badge,
+  type CookingStep,
   Difficulty,
   PointReason,
   type Rank,

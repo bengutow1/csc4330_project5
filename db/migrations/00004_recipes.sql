@@ -49,6 +49,13 @@ create table app.recipe (
     diets         text[]      not null
                               check (diets <@ array['vegetarian', 'vegan', 'pescatarian']),
     steps         text[]      not null check (cardinality(steps) between 1 and 20),
+    -- 0 is untimed. Empty is a legacy recipe with no timers; otherwise one per step.
+    -- Keep these bounds in step with cook/validate.go.
+    step_timers   int[]       not null default '{}'
+                              check ((cardinality(step_timers) = 0 or
+                                      cardinality(step_timers) = cardinality(steps)) and
+                                     array_position(step_timers, null) is null and
+                                     0 <= all(step_timers) and 14400 >= all(step_timers)),
     created_at    timestamptz not null default now(),
     -- Every recipe belongs to a set that was made.
     constraint recipe_scan_id_items_version_fkey foreign key (scan_id, items_version)

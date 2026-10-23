@@ -48,6 +48,14 @@ func toProtoRecipe(r repository.Recipe) (*cookv1.Recipe, error) {
 	if err != nil {
 		return nil, err
 	}
+	steps := make([]*cookv1.CookingStep, len(r.Steps))
+	for i, instruction := range r.Steps {
+		steps[i] = &cookv1.CookingStep{Instruction: instruction}
+		if i < len(r.StepTimers) && r.StepTimers[i] > 0 {
+			seconds := int32(r.StepTimers[i]) // bounded to four hours by app.recipe
+			steps[i].TimerSeconds = &seconds
+		}
+	}
 	return &cookv1.Recipe{
 		RecipeId:      r.RecipeID,
 		Title:         r.Title,
@@ -57,6 +65,7 @@ func toProtoRecipe(r repository.Recipe) (*cookv1.Recipe, error) {
 		Uses:          r.Uses,
 		Missing:       r.Missing,
 		Steps:         r.Steps,
+		CookingSteps:  steps,
 		PointsPreview: pointsPreview(r.ScanScore),
 	}, nil
 }

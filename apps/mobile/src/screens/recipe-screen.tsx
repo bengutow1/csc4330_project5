@@ -100,6 +100,16 @@ export function RecipeScreen(props: { id: string | undefined }) {
         </ScrollView>
         <BottomBar>
           <Button
+            label="Cook step by step"
+            onPress={() =>
+              router.push({
+                pathname: "/recipe/[id]/steps",
+                params: { id: String(found.recipeId) },
+              })
+            }
+          />
+          <Button
+            variant="secondary"
             label="I made it"
             onPress={() =>
               router.push({
