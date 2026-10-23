@@ -49,6 +49,23 @@ export function useRecipes(scanId: bigint | undefined, filters: RecipeFilters) {
   return query;
 }
 
+/** useComboRecipes reads both fridges' shelves without borrowing another combo's last answer. */
+export function useComboRecipes(comboId: bigint | undefined, filters: RecipeFilters) {
+  const shownCombo = useRef<bigint | undefined>(undefined);
+  const query = useQuery(CookService.method.listRecipes, comboRecipesInput(comboId, filters), {
+    placeholderData: (previous) => shelvesPlaceholder(previous, shownCombo.current, comboId),
+  });
+  useEffect(() => {
+    if (query.data !== undefined && !query.isPlaceholderData) shownCombo.current = comboId;
+  }, [query.data, query.isPlaceholderData, comboId]);
+  return query;
+}
+
+/** comboRecipesInput keeps the merged-list selector separate from the solo scan selector. */
+export function comboRecipesInput(comboId: bigint | undefined, filters: RecipeFilters) {
+  return comboId === undefined || comboId <= 0n ? skipToken : { comboId, ...filters };
+}
+
 /**
  * shelvesPlaceholder is what the shelves show while new ones load: the last ones, but only when
  * they belong to the scan being asked about.

@@ -49,6 +49,15 @@ func buildListRecipes(req *cookv1.ListRecipesRequest) (listInput, handlers.Field
 		ScanID     int64 `pfield:"scan_id"     validate:"gt=0"`
 		MaxMinutes int32 `pfield:"max_minutes" validate:"oneof=0 10 20 45"`
 	}{req.GetScanId(), req.GetMaxMinutes()})
+	if req.ComboId != nil {
+		invalid = handlers.Validate(struct {
+			ComboID    int64 `pfield:"combo_id" validate:"gt=0"`
+			MaxMinutes int32 `pfield:"max_minutes" validate:"oneof=0 10 20 45"`
+		}{req.GetComboId(), req.GetMaxMinutes()})
+		if req.ScanId != 0 {
+			invalid = append(invalid, handlers.FieldError{Field: "scan_id", Message: "choose a scan or a combo, not both"})
+		}
+	}
 	refuse := func(field, msg string) {
 		invalid = append(invalid, handlers.FieldError{Field: field, Message: msg})
 	}

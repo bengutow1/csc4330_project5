@@ -117,6 +117,8 @@ was built, and each owner replaced their own with its screen.
 | `fries/spots` | Spots, with the spot sheet (F2, F3) | #27 |
 | `crews` | Crews: your crews, make one, join with a code (B3) | #38 |
 | `combo/[id]/reveal` | Combo reveal: both scores, then the combined one (X3) | #36 |
+| `combo/[id]/recipes` | Combo recipes with ingredient owners (X4) | #39 |
+| `combo/[id]/bring` | Kitchen choice and the guest's bring checklist (X5) | #39 |
 
 The app opens on the Snap tab, as the design draws it (`docs/design.md`), so the kitchen home (K1,
 #15) has no route while it is on hold. Next issues add their own routes (`combo/…`,

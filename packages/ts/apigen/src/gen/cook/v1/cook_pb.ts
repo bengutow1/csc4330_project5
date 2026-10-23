@@ -17,7 +17,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file cook/v1/cook.proto.
  */
 export const file_cook_v1_cook: GenFile = /*@__PURE__*/
-  fileDesc("ChJjb29rL3YxL2Nvb2sucHJvdG8SB2Nvb2sudjEiRQoEUmFuaxIMCgRuYW1lGAEgASgJEgwKBG5leHQYAiABKAkSDwoHdG9fbmV4dBgDIAEoBRIQCghwcm9ncmVzcxgEIAEoASI6CgVCYWRnZRIMCgRuYW1lGAEgASgJEhMKC2hvd190b19lYXJuGAIgASgJEg4KBmVhcm5lZBgDIAEoCCJQCgtDb29raW5nU3RlcBITCgtpbnN0cnVjdGlvbhgBIAEoCRIaCg10aW1lcl9zZWNvbmRzGAIgASgFSACIAQFCEAoOX3RpbWVyX3NlY29uZHMigQIKBlJlY2lwZRIRCglyZWNpcGVfaWQYASABKAMSDQoFdGl0bGUYAiABKAkSDwoHbWludXRlcxgDIAEoBRInCgpkaWZmaWN1bHR5GAQgASgOMhMuY29vay52MS5EaWZmaWN1bHR5EigKCWVxdWlwbWVudBgFIAMoDjIVLmFjY291bnQudjEuRXF1aXBtZW50EgwKBHVzZXMYBiADKAkSDwoHbWlzc2luZxgHIAMoCRINCgVzdGVwcxgIIAMoCRIWCg5wb2ludHNfcHJldmlldxgJIAEoBRIrCg1jb29raW5nX3N0ZXBzGAogAygLMhQuY29vay52MS5Db29raW5nU3RlcCKEAQoSTGlzdFJlY2lwZXNSZXF1ZXN0Eg8KB3NjYW5faWQYASABKAMSEwoLbWF4X21pbnV0ZXMYAiABKAUSKAoJZXF1aXBtZW50GAMgAygOMhUuYWNjb3VudC52MS5FcXVpcG1lbnQSHgoEZGlldBgEIAEoDjIQLmFjY291bnQudjEuRGlldCJjChNMaXN0UmVjaXBlc1Jlc3BvbnNlEiQKC21ha2VfaXRfbm93GAEgAygLMg8uY29vay52MS5SZWNpcGUSJgoNb25lX2l0ZW1fYXdheRgCIAMoCzIPLmNvb2sudjEuUmVjaXBlIiUKEEdldFJlY2lwZVJlcXVlc3QSEQoJcmVjaXBlX2lkGAEgASgDIjQKEUdldFJlY2lwZVJlc3BvbnNlEh8KBnJlY2lwZRgBIAEoCzIPLmNvb2sudjEuUmVjaXBlIjQKEFBsYXRlTWVhbFJlcXVlc3QSEQoJcmVjaXBlX2lkGAEgASgDEg0KBXBob3RvGAIgASgMIjYKEVBsYXRlTWVhbFJlc3BvbnNlEiEKB3JlY2VpcHQYASABKAsyEC5jb29rLnYxLlJlY2VpcHQi3AEKB1JlY2VpcHQSDgoGcGFzc2VkGAEgASgIEg8KB21lc3NhZ2UYAiABKAkSIQoFbGluZXMYAyADKAsyEi5jb29rLnYxLkF3YXJkTGluZRINCgV0b3RhbBgEIAEoBRITCgtzdHJlYWtfZGF5cxgFIAEoBRIiCgpuZXdfYmFkZ2VzGAYgAygLMg4uY29vay52MS5CYWRnZRIiCgtyYW5rX2JlZm9yZRgHIAEoCzINLmNvb2sudjEuUmFuaxIhCgpyYW5rX2FmdGVyGAggASgLMg0uY29vay52MS5SYW5rIkEKCUF3YXJkTGluZRIkCgZyZWFzb24YASABKA4yFC5jb29rLnYxLlBvaW50UmVhc29uEg4KBnBvaW50cxgCIAEoBSppCgpEaWZmaWN1bHR5EhoKFkRJRkZJQ1VMVFlfVU5TUEVDSUZJRUQQABITCg9ESUZGSUNVTFRZX0VBU1kQARIVChFESUZGSUNVTFRZX01FRElVTRACEhMKD0RJRkZJQ1VMVFlfSEFSRBADKrsBCgtQb2ludFJlYXNvbhIcChhQT0lOVF9SRUFTT05fVU5TUEVDSUZJRUQQABIVChFQT0lOVF9SRUFTT05fQ09PSxABEh4KGlBPSU5UX1JFQVNPTl9TQ1JBUFBZX0JPTlVTEAISIQodUE9JTlRfUkVBU09OX0FHQUlOU1RfQUxMX09ERFMQAxIXChNQT0lOVF9SRUFTT05fU1RSRUFLEAQSGwoXUE9JTlRfUkVBU09OX0NPTUJPX0NPT0sQBTLfAQoLQ29va1NlcnZpY2USSAoLTGlzdFJlY2lwZXMSGy5jb29rLnYxLkxpc3RSZWNpcGVzUmVxdWVzdBocLmNvb2sudjEuTGlzdFJlY2lwZXNSZXNwb25zZRJCCglHZXRSZWNpcGUSGS5jb29rLnYxLkdldFJlY2lwZVJlcXVlc3QaGi5jb29rLnYxLkdldFJlY2lwZVJlc3BvbnNlEkIKCVBsYXRlTWVhbBIZLmNvb2sudjEuUGxhdGVNZWFsUmVxdWVzdBoaLmNvb2sudjEuUGxhdGVNZWFsUmVzcG9uc2VCngEKC2NvbS5jb29rLnYxQglDb29rUHJvdG9QAVpHZ2l0aHViLmNvbS9iZW5ndXRvdzEvY3NjNDMzMF9wcm9qZWN0NS9wYWNrYWdlcy9nby9hcGlnZW4vY29vay92MTtjb29rdjGiAgNDWFiqAgdDb29rLlYxygIHQ29va1xWMeICE0Nvb2tcVjFcR1BCTWV0YWRhdGHqAghDb29rOjpWMWIGcHJvdG8z", [file_account_v1_account]);
+  fileDesc("ChJjb29rL3YxL2Nvb2sucHJvdG8SB2Nvb2sudjEiRQoEUmFuaxIMCgRuYW1lGAEgASgJEgwKBG5leHQYAiABKAkSDwoHdG9fbmV4dBgDIAEoBRIQCghwcm9ncmVzcxgEIAEoASI6CgVCYWRnZRIMCgRuYW1lGAEgASgJEhMKC2hvd190b19lYXJuGAIgASgJEg4KBmVhcm5lZBgDIAEoCCJQCgtDb29raW5nU3RlcBITCgtpbnN0cnVjdGlvbhgBIAEoCRIaCg10aW1lcl9zZWNvbmRzGAIgASgFSACIAQFCEAoOX3RpbWVyX3NlY29uZHMi3wIKBlJlY2lwZRIRCglyZWNpcGVfaWQYASABKAMSDQoFdGl0bGUYAiABKAkSDwoHbWludXRlcxgDIAEoBRInCgpkaWZmaWN1bHR5GAQgASgOMhMuY29vay52MS5EaWZmaWN1bHR5EigKCWVxdWlwbWVudBgFIAMoDjIVLmFjY291bnQudjEuRXF1aXBtZW50EgwKBHVzZXMYBiADKAkSDwoHbWlzc2luZxgHIAMoCRINCgVzdGVwcxgIIAMoCRIWCg5wb2ludHNfcHJldmlldxgJIAEoBRIrCg1jb29raW5nX3N0ZXBzGAogAygLMhQuY29vay52MS5Db29raW5nU3RlcBIQCghjb21ib19pZBgLIAEoAxIVCg1vbmx5X3RvZ2V0aGVyGAwgASgIEjMKEWluZ3JlZGllbnRfb3duZXJzGA0gAygLMhguY29vay52MS5JbmdyZWRpZW50T3duZXIiOQoPSW5ncmVkaWVudE93bmVyEhIKCmFjY291bnRfaWQYASABKAMSEgoKaW5ncmVkaWVudBgCIAEoCSKoAQoSTGlzdFJlY2lwZXNSZXF1ZXN0Eg8KB3NjYW5faWQYASABKAMSEwoLbWF4X21pbnV0ZXMYAiABKAUSKAoJZXF1aXBtZW50GAMgAygOMhUuYWNjb3VudC52MS5FcXVpcG1lbnQSHgoEZGlldBgEIAEoDjIQLmFjY291bnQudjEuRGlldBIVCghjb21ib19pZBgFIAEoA0gAiAEBQgsKCV9jb21ib19pZCJjChNMaXN0UmVjaXBlc1Jlc3BvbnNlEiQKC21ha2VfaXRfbm93GAEgAygLMg8uY29vay52MS5SZWNpcGUSJgoNb25lX2l0ZW1fYXdheRgCIAMoCzIPLmNvb2sudjEuUmVjaXBlIiUKEEdldFJlY2lwZVJlcXVlc3QSEQoJcmVjaXBlX2lkGAEgASgDIjQKEUdldFJlY2lwZVJlc3BvbnNlEh8KBnJlY2lwZRgBIAEoCzIPLmNvb2sudjEuUmVjaXBlIjQKEFBsYXRlTWVhbFJlcXVlc3QSEQoJcmVjaXBlX2lkGAEgASgDEg0KBXBob3RvGAIgASgMIjYKEVBsYXRlTWVhbFJlc3BvbnNlEiEKB3JlY2VpcHQYASABKAsyEC5jb29rLnYxLlJlY2VpcHQi3AEKB1JlY2VpcHQSDgoGcGFzc2VkGAEgASgIEg8KB21lc3NhZ2UYAiABKAkSIQoFbGluZXMYAyADKAsyEi5jb29rLnYxLkF3YXJkTGluZRINCgV0b3RhbBgEIAEoBRITCgtzdHJlYWtfZGF5cxgFIAEoBRIiCgpuZXdfYmFkZ2VzGAYgAygLMg4uY29vay52MS5CYWRnZRIiCgtyYW5rX2JlZm9yZRgHIAEoCzINLmNvb2sudjEuUmFuaxIhCgpyYW5rX2FmdGVyGAggASgLMg0uY29vay52MS5SYW5rIkEKCUF3YXJkTGluZRIkCgZyZWFzb24YASABKA4yFC5jb29rLnYxLlBvaW50UmVhc29uEg4KBnBvaW50cxgCIAEoBSppCgpEaWZmaWN1bHR5EhoKFkRJRkZJQ1VMVFlfVU5TUEVDSUZJRUQQABITCg9ESUZGSUNVTFRZX0VBU1kQARIVChFESUZGSUNVTFRZX01FRElVTRACEhMKD0RJRkZJQ1VMVFlfSEFSRBADKrsBCgtQb2ludFJlYXNvbhIcChhQT0lOVF9SRUFTT05fVU5TUEVDSUZJRUQQABIVChFQT0lOVF9SRUFTT05fQ09PSxABEh4KGlBPSU5UX1JFQVNPTl9TQ1JBUFBZX0JPTlVTEAISIQodUE9JTlRfUkVBU09OX0FHQUlOU1RfQUxMX09ERFMQAxIXChNQT0lOVF9SRUFTT05fU1RSRUFLEAQSGwoXUE9JTlRfUkVBU09OX0NPTUJPX0NPT0sQBTLfAQoLQ29va1NlcnZpY2USSAoLTGlzdFJlY2lwZXMSGy5jb29rLnYxLkxpc3RSZWNpcGVzUmVxdWVzdBocLmNvb2sudjEuTGlzdFJlY2lwZXNSZXNwb25zZRJCCglHZXRSZWNpcGUSGS5jb29rLnYxLkdldFJlY2lwZVJlcXVlc3QaGi5jb29rLnYxLkdldFJlY2lwZVJlc3BvbnNlEkIKCVBsYXRlTWVhbBIZLmNvb2sudjEuUGxhdGVNZWFsUmVxdWVzdBoaLmNvb2sudjEuUGxhdGVNZWFsUmVzcG9uc2VCngEKC2NvbS5jb29rLnYxQglDb29rUHJvdG9QAVpHZ2l0aHViLmNvbS9iZW5ndXRvdzEvY3NjNDMzMF9wcm9qZWN0NS9wYWNrYWdlcy9nby9hcGlnZW4vY29vay92MTtjb29rdjGiAgNDWFiqAgdDb29rLlYxygIHQ29va1xWMeICE0Nvb2tcVjFcR1BCTWV0YWRhdGHqAghDb29rOjpWMWIGcHJvdG8z", [file_account_v1_account]);
 
 /**
  * Rank is the title a player's all-time points earn and the way to the next one. The profile
@@ -191,6 +191,27 @@ export type Recipe = Message<"cook.v1.Recipe"> & {
    * @generated from field: repeated cook.v1.CookingStep cooking_steps = 10;
    */
   cookingSteps: CookingStep[];
+
+  /**
+   * 0 for a solo recipe; otherwise the combo whose merged food this uses.
+   *
+   * @generated from field: int64 combo_id = 11;
+   */
+  comboId: bigint;
+
+  /**
+   * True only when the dish needs food unique to each fridge.
+   *
+   * @generated from field: bool only_together = 12;
+   */
+  onlyTogether: boolean;
+
+  /**
+   * Every scanned food the dish uses, tagged with each fridge that has it. Staples have no tag.
+   *
+   * @generated from field: repeated cook.v1.IngredientOwner ingredient_owners = 13;
+   */
+  ingredientOwners: IngredientOwner[];
 };
 
 /**
@@ -199,6 +220,32 @@ export type Recipe = Message<"cook.v1.Recipe"> & {
  */
 export const RecipeSchema: GenMessage<Recipe> = /*@__PURE__*/
   messageDesc(file_cook_v1_cook, 3);
+
+/**
+ * IngredientOwner tags one recipe ingredient with its fridge's public account id.
+ *
+ * @generated from message cook.v1.IngredientOwner
+ */
+export type IngredientOwner = Message<"cook.v1.IngredientOwner"> & {
+  /**
+   * @generated from field: int64 account_id = 1;
+   */
+  accountId: bigint;
+
+  /**
+   * The recipe's ingredient name, at most 40 characters.
+   *
+   * @generated from field: string ingredient = 2;
+   */
+  ingredient: string;
+};
+
+/**
+ * Describes the message cook.v1.IngredientOwner.
+ * Use `create(IngredientOwnerSchema)` to create a new message.
+ */
+export const IngredientOwnerSchema: GenMessage<IngredientOwner> = /*@__PURE__*/
+  messageDesc(file_cook_v1_cook, 4);
 
 /**
  * @generated from message cook.v1.ListRecipesRequest
@@ -231,6 +278,13 @@ export type ListRecipesRequest = Message<"cook.v1.ListRecipesRequest"> & {
    * @generated from field: account.v1.Diet diet = 4;
    */
   diet: Diet;
+
+  /**
+   * When set, use the combo's two fridges instead of scan_id. Positive; mutually exclusive.
+   *
+   * @generated from field: optional int64 combo_id = 5;
+   */
+  comboId?: bigint | undefined;
 };
 
 /**
@@ -238,7 +292,7 @@ export type ListRecipesRequest = Message<"cook.v1.ListRecipesRequest"> & {
  * Use `create(ListRecipesRequestSchema)` to create a new message.
  */
 export const ListRecipesRequestSchema: GenMessage<ListRecipesRequest> = /*@__PURE__*/
-  messageDesc(file_cook_v1_cook, 4);
+  messageDesc(file_cook_v1_cook, 5);
 
 /**
  * The shelves come whole, without a cursor: they hold one scan's recipes, a handful from the
@@ -267,7 +321,7 @@ export type ListRecipesResponse = Message<"cook.v1.ListRecipesResponse"> & {
  * Use `create(ListRecipesResponseSchema)` to create a new message.
  */
 export const ListRecipesResponseSchema: GenMessage<ListRecipesResponse> = /*@__PURE__*/
-  messageDesc(file_cook_v1_cook, 5);
+  messageDesc(file_cook_v1_cook, 6);
 
 /**
  * @generated from message cook.v1.GetRecipeRequest
@@ -284,7 +338,7 @@ export type GetRecipeRequest = Message<"cook.v1.GetRecipeRequest"> & {
  * Use `create(GetRecipeRequestSchema)` to create a new message.
  */
 export const GetRecipeRequestSchema: GenMessage<GetRecipeRequest> = /*@__PURE__*/
-  messageDesc(file_cook_v1_cook, 6);
+  messageDesc(file_cook_v1_cook, 7);
 
 /**
  * @generated from message cook.v1.GetRecipeResponse
@@ -301,7 +355,7 @@ export type GetRecipeResponse = Message<"cook.v1.GetRecipeResponse"> & {
  * Use `create(GetRecipeResponseSchema)` to create a new message.
  */
 export const GetRecipeResponseSchema: GenMessage<GetRecipeResponse> = /*@__PURE__*/
-  messageDesc(file_cook_v1_cook, 7);
+  messageDesc(file_cook_v1_cook, 8);
 
 /**
  * @generated from message cook.v1.PlateMealRequest
@@ -327,7 +381,7 @@ export type PlateMealRequest = Message<"cook.v1.PlateMealRequest"> & {
  * Use `create(PlateMealRequestSchema)` to create a new message.
  */
 export const PlateMealRequestSchema: GenMessage<PlateMealRequest> = /*@__PURE__*/
-  messageDesc(file_cook_v1_cook, 8);
+  messageDesc(file_cook_v1_cook, 9);
 
 /**
  * @generated from message cook.v1.PlateMealResponse
@@ -344,7 +398,7 @@ export type PlateMealResponse = Message<"cook.v1.PlateMealResponse"> & {
  * Use `create(PlateMealResponseSchema)` to create a new message.
  */
 export const PlateMealResponseSchema: GenMessage<PlateMealResponse> = /*@__PURE__*/
-  messageDesc(file_cook_v1_cook, 9);
+  messageDesc(file_cook_v1_cook, 10);
 
 /**
  * Receipt is what one plate earned, line by line.
@@ -414,7 +468,7 @@ export type Receipt = Message<"cook.v1.Receipt"> & {
  * Use `create(ReceiptSchema)` to create a new message.
  */
 export const ReceiptSchema: GenMessage<Receipt> = /*@__PURE__*/
-  messageDesc(file_cook_v1_cook, 10);
+  messageDesc(file_cook_v1_cook, 11);
 
 /**
  * AwardLine is one award: a line on the receipt and a row in the ledger.
@@ -438,7 +492,7 @@ export type AwardLine = Message<"cook.v1.AwardLine"> & {
  * Use `create(AwardLineSchema)` to create a new message.
  */
 export const AwardLineSchema: GenMessage<AwardLine> = /*@__PURE__*/
-  messageDesc(file_cook_v1_cook, 11);
+  messageDesc(file_cook_v1_cook, 12);
 
 /**
  * Difficulty is how hard a recipe is to make.

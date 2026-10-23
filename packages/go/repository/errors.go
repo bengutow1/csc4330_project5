@@ -29,6 +29,8 @@ var (
 	ErrComboEnded = errors.New("that combo has already ended")
 	// ErrComboFull fires when the guest seat is occupied.
 	ErrComboFull = errors.New("that combo is full")
+	// ErrComboNotReady fires before both members have scanned.
+	ErrComboNotReady = errors.New("both players need to scan before choosing a recipe")
 	// ErrNoCrewForCode fires when no crew holds the code a player typed to join.
 	ErrNoCrewForCode = errors.New("no crew has that code, check it and try again")
 	// ErrTooManyCrews fires when a player already in the most crews one can be in makes or joins

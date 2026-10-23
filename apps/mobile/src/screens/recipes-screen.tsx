@@ -112,8 +112,8 @@ export function RecipesScreen(props: { scanId: string | undefined }) {
           />
         ) : (
           <>
-            <Shelf title="Make it now" recipes={makeItNow} onOpen={open} />
-            <Shelf title="One item away" recipes={oneItemAway} onOpen={open} />
+            <RecipeShelf title="Make it now" recipes={makeItNow} onOpen={open} />
+            <RecipeShelf title="One item away" recipes={oneItemAway} onOpen={open} />
           </>
         )}
       </View>
@@ -143,7 +143,7 @@ export function RecipesScreen(props: { scanId: string | undefined }) {
             onEdit={() => setFixing(true)}
           />
         )}
-        <Chips filters={filters} onChange={setFilters} />
+        <RecipeChips filters={filters} onChange={setFilters} />
         {shelves}
       </ScrollView>
       {/* Mounted only while open, so each opening starts from the verdict's own list. */}
@@ -184,10 +184,10 @@ function Summary(props: { names: string[]; onEdit: () => void }) {
 }
 
 /**
- * Chips are the filters: a time, the equipment the player has, and a diet. The phone only says
+ * RecipeChips are the filters: a time, the equipment the player has, and a diet. The phone only says
  * which are on; the server narrows the shelves.
  */
-function Chips(props: {
+export function RecipeChips(props: {
   filters: RecipeFilters;
   onChange: (change: (filters: RecipeFilters) => RecipeFilters) => void;
 }) {
@@ -226,8 +226,13 @@ function Chips(props: {
   );
 }
 
-/** Shelf is one of the two shelves, a heading over its cards. An empty shelf shows nothing. */
-function Shelf(props: { title: string; recipes: Recipe[]; onOpen: (recipe: Recipe) => void }) {
+/** RecipeShelf is a heading over recipe cards. An empty shelf shows nothing. */
+export function RecipeShelf(props: {
+  title: string;
+  recipes: Recipe[];
+  onOpen: (recipe: Recipe) => void;
+  owners?: ReadonlyMap<bigint, string>;
+}) {
   if (props.recipes.length === 0) {
     return null;
   }
@@ -240,6 +245,7 @@ function Shelf(props: { title: string; recipes: Recipe[]; onOpen: (recipe: Recip
         <RecipeCard
           key={String(recipe.recipeId)}
           recipe={recipe}
+          owners={props.owners}
           onPress={() => props.onOpen(recipe)}
         />
       ))}
@@ -251,7 +257,11 @@ function Shelf(props: { title: string; recipes: Recipe[]; onOpen: (recipe: Recip
  * RecipeCard is one recipe on a shelf: its time, difficulty and equipment, how much of it the
  * player has, and the points plating it would earn. The whole card opens the recipe.
  */
-function RecipeCard(props: { recipe: Recipe; onPress: () => void }) {
+function RecipeCard(props: {
+  recipe: Recipe;
+  onPress: () => void;
+  owners?: ReadonlyMap<bigint, string>;
+}) {
   const { recipe } = props;
   const difficulty = difficultyLabel(recipe.difficulty);
   const equipment = equipmentLabel(recipe.equipment);
@@ -277,6 +287,14 @@ function RecipeCard(props: { recipe: Recipe; onPress: () => void }) {
         </View>
         {equipment === undefined ? null : <Text style={styles.caption}>{equipment}</Text>}
         <Text style={styles.caption}>{haveLabel(recipe)}</Text>
+        {recipe.onlyTogether ? <Text style={styles.points}>Only together</Text> : null}
+        {props.owners === undefined
+          ? null
+          : recipe.ingredientOwners.map((item) => (
+              <Text key={`${item.accountId}-${item.ingredient}`} style={styles.caption}>
+                {item.ingredient}: @{props.owners?.get(item.accountId)}
+              </Text>
+            ))}
         <Text style={styles.points}>{pointsLabel(recipe.pointsPreview)}</Text>
       </View>
       <View style={styles.chevron}>

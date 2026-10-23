@@ -13,14 +13,20 @@ create table app.plate (
     -- Checked at the end of the statement, so deleting an account takes its plates and its
     -- recipes together, while a plated recipe never goes on its own.
     recipe_id    bigint      not null references app.recipe (recipe_id) on delete no action,
+    -- The second player's own plate record shares the one checked photo. If the first player
+    -- deletes their account, the surviving copy becomes the photo's unique original.
+    combo_plate_id bigint references app.plate (plate_id) on delete set null,
     -- A JPEG of at most 2 MB (the photo tag).
     photo        bytea       not null check (octet_length(photo) between 1 and 2097152),
     photo_sha256 bytea       not null check (octet_length(photo_sha256) = 32),
     -- When it was plated, by the server's clock: the late-night badge reads its hour.
     created_at   timestamptz not null default now(),
     -- A photo seen before is this constraint firing, never a check before the insert.
-    constraint plate_photo_sha256_key unique (photo_sha256)
+    check (combo_plate_id is null or combo_plate_id <> plate_id)
 );
+
+create unique index plate_photo_sha256_key on app.plate (photo_sha256) where combo_plate_id is null;
+create unique index plate_combo_plate_id_key on app.plate (combo_plate_id) where combo_plate_id is not null;
 
 create index plate_account_id_created_at_idx on app.plate (account_id, created_at desc);
 

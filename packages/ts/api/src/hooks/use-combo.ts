@@ -7,11 +7,13 @@ const WAITING_POLL_MS = 2000;
 
 /**
  * useCombo reads one combo. While it waits for a scan it asks again every 2 s, the one polling
- * this app does (ts-api.md); once both fridges are in, or the combo ends, it stops.
+ * this app does (ts-api.md); once both fridges are in, or the combo ends, it stops. Cooking
+ * screens pass false so only the lobby and reveal watch for the second fridge.
  */
-export function useCombo(comboId: bigint | undefined) {
+export function useCombo(comboId: bigint | undefined, watchWaiting = true) {
   return useQuery(ComboService.method.getCombo, comboInput(comboId), {
-    refetchInterval: (query) => (comboWaiting(query.state.data?.combo) ? WAITING_POLL_MS : false),
+    refetchInterval: (query) =>
+      watchWaiting && comboWaiting(query.state.data?.combo) ? WAITING_POLL_MS : false,
   });
 }
 

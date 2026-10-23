@@ -32,6 +32,7 @@ export {
   type Badge,
   type CookingStep,
   Difficulty,
+  type IngredientOwner,
   PointReason,
   type Rank,
   type Recipe,
@@ -66,6 +67,7 @@ export {
 export { comboWaiting, useCombo } from "./hooks/use-combo.ts";
 export {
   type RecipeFilters,
+  useComboRecipes,
   useInvalidateRecipes,
   usePlateMeal,
   useRecipe,

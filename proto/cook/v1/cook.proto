@@ -91,6 +91,18 @@ message Recipe {
   int32 points_preview = 9;
   // Structured instructions for step-by-step cooking. steps stays for older clients.
   repeated CookingStep cooking_steps = 10;
+  // 0 for a solo recipe; otherwise the combo whose merged food this uses.
+  int64 combo_id = 11;
+  // True only when the dish needs food unique to each fridge.
+  bool only_together = 12;
+  // Every scanned food the dish uses, tagged with each fridge that has it. Staples have no tag.
+  repeated IngredientOwner ingredient_owners = 13;
+}
+
+// IngredientOwner tags one recipe ingredient with its fridge's public account id.
+message IngredientOwner {
+  int64 account_id = 1;
+  string ingredient = 2; // The recipe's ingredient name, at most 40 characters.
 }
 
 message ListRecipesRequest {
@@ -102,6 +114,8 @@ message ListRecipesRequest {
   repeated account.v1.Equipment equipment = 3;
   // Keep only recipes that fit this diet; unspecified or none = no filter.
   account.v1.Diet diet = 4;
+  // When set, use the combo's two fridges instead of scan_id. Positive; mutually exclusive.
+  optional int64 combo_id = 5;
 }
 
 // The shelves come whole, without a cursor: they hold one scan's recipes, a handful from the
