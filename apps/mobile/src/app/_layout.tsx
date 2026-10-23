@@ -89,6 +89,7 @@ function RootStack() {
           <Stack.Screen name="fries" options={{ headerShown: false }} />
           <Stack.Screen name="settings" />
           <Stack.Screen name="crews" />
+          <Stack.Screen name="combo/[id]/reveal" />
         </Stack.Protected>
       </Stack>
       {covered ? (
