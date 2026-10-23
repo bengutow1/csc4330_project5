@@ -431,7 +431,9 @@ func (x *Verdict) GetCreatedAt() *timestamppb.Timestamp {
 type CreateScanRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// 1 to 3 photos of the same kitchen, together under the 4 MiB the server reads per request.
-	Photos        []*Photo `protobuf:"bytes,1,rep,name=photos,proto3" json:"photos,omitempty"`
+	Photos []*Photo `protobuf:"bytes,1,rep,name=photos,proto3" json:"photos,omitempty"`
+	// When set, the caller must belong to this open, unexpired combo. Positive; 0 is refused.
+	ComboId       *int64 `protobuf:"varint,2,opt,name=combo_id,json=comboId,proto3,oneof" json:"combo_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -471,6 +473,13 @@ func (x *CreateScanRequest) GetPhotos() []*Photo {
 		return x.Photos
 	}
 	return nil
+}
+
+func (x *CreateScanRequest) GetComboId() int64 {
+	if x != nil && x.ComboId != nil {
+		return *x.ComboId
+	}
+	return 0
 }
 
 type CreateScanResponse struct {
@@ -807,9 +816,11 @@ const file_scan_v1_scan_proto_rawDesc = "" +
 	"\x05roast\x18\x04 \x01(\tR\x05roast\x125\n" +
 	"\vingredients\x18\x05 \x03(\v2\x13.scan.v1.IngredientR\vingredients\x129\n" +
 	"\n" +
-	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\";\n" +
+	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"h\n" +
 	"\x11CreateScanRequest\x12&\n" +
-	"\x06photos\x18\x01 \x03(\v2\x0e.scan.v1.PhotoR\x06photos\"@\n" +
+	"\x06photos\x18\x01 \x03(\v2\x0e.scan.v1.PhotoR\x06photos\x12\x1e\n" +
+	"\bcombo_id\x18\x02 \x01(\x03H\x00R\acomboId\x88\x01\x01B\v\n" +
+	"\t_combo_id\"@\n" +
 	"\x12CreateScanResponse\x12*\n" +
 	"\averdict\x18\x01 \x01(\v2\x10.scan.v1.VerdictR\averdict\")\n" +
 	"\x0eGetScanRequest\x12\x17\n" +
@@ -919,6 +930,7 @@ func file_scan_v1_scan_proto_init() {
 	if File_scan_v1_scan_proto != nil {
 		return
 	}
+	file_scan_v1_scan_proto_msgTypes[3].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

@@ -40,6 +40,7 @@ type Scan struct {
 	vision Vision
 	limit  *handlers.Limiter
 	log    *slog.Logger
+	now    func() time.Time
 }
 
 // Config is what Scan needs to exist.
@@ -50,6 +51,7 @@ type Config struct {
 	// Limit caps scans per account. main.go passes DefaultLimit; nil limits nothing.
 	Limit *handlers.Limiter
 	Log   *slog.Logger
+	Now   func() time.Time // nil uses the wall clock; combo expiry tests fix it.
 }
 
 // DefaultLimit is the limit the API serves with: scansPerHour for each player.
@@ -63,12 +65,16 @@ func NewScan(cfg Config) *Scan {
 	if log == nil {
 		log = slog.New(slog.DiscardHandler)
 	}
+	if cfg.Now == nil {
+		cfg.Now = time.Now
+	}
 	return &Scan{
 		repo:   cfg.Repo,
-		gate:   handlers.Gate{Auth: cfg.Auth},
+		gate:   handlers.Gate{Auth: cfg.Auth, Repo: cfg.Repo},
 		vision: cfg.Vision,
 		limit:  cfg.Limit,
 		log:    log,
+		now:    cfg.Now,
 	}
 }
 
@@ -93,6 +99,18 @@ func (h *Scan) CreateScan(
 	photos, invalid := buildPhotos(req.Msg.Photos)
 	if invalid != nil {
 		return nil, h.fail(op, invalid)
+	}
+	if req.Msg.ComboId != nil {
+		_, c, err := h.gate.ComboMember(ctx, req.Msg.GetComboId())
+		if err != nil {
+			return nil, h.fail(op, err)
+		}
+		if c.State == repository.ComboEnded {
+			return nil, h.fail(op, repository.ErrComboEnded)
+		}
+		if !c.ExpiresAt.After(h.now()) {
+			return nil, h.fail(op, repository.ErrComboExpired)
+		}
 	}
 
 	// 3. The model's time costs money, so each player gets scansPerHour
@@ -128,7 +146,12 @@ func (h *Scan) CreateScan(
 	// 7. Store the verdict, and answer with it as stored
 	// Postgres text cannot hold a NUL; the roast's line breaks may be meant, so only NULs go
 	roast := strings.ReplaceAll(fridge.Roast, "\x00", "")
-	scan, err := h.repo.CreateScan(ctx, me.AccountID, score, roast, items)
+	var scan repository.Scan
+	if req.Msg.ComboId == nil {
+		scan, err = h.repo.CreateScan(ctx, me.AccountID, score, roast, items)
+	} else {
+		scan, err = h.repo.CreateComboScan(ctx, me.AccountID, req.Msg.GetComboId(), score, roast, items, h.now())
+	}
 	if err != nil {
 		return nil, h.fail(op, err)
 	}

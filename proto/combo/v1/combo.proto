@@ -1,0 +1,89 @@
+// combo.v1: two players merge their fridges under a six-digit invite code.
+syntax = "proto3";
+
+package combo.v1;
+
+import "google/protobuf/timestamp.proto";
+import "scan/v1/scan.proto";
+
+// ComboService starts, joins and reads a two-player kitchen.
+service ComboService {
+  // StartCombo starts a two-hour combo and returns its invite code.
+  rpc StartCombo(StartComboRequest) returns (StartComboResponse);
+  // JoinCombo claims the last seat, limited per client IP.
+  rpc JoinCombo(JoinComboRequest) returns (JoinComboResponse);
+  // GetCombo is one indexed read, polled every two seconds only while waiting.
+  rpc GetCombo(GetComboRequest) returns (GetComboResponse);
+}
+
+// ComboHostService holds the controls only the host may use.
+service ComboHostService {
+  // EndCombo ends the invite and further scanning.
+  rpc EndCombo(EndComboRequest) returns (EndComboResponse);
+  // RemovePlayer removes the guest and their food from this combo.
+  rpc RemovePlayer(RemovePlayerRequest) returns (RemovePlayerResponse);
+}
+
+// ComboState describes the invite's lifecycle; an expired open combo cannot be joined.
+enum ComboState {
+  COMBO_STATE_UNSPECIFIED = 0;
+  COMBO_STATE_OPEN = 1;
+  COMBO_STATE_ENDED = 2;
+}
+
+// Combo carries at most two players and a verdict only once both have scanned.
+message Combo {
+  int64 combo_id = 1; // Positive id for subsequent calls.
+  string code = 2; // Exactly six digits, including leading zeroes.
+  int64 host_id = 3; // Public identity of the host, never the caller's credential.
+  ComboState state = 4;
+  google.protobuf.Timestamp expires_at = 5; // Exactly two hours after starting.
+  repeated Player players = 6; // At most two, host first.
+  CombinedVerdict verdict = 7; // Unset until both players have scanned.
+}
+
+// Player is a member's public identity and latest scan status for this combo.
+message Player {
+  int64 account_id = 1;
+  string handle = 2;
+  string avatar = 3;
+  scan.v1.Verdict scan = 4; // Unset while this player has not scanned.
+}
+
+// CombinedVerdict is scored by our code from both lists, preserving each food's owner.
+message CombinedVerdict {
+  int32 score = 1; // 0 to 100.
+  scan.v1.Tier tier = 2;
+  repeated OwnedIngredient ingredients = 3; // At most 80, in player then scan order.
+}
+
+// OwnedIngredient retains provenance even when the same food is in both fridges.
+message OwnedIngredient {
+  int64 account_id = 1;
+  scan.v1.Ingredient ingredient = 2;
+}
+
+message StartComboRequest {}
+message StartComboResponse {
+  Combo combo = 1;
+}
+message JoinComboRequest {
+  string code = 1;
+} // Exactly six digits after trimming.
+message JoinComboResponse {
+  Combo combo = 1;
+}
+message GetComboRequest {
+  int64 combo_id = 1;
+} // Required, positive.
+message GetComboResponse {
+  Combo combo = 1;
+}
+message EndComboRequest {
+  int64 combo_id = 1;
+} // Required, positive.
+message EndComboResponse {}
+message RemovePlayerRequest {
+  int64 combo_id = 1;
+} // Removes the only guest, never the host.
+message RemovePlayerResponse {}

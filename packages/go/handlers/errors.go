@@ -58,6 +58,14 @@ func ConnectErr(log *slog.Logger, op string, err error) error {
 	// FailedPrecondition, not AlreadyExists: the plate is new, and the next meal window takes it.
 	case errors.Is(err, repository.ErrMealWindowCooked):
 		return connect.NewError(connect.CodeFailedPrecondition, repository.ErrMealWindowCooked)
+	case errors.Is(err, repository.ErrComboCodeMissing):
+		return connect.NewError(connect.CodeNotFound, repository.ErrComboCodeMissing)
+	case errors.Is(err, repository.ErrComboExpired):
+		return connect.NewError(connect.CodeFailedPrecondition, repository.ErrComboExpired)
+	case errors.Is(err, repository.ErrComboEnded):
+		return connect.NewError(connect.CodeFailedPrecondition, repository.ErrComboEnded)
+	case errors.Is(err, repository.ErrComboFull):
+		return connect.NewError(connect.CodeResourceExhausted, repository.ErrComboFull)
 	// NotFound, in words of its own: the join screen tells a mistyped code apart from a lost one.
 	case errors.Is(err, repository.ErrNoCrewForCode):
 		return connect.NewError(connect.CodeNotFound, repository.ErrNoCrewForCode)

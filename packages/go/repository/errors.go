@@ -21,6 +21,14 @@ var (
 	ErrPlateSeen = errors.New("we've seen this plate before")
 	// ErrMealWindowCooked fires when the player already has this meal window's cook credit.
 	ErrMealWindowCooked = errors.New("you already cooked this meal window")
+	// ErrComboCodeMissing fires when no invite has this code.
+	ErrComboCodeMissing = errors.New("no combo has that code")
+	// ErrComboExpired fires when an invite's two hours have elapsed.
+	ErrComboExpired = errors.New("that code has expired, ask for a new one")
+	// ErrComboEnded fires when the host has ended the combo.
+	ErrComboEnded = errors.New("that combo has already ended")
+	// ErrComboFull fires when the guest seat is occupied.
+	ErrComboFull = errors.New("that combo is full")
 	// ErrNoCrewForCode fires when no crew holds the code a player typed to join.
 	ErrNoCrewForCode = errors.New("no crew has that code, check it and try again")
 	// ErrTooManyCrews fires when a player already in the most crews one can be in makes or joins

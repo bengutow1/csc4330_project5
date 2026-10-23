@@ -1,5 +1,5 @@
 // Author: Caden Lund
-package scan
+package handlers
 
 import (
 	"strings"

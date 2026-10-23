@@ -99,6 +99,8 @@ message Verdict {
 message CreateScanRequest {
   // 1 to 3 photos of the same kitchen, together under the 4 MiB the server reads per request.
   repeated Photo photos = 1;
+  // When set, the caller must belong to this open, unexpired combo. Positive; 0 is refused.
+  optional int64 combo_id = 2;
 }
 
 message CreateScanResponse {
