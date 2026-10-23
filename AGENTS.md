@@ -8,7 +8,7 @@ together. `apps/` holds deployables, `packages/` holds shared code.
 Status: device accounts, scans, cooking for points, spots nearby, the board, crews and the profile. The API
 serves the health probes, `AccountService` (make a device account, check a handle, who am I, save
 the kitchen, delete the account and end its sessions), `ScanService` (judge a kitchen's photos with
-the vision mock, read a verdict, fix its list), `CookService` (a scan's recipes on two shelves, one
+Claude when `VISION_API_KEY` is set and the vision mock without it, read a verdict, fix its list), `CookService` (a scan's recipes on two shelves, one
 recipe, and a plate the mock checks, paid in points on a receipt), `FriesService` (spots nearby from
 the places mock, and fry runs), `BoardService` (Chefs or the Hall of Fries, this week or all time,
 paged with the caller's own row, campus-wide or one crew's, and the Fridge of the Week),

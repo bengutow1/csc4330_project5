@@ -274,6 +274,7 @@ func TestAnAnswerThatDoesNotDecodeIsUnavailableNeverAPartialFridge(t *testing.T)
 		{name: "answer has an unknown field", vendor: answering(t, `{"items":[],"roast":"Cold.","score":100}`)},
 		{name: "answer has trailing data", vendor: answering(t, `{"items":[],"roast":"Cold."}{"items":[]}`)},
 		{name: "answer is empty", vendor: answering(t, ``)},
+		{name: "roast runs far past 40 words", vendor: answering(t, `{"items":[],"roast":"`+strings.Repeat("cold ", 61)+`"}`)},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

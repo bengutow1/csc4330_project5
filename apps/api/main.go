@@ -93,6 +93,10 @@ func main() {
 		model := cmp.Or(os.Getenv("VISION_MODEL"), vision.DefaultModel)
 		fridgeReader = vision.NewClient(vision.Config{APIKey: visionKey, Model: model})
 		log.Info("vision model is live for scans", "model", model)
+		if visionPin != "" {
+			// The pin picks a mock fridge, and scans no longer read from the mock.
+			log.Warn("VISION_MOCK is ignored for scans while VISION_API_KEY is set", "pin", visionPin)
+		}
 		log.Info("vision mock is live for recipes and plates until #25",
 			"plates", cmp.Or(platePin, "every plate passes"))
 	case appEnv == "production":

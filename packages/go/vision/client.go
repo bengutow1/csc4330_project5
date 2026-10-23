@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/anthropics/anthropic-sdk-go/option"
@@ -22,6 +23,10 @@ const DefaultModel = "claude-opus-5-5"
 // readTimeout caps one fridge read: up to three photos usually take several seconds, and the
 // cap stays well under the API's 90 s write timeout so a hung call cannot hold the request open.
 const readTimeout = 45 * time.Second
+
+// maxRoast is the longest roast kept, in characters: the prompt asks for under 40 words, about 240,
+// and this leaves slack while the roast still fits the verdict and its 1080 by 1920 share card.
+const maxRoast = 300
 
 // readMaxTokens leaves the model room to think before a short JSON answer, without risking a
 // cut-off that would fail to decode.
@@ -143,8 +148,8 @@ func (c *Client) ReadFridge(ctx context.Context, photos [][]byte, level RoastLev
 	return fridge, nil
 }
 
-// decodeFridge reads the model's JSON into a Fridge, refusing unknown fields, trailing data and a
-// missing list or roast.
+// decodeFridge reads the model's JSON into a Fridge, refusing unknown fields, trailing data, a
+// missing list or roast, and a roast past maxRoast.
 func decodeFridge(text string) (Fridge, error) {
 	dec := json.NewDecoder(bytes.NewReader([]byte(text)))
 	dec.DisallowUnknownFields()
@@ -161,6 +166,8 @@ func decodeFridge(text string) (Fridge, error) {
 		return Fridge{}, errors.New("decode answer: no items")
 	case w.Roast == nil || strings.TrimSpace(*w.Roast) == "":
 		return Fridge{}, errors.New("decode answer: no roast")
+	case utf8.RuneCountInString(*w.Roast) > maxRoast:
+		return Fridge{}, fmt.Errorf("decode answer: roast of %d characters, over %d", utf8.RuneCountInString(*w.Roast), maxRoast)
 	}
 	items := make([]Item, 0, len(*w.Items))
 	for _, it := range *w.Items {
