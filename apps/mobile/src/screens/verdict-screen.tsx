@@ -9,6 +9,7 @@ import { Button } from "@/components/button";
 import { CountUp } from "@/components/count-up";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
+import { FoodArt } from "@/components/food-art";
 import { Header } from "@/components/header";
 import { IconButton } from "@/components/icon-button";
 import { IngredientSheet } from "@/components/ingredient-sheet";
@@ -192,10 +193,10 @@ function Sections(props: { list: readonly Item[] }) {
                   key={`${index}-${item.name}`}
                   style={styles.tile}
                 >
-                  {/* No ingredient photos exist, so the tile shows its category (docs/design.md). */}
-                  <View style={styles.art}>
+                  {/* The ingredient's photo, or its category's icon when it has none. */}
+                  <FoodArt name={item.name} style={styles.art}>
                     <Ionicons name={look.icon} size={30} color={COLORS.muted} />
-                  </View>
+                  </FoodArt>
                   <Text numberOfLines={2} style={styles.name}>
                     {item.name}
                   </Text>

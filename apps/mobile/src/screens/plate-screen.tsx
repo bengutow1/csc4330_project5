@@ -29,7 +29,9 @@ import { type PhotoSource, PLATE_PHOTO, shrinkPhoto } from "@/lib/shrink-photo";
 import { COLORS, SPACE, TYPE } from "@/theme";
 
 // The simulator has no camera, so a development build offers the same bundled photo as Snap.
-const SAMPLE_PHOTO = __DEV__ ? require("../../assets/dev/fridge.jpg") : null;
+const SAMPLE_PHOTO = __DEV__ ? require("../../assets/dev/plate.jpg") : null;
+// What the viewfinder plays in a development build, where the simulator has no camera.
+const DEMO_VIEW = __DEV__ ? require("../../assets/dev/plate-view.gif") : undefined;
 
 const WHY = "The camera checks the dish you made. Plate photos are kept for your profile.";
 const NO_CONNECTION = "Plates need a connection.";
@@ -199,6 +201,7 @@ function Plating(props: { recipeId: bigint }) {
           never finish. */}
       <Camera
         why={WHY}
+        demo={DEMO_VIEW}
         onShot={fromCamera}
         full={busy}
         beside={

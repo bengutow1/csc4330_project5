@@ -9,6 +9,7 @@ import { Button } from "@/components/button";
 import { Card, Divider } from "@/components/card";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
+import { FoodArt } from "@/components/food-art";
 import { IconButton } from "@/components/icon-button";
 import { Skeleton } from "@/components/skeleton";
 import {
@@ -142,10 +143,10 @@ function Top(props: { recipe: Recipe }) {
   return (
     <Card>
       <View style={styles.top}>
-        {/* No recipe photos exist, so the tile shows a plate (docs/design.md). */}
-        <View style={styles.art}>
+        {/* The recipe's photo, or a plate when it has none. */}
+        <FoodArt name={recipe.title} style={styles.art}>
           <Ionicons name="restaurant-outline" size={ART_ICON} color={COLORS.muted} />
-        </View>
+        </FoodArt>
         <View style={styles.topText}>
           <Text accessibilityRole="header" style={styles.title}>
             {recipe.title}
