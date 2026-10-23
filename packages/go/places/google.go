@@ -37,7 +37,8 @@ const (
 // the hours and the price already put every call in its Enterprise tier, so nothing else rides
 // along.
 const fieldMask = "places.id,places.displayName,places.location,places.shortFormattedAddress," +
-	"places.types,places.priceLevel,places.currentOpeningHours,places.utcOffsetMinutes"
+	"places.types,places.primaryTypeDisplayName,places.priceLevel,places.currentOpeningHours," +
+	"places.utcOffsetMinutes"
 
 // foodTypes are the Google place types a search around the player asks for: somewhere to eat.
 var foodTypes = []string{"restaurant", "meal_takeaway"}
@@ -70,31 +71,43 @@ func New(key, baseURL string) *Client {
 // for and Google looks around the point first. Every failure, a timeout included, is
 // ErrUnavailable.
 func (c *Client) Nearby(ctx context.Context, lat, lng float64, query string) ([]Place, error) {
-	around := area{Circle: circle{Center: latLng{Latitude: lat, Longitude: lng}, Radius: searchRadius}}
-	var (
-		path string
-		body any
-	)
+	from := &latLng{Latitude: lat, Longitude: lng}
+	around := &area{Circle: circle{Center: *from, Radius: searchRadius}}
 	if query == "" {
-		path, body = "/v1/places:searchNearby", nearbyRequest{
+		return c.places(ctx, "/v1/places:searchNearby", nearbyRequest{
 			IncludedTypes:       foodTypes,
 			MaxResultCount:      pageSize,
 			RankPreference:      "DISTANCE",
 			LanguageCode:        "en",
-			LocationRestriction: around,
-		}
-	} else {
-		// Ranked by relevance, Google's advice for words like "near the stadium". The handler
-		// orders by distance anyway.
-		path, body = "/v1/places:searchText", textRequest{
-			TextQuery:    query,
-			IncludedType: "restaurant",
-			PageSize:     pageSize,
-			LanguageCode: "en",
-			LocationBias: around,
-		}
+			LocationRestriction: *around,
+		}, from)
 	}
+	// Ranked by relevance, Google's advice for words like "near the stadium". The handler orders
+	// by distance anyway.
+	return c.places(ctx, "/v1/places:searchText", textRequest{
+		TextQuery:    query,
+		IncludedType: "restaurant",
+		PageSize:     pageSize,
+		LanguageCode: "en",
+		LocationBias: around,
+	}, from)
+}
 
+// Search finds places to eat from words alone ("tacos near the stadium"), for a player whose
+// location is off. There is no player to measure from, so every distance is 0. Every failure, a
+// timeout included, is ErrUnavailable.
+func (c *Client) Search(ctx context.Context, query string) ([]Place, error) {
+	return c.places(ctx, "/v1/places:searchText", textRequest{
+		TextQuery:    query,
+		IncludedType: "restaurant",
+		PageSize:     pageSize,
+		LanguageCode: "en",
+	}, nil)
+}
+
+// places sends one search and turns its answer into Places measured from from, or 0 m away when
+// from is nil.
+func (c *Client) places(ctx context.Context, path string, body any, from *latLng) ([]Place, error) {
 	found, err := c.search(ctx, path, body)
 	if err != nil {
 		return nil, err
@@ -103,7 +116,7 @@ func (c *Client) Nearby(ctx context.Context, lat, lng float64, query string) ([]
 	out := make([]Place, 0, len(found))
 	for i, g := range found {
 		var p Place
-		p, err = toPlace(g, lat, lng, now)
+		p, err = toPlace(g, from, now)
 		if err != nil {
 			return nil, unavailable(fmt.Sprintf("%s place %d", path, i), err)
 		}
@@ -152,9 +165,9 @@ func unavailable(op string, err error) error {
 	return fmt.Errorf("places: google %s: %w (%s)", op, ErrUnavailable, err.Error())
 }
 
-// toPlace turns one of Google's places into a Place measured from lat, lng. now decides which day
-// is today where the place is.
-func toPlace(g googlePlace, lat, lng float64, now time.Time) (Place, error) {
+// toPlace turns one of Google's places into a Place measured from from (0 m when from is nil).
+// now decides which day is today where the place is.
+func toPlace(g googlePlace, from *latLng, now time.Time) (Place, error) {
 	if g.ID == "" || g.DisplayName.Text == "" || g.Location == nil {
 		return Place{}, errors.New("a place without its id, name or location")
 	}
@@ -163,14 +176,17 @@ func toPlace(g googlePlace, lat, lng float64, now time.Time) (Place, error) {
 		return Place{}, err
 	}
 	p := Place{
-		ID:             g.ID,
-		Name:           g.DisplayName.Text,
-		DistanceMeters: distanceMeters(lat, lng, g.Location.Latitude, g.Location.Longitude),
-		PriceLevel:     price,
-		FastFood:       slices.Contains(g.Types, "fast_food_restaurant"),
-		Lat:            g.Location.Latitude,
-		Lng:            g.Location.Longitude,
-		Address:        g.ShortFormattedAddress,
+		ID:         g.ID,
+		Name:       g.DisplayName.Text,
+		PriceLevel: price,
+		FastFood:   slices.Contains(g.Types, "fast_food_restaurant"),
+		Lat:        g.Location.Latitude,
+		Lng:        g.Location.Longitude,
+		Address:    g.ShortFormattedAddress,
+		Category:   category(g.PrimaryTypeDisplayName.Text),
+	}
+	if from != nil {
+		p.DistanceMeters = distanceMeters(from.Latitude, from.Longitude, p.Lat, p.Lng)
 	}
 
 	h := g.CurrentOpeningHours
@@ -241,6 +257,12 @@ func startOfDay(t time.Time) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
 }
 
+// category turns Google's name for a place's main type ("Mexican Restaurant") into the kind of food
+// in a word or two ("Mexican"). Plain "Restaurant" names no kind, so it is "".
+func category(primaryType string) string {
+	return strings.TrimSpace(strings.TrimSuffix(primaryType, "Restaurant"))
+}
+
 // priceLevel turns Google's price level into 1 (cheap) through 4, or 0 when Google does not know.
 func priceLevel(level string) (int, error) {
 	switch level {
@@ -285,7 +307,7 @@ type textRequest struct {
 	IncludedType string `json:"includedType"`
 	PageSize     int    `json:"pageSize"`
 	LanguageCode string `json:"languageCode"`
-	LocationBias area   `json:"locationBias"`
+	LocationBias *area  `json:"locationBias,omitempty"` // none for a search from words alone
 }
 
 type area struct {
@@ -311,11 +333,14 @@ type googlePlace struct {
 	DisplayName struct {
 		Text string `json:"text"`
 	} `json:"displayName"`
-	Location              *latLng       `json:"location"`
-	ShortFormattedAddress string        `json:"shortFormattedAddress"`
-	Types                 []string      `json:"types"`
-	PriceLevel            string        `json:"priceLevel"`
-	CurrentOpeningHours   *openingHours `json:"currentOpeningHours"`
+	Location               *latLng  `json:"location"`
+	ShortFormattedAddress  string   `json:"shortFormattedAddress"`
+	Types                  []string `json:"types"`
+	PrimaryTypeDisplayName struct {
+		Text string `json:"text"`
+	} `json:"primaryTypeDisplayName"`
+	PriceLevel          string        `json:"priceLevel"`
+	CurrentOpeningHours *openingHours `json:"currentOpeningHours"`
 	// UTCOffsetMinutes is a pointer because 0 is a real offset (London in winter).
 	UTCOffsetMinutes *int `json:"utcOffsetMinutes"`
 }

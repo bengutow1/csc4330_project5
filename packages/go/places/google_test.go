@@ -24,12 +24,13 @@ const testKey = "test-key-not-real"
 // fieldMask is every field a search may ask Google for, written out by hand: Google bills a call
 // by its costliest field, so a change here is a change to the bill.
 const fieldMask = "places.id,places.displayName,places.location,places.shortFormattedAddress," +
-	"places.types,places.priceLevel,places.currentOpeningHours,places.utcOffsetMinutes"
+	"places.types,places.primaryTypeDisplayName,places.priceLevel,places.currentOpeningHours," +
+	"places.utcOffsetMinutes"
 
 // TestAGoodPageBecomesPlacesMeasuredFromThePlayer: every field the spots screen shows comes from
-// Google's answer, the distance from the player's point, the price on our 1 to 4 scale and the
-// closing time on the place's own clock. A wrong mapping would list a steakhouse as cheap or say a
-// late-night spot closes at 07:00.
+// Google's answer, the distance from the player's point, the price on our 1 to 4 scale, the kind of
+// food and the closing time on the place's own clock. A wrong mapping would list a steakhouse as
+// cheap or say a late-night spot closes at 07:00.
 func TestAGoodPageBecomesPlacesMeasuredFromThePlayer(t *testing.T) {
 	t.Parallel()
 	client, _ := replaying(t, http.StatusOK, "google_nearby.json")
@@ -43,27 +44,28 @@ func TestAGoodPageBecomesPlacesMeasuredFromThePlayer(t *testing.T) {
 		{
 			ID: "test-fries", Name: "Midnight Fry Shack", DistanceMeters: 1200,
 			OpenNow: true, ClosesAt: "02:00", PriceLevel: 1, FastFood: true,
-			Lat: 30.424092, Lng: -91.18, Address: "77 Maple Dr, Baton Rouge",
+			Lat: 30.424092, Lng: -91.18, Address: "77 Maple Dr, Baton Rouge", Category: "Fast Food",
 		},
 		{
 			ID: "test-noodles", Name: "Corner Noodle Bar", DistanceMeters: 650,
 			OpenNow: true, ClosesAt: "22:00", PriceLevel: 2,
-			Lat: 30.407454, Lng: -91.18, Address: "402 Oak Ave, Baton Rouge",
+			Lat: 30.407454, Lng: -91.18, Address: "402 Oak Ave, Baton Rouge", Category: "Ramen",
 		},
 		{
 			// Closed, and Google sends no price level for it.
 			ID: "test-diner", Name: "Early Bird Diner", DistanceMeters: 300,
-			Lat: 30.415998, Lng: -91.18, Address: "18 Elm St, Baton Rouge",
+			Lat: 30.415998, Lng: -91.18, Address: "18 Elm St, Baton Rouge", Category: "Breakfast",
 		},
 		{
-			// Open around the clock, so there is no closing time to show.
+			// Open around the clock, so there is no closing time to show. Google calls it a plain
+			// Restaurant, which names no kind of food.
 			ID: "test-grill", Name: "Round The Clock Grill", DistanceMeters: 2400,
 			OpenNow: true, PriceLevel: 3,
 			Lat: 30.391716, Lng: -91.18, Address: "560 Main St, Baton Rouge",
 			Hours: []places.Opening{{Open: 0, Close: 24 * time.Hour}},
 		},
 		{
-			// No posted hours and no address: not known to be open.
+			// No posted hours, no address and no type name: not known to be open.
 			ID: "test-cart", Name: "Sunny Taco Cart", DistanceMeters: 1500, PriceLevel: 1,
 			Lat: 30.42679, Lng: -91.18,
 		},
@@ -147,6 +149,46 @@ func TestWordsSearchByTextAroundThePoint(t *testing.T) {
 		t.Fatal("no locationBias, want a circle around the player")
 	}
 	aroundCampus(t, *b.LocationBias)
+}
+
+// TestWordsAloneSearchWithNoPoint: with the player's location off, the words are all there is, so
+// the search carries no circle and no point leaves the phone. Nothing is measured from nowhere, so
+// every distance is 0, as the mock answers.
+func TestWordsAloneSearchWithNoPoint(t *testing.T) {
+	t.Parallel()
+	client, wire := replaying(t, http.StatusOK, "google_nearby.json")
+
+	got, err := client.Search(t.Context(), "tacos near the stadium")
+	if err != nil {
+		t.Fatalf("search: %v", err)
+	}
+	if len(got) != 5 {
+		t.Fatalf("got %d places, want the page's 5", len(got))
+	}
+	for _, p := range got {
+		if p.DistanceMeters != 0 {
+			t.Errorf("%s is %d m away, want 0 (there is no point to measure from)", p.ID, p.DistanceMeters)
+		}
+	}
+	if got[0].Name != "Midnight Fry Shack" || got[0].ClosesAt != "02:00" || got[0].Category != "Fast Food" {
+		t.Errorf("first place = %q closes %q, %q; want Midnight Fry Shack closes 02:00, Fast Food",
+			got[0].Name, got[0].ClosesAt, got[0].Category)
+	}
+
+	call := wire.only(t)
+	if call.method != http.MethodPost || call.path != "/v1/places:searchText" {
+		t.Errorf("sent %s %s, want POST /v1/places:searchText", call.method, call.path)
+	}
+	wantHeader(t, call, "X-Goog-Api-Key", testKey)
+	wantHeader(t, call, "X-Goog-FieldMask", fieldMask)
+	b := call.body
+	if b.TextQuery != "tacos near the stadium" || b.IncludedType != "restaurant" || b.PageSize != 20 {
+		t.Errorf("sent query %q, type %q, page size %d; want the words, restaurant, 20",
+			b.TextQuery, b.IncludedType, b.PageSize)
+	}
+	if b.LocationBias != nil || b.LocationRestriction != nil {
+		t.Errorf("sent an area (%+v, %+v), want none without a point", b.LocationBias, b.LocationRestriction)
+	}
 }
 
 // TestAnEmptyPageIsNoSpots: Google answers {} when nothing is near, which is an empty street for
@@ -377,6 +419,9 @@ func samePlace(t *testing.T, got, want places.Place) {
 	t.Helper()
 	if got.ID != want.ID || got.Name != want.Name || got.Address != want.Address {
 		t.Errorf("got %q %q at %q, want %q %q at %q", got.ID, got.Name, got.Address, want.ID, want.Name, want.Address)
+	}
+	if got.Category != want.Category {
+		t.Errorf("%s category = %q, want %q", want.ID, got.Category, want.Category)
 	}
 	if got.DistanceMeters != want.DistanceMeters {
 		t.Errorf("%s is %d m away, want %d m", want.ID, got.DistanceMeters, want.DistanceMeters)

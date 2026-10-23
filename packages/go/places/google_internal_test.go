@@ -11,6 +11,9 @@ import (
 	"time"
 )
 
+// campus is where these tests measure from.
+var campus = &latLng{Latitude: 30.4133, Longitude: -91.18}
+
 // campusTime is the offset of a place near campus in late October (CDT), as Google sends it.
 var campusTime = time.FixedZone("CDT", -5*60*60)
 
@@ -142,7 +145,7 @@ func TestToPlaceReadsTheDayWhereThePlaceIs(t *testing.T) {
 		NextCloseTime: &closes,
 	}
 
-	got, err := toPlace(g, 30.4133, -91.18, tenPMLocal)
+	got, err := toPlace(g, campus, tenPMLocal)
 	if err != nil {
 		t.Fatalf("to place: %v", err)
 	}
@@ -168,7 +171,7 @@ func TestAPlaceThatNeverClosesShowsNoClosingTime(t *testing.T) {
 		NextCloseTime: &weekEdge,
 	}
 
-	got, err := toPlace(g, 30.4133, -91.18, time.Date(2026, 10, 21, 19, 0, 0, 0, campusTime))
+	got, err := toPlace(g, campus, time.Date(2026, 10, 21, 19, 0, 0, 0, campusTime))
 	if err != nil {
 		t.Fatalf("to place: %v", err)
 	}
@@ -195,7 +198,7 @@ func TestAPlaceWithNoOffsetShowsNoHours(t *testing.T) {
 		NextCloseTime: &closes,
 	}
 
-	got, err := toPlace(g, 30.4133, -91.18, time.Date(2026, 10, 22, 0, 0, 0, 0, time.UTC))
+	got, err := toPlace(g, campus, time.Date(2026, 10, 22, 0, 0, 0, 0, time.UTC))
 	if err != nil {
 		t.Fatalf("to place: %v", err)
 	}
@@ -239,6 +242,32 @@ func TestEveryPriceLevelLandsOnOneToFour(t *testing.T) {
 	_, err := priceLevel("PRICE_LEVEL_PRICELESS")
 	if err == nil {
 		t.Error("an unknown level passed, want an error")
+	}
+}
+
+// TestCategoryIsTheKindOfFood: the spots list shows the kind of food before the price, so
+// Google's type name loses its "Restaurant" and a plain Restaurant, which names no kind, shows
+// nothing.
+func TestCategoryIsTheKindOfFood(t *testing.T) {
+	t.Parallel()
+	cases := []struct{ primaryType, want string }{
+		{primaryType: "Mexican Restaurant", want: "Mexican"},
+		{primaryType: "Fast Food Restaurant", want: "Fast Food"},
+		{primaryType: "Pizza Restaurant", want: "Pizza"},
+		{primaryType: "Restaurant", want: ""},
+		{primaryType: "Sandwich Shop", want: "Sandwich Shop"},
+		{primaryType: "", want: ""},
+	}
+	for _, c := range cases {
+		t.Run(c.primaryType, func(t *testing.T) {
+			t.Parallel()
+
+			got := category(c.primaryType)
+
+			if got != c.want {
+				t.Errorf("category(%q) = %q, want %q", c.primaryType, got, c.want)
+			}
+		})
 	}
 }
 
