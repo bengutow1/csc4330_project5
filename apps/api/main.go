@@ -25,6 +25,7 @@ import (
 
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/account/v1/accountv1connect"
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/board/v1/boardv1connect"
+	"github.com/bengutow1/csc4330_project5/packages/go/apigen/combo/v1/combov1connect"
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/cook/v1/cookv1connect"
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/fries/v1/friesv1connect"
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/health/v1/healthv1connect"
@@ -33,6 +34,7 @@ import (
 	"github.com/bengutow1/csc4330_project5/packages/go/auth"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/account"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/board"
+	"github.com/bengutow1/csc4330_project5/packages/go/handlers/combo"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/cook"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/fries"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/healthz"
@@ -166,6 +168,7 @@ func main() {
 	})
 	boardSvc := board.NewBoard(board.Config{Repo: repo, Auth: authn, Log: log})
 	profileSvc := profile.NewProfile(profile.Config{Repo: repo, Auth: authn, Log: log})
+	comboSvc := combo.NewCombo(combo.Config{Repo: repo, Auth: authn, Limit: combo.DefaultLimit(), Log: log})
 
 	// Every service reads request bodies under the same cap.
 	readCap := connect.WithReadMaxBytes(4 << 20)
@@ -182,6 +185,8 @@ func main() {
 	r.Mount(friesv1connect.NewFriesServiceHandler(friesSvc, readCap))
 	r.Mount(boardv1connect.NewBoardServiceHandler(boardSvc, readCap))
 	r.Mount(profilev1connect.NewProfileServiceHandler(profileSvc, readCap))
+	r.Mount(combov1connect.NewComboServiceHandler(comboSvc, readCap))
+	r.Mount(combov1connect.NewComboHostServiceHandler(comboSvc, readCap))
 
 	srv := &http.Server{
 		Addr:              addr,
