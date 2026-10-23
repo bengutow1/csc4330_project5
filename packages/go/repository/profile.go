@@ -7,9 +7,9 @@ import (
 	"time"
 )
 
-// profile.go reads the profile's plate grid. The plates belong to plate.go; this only reads a
-// player's own, newest first, a page at a time, with a keyset over (created_at, plate_id) so two
-// plates from the same moment keep one order.
+// profile.go reads the profile's plate grid and finds a player for their public card. The plates
+// belong to plate.go; this only reads one player's, newest first, a page at a time, with a keyset
+// over (created_at, plate_id) so two plates from the same moment keep one order.
 
 // PlateKey is where a page of plates ended: its last plate's time and id.
 type PlateKey struct {
@@ -61,4 +61,26 @@ func (r *Repository) ListPlates(ctx context.Context, accountID int64, after *Pla
 		return nil, known(op, err)
 	}
 	return out, nil
+}
+
+// Player is what anyone signed in may see of an account: its handle and avatar, and the id its
+// card's counts are fenced by. It never holds the kitchen settings.
+type Player struct {
+	AccountID int64
+	Handle    string
+	Avatar    string // one emoji
+}
+
+// PlayerByHandle finds the player who holds handle, for their public card, reading only the public
+// columns. A handle nobody holds is ErrNotFound.
+func (r *Repository) PlayerByHandle(ctx context.Context, handle string) (Player, error) {
+	var p Player
+	err := r.db.QueryRow(ctx, `
+		select a.account_id, a.handle, a.avatar
+		  from app.account a
+		 where a.handle = $1`, handle).Scan(&p.AccountID, &p.Handle, &p.Avatar)
+	if err != nil {
+		return Player{}, known(fmt.Sprintf("player by handle handle=%s", handle), err)
+	}
+	return p, nil
 }

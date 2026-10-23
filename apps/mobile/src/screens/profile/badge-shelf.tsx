@@ -1,6 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import type { Badge } from "@fries-in-the-bag/api";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { badgeLook, earnedLine, type Tone } from "@/lib/profile";
 import { COLORS, SPACE, TYPE } from "@/theme";
 
@@ -21,16 +21,28 @@ const TONES: Record<Tone, { fill: string; ink: string }> = {
 /**
  * BadgeShelf is every badge in the server's order, four to a row, with how many are earned. An
  * earned badge wears its icon in its tint; a locked one is faded behind a lock and says how to
- * earn it to a screen reader.
+ * earn it to a screen reader. With onSeeAll, a See all link opens the badges screen (P2).
  */
-export function BadgeShelf(props: { badges: readonly Badge[] }) {
+export function BadgeShelf(props: { badges: readonly Badge[]; onSeeAll?: () => void }) {
   return (
     <View>
       <View style={styles.heading}>
         <Text accessibilityRole="header" style={styles.title}>
           Badges
         </Text>
-        <Text style={styles.count}>{earnedLine(props.badges)}</Text>
+        <View style={styles.trailing}>
+          <Text style={styles.count}>{earnedLine(props.badges)}</Text>
+          {props.onSeeAll ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="See all badges"
+              onPress={props.onSeeAll}
+              hitSlop={SPACE.sm}
+            >
+              <Text style={styles.link}>See all</Text>
+            </Pressable>
+          ) : null}
+        </View>
       </View>
       <View style={styles.grid}>
         {props.badges.map((badge) => (
@@ -75,7 +87,9 @@ const styles = StyleSheet.create({
     marginHorizontal: SPACE.xxs,
   },
   title: { ...TYPE.heading, fontSize: TYPE.button.fontSize, color: COLORS.ink },
+  trailing: { flexDirection: "row", alignItems: "center", gap: SPACE.md },
   count: { ...TYPE.caption, color: COLORS.muted },
+  link: { ...TYPE.small, color: COLORS.ketchup },
   grid: { flexDirection: "row", flexWrap: "wrap", rowGap: SPACE.md },
   item: { width: `${100 / PER_ROW}%`, alignItems: "center", gap: SPACE.xs + SPACE.xxs },
   locked: { opacity: LOCKED_OPACITY },

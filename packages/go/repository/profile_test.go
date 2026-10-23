@@ -2,6 +2,7 @@
 package repository_test
 
 import (
+	"errors"
 	"fmt"
 	"slices"
 	"testing"
@@ -160,5 +161,28 @@ func ranOn(t *testing.T, repo *repository.Repository, a repository.Account, at .
 			MealWindow: []string{"morning", "midday", "evening", "late_night"}[i%4],
 			At:         when,
 		})
+	}
+}
+
+// TestPlayerByHandleFindsTheHolder: a card is opened by the handle the board shows, so the lookup
+// finds the one account that holds it, and a handle nobody holds is ErrNotFound, never another
+// player's row.
+func TestPlayerByHandleFindsTheHolder(t *testing.T) {
+	t.Parallel()
+	repo := newRepo(t)
+	maya := createAccount(t, repo, "test_maya")
+	createAccount(t, repo, "test_ben")
+
+	got, err := repo.PlayerByHandle(t.Context(), "test_maya")
+	if err != nil {
+		t.Fatalf("player by handle: %v", err)
+	}
+	_, missing := repo.PlayerByHandle(t.Context(), "test_nobody")
+
+	if got != (repository.Player{AccountID: maya.AccountID, Handle: "test_maya", Avatar: "🍟"}) {
+		t.Errorf("got %+v, want maya's id, handle and avatar", got)
+	}
+	if !errors.Is(missing, repository.ErrNotFound) {
+		t.Errorf("an unheld handle = %v, want ErrNotFound", missing)
 	}
 }

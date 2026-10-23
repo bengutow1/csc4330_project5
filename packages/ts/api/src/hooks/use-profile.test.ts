@@ -1,5 +1,5 @@
 import { create } from "@bufbuild/protobuf";
-import { createConnectQueryKey } from "@connectrpc/connect-query";
+import { createConnectQueryKey, skipToken } from "@connectrpc/connect-query";
 import {
   ListPlatesResponseSchema,
   ProfileService,
@@ -8,7 +8,7 @@ import { ScanService } from "@fries-in-the-bag/apigen/scan/v1/scan_pb";
 import { partialMatchKey } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
 import { createApiTransport } from "../transport.ts";
-import { nextPlatesCursor, PROFILE } from "./use-profile.ts";
+import { nextPlatesCursor, PROFILE, playerCardInput } from "./use-profile.ts";
 
 describe("nextPlatesCursor", () => {
   it("follows the server's cursor while there is more", () => {
@@ -18,6 +18,17 @@ describe("nextPlatesCursor", () => {
 
   it("ends the grid at an empty cursor", () => {
     expect(nextPlatesCursor(create(ListPlatesResponseSchema, {}))).toBeUndefined();
+  });
+});
+
+describe("playerCardInput", () => {
+  it("waits until a card is open", () => {
+    expect(playerCardInput(undefined)).toBe(skipToken);
+    expect(playerCardInput("")).toBe(skipToken);
+  });
+
+  it("asks for the handle the board showed", () => {
+    expect(playerCardInput("chef_maya")).toEqual({ handle: "chef_maya" });
   });
 });
 
@@ -41,6 +52,16 @@ describe("PROFILE", () => {
     });
     expect(partialMatchKey(profile, PROFILE)).toBe(true);
     expect(partialMatchKey(plates, PROFILE)).toBe(true);
+  });
+
+  it("covers a player card too, so a new plate refreshes an open card", () => {
+    const card = createConnectQueryKey({
+      schema: ProfileService.method.getPlayerCard,
+      input: { handle: "chef_maya" },
+      transport,
+      cardinality: "finite",
+    });
+    expect(partialMatchKey(card, PROFILE)).toBe(true);
   });
 
   it("leaves other services' reads alone", () => {

@@ -13,11 +13,12 @@ recipe, and a plate the mock checks, paid in points on a receipt), `FriesService
 the places mock, and fry runs), `BoardService` (Chefs or the Hall of Fries, this week or all time,
 paged with the caller's own row, campus-wide or one crew's, and the Fridge of the Week),
 `CrewService` (make a crew, join one by its code, leave, list mine) and `ProfileService` (a player's
-rank, stats and badges, and their plates newest first), with sessions in Postgres. The Go packages hold
-what every feature builds on (the error boundary, validation, the gate, the limiter, the session,
-the repository, logging), and the schema holds the `app` schema, its shared trigger, `app.account`,
-the sessions table, `app.scan` with its items, the recipes, the plates with their points ledger,
-the fry runs, and the crews with their members: copy their shape.
+rank, stats and badges, their plates newest first, and any player's public card by handle), with
+sessions in Postgres. The Go packages hold what every feature builds on (the error boundary,
+validation, the gate, the limiter, the session, the repository, logging), and the schema holds the
+`app` schema, its shared trigger, `app.account`, the sessions table, `app.scan` with its items, the
+recipes, the plates with their points ledger, the fry runs, and the crews with their members: copy
+their shape.
 `packages/ts/api` holds the transport, the query client, the foreground refetch, error decoding and
 the health, account, scan, cook, fries, board, crew and profile hooks.
 `apps/mobile` is the shell: a first launch goes through onboarding (welcome, handle and avatar,
@@ -27,9 +28,9 @@ to its recipes on two shelves, narrowed by chips the server applies, and to one 
 have, what you need and its steps. Plate it photographs a cooked recipe and prints the points
 receipt. Fries mode is the fries moment and the spots nearby. Board ranks players by points or fry
 runs on a podium and pins the player's own row, campus-wide or per crew, with crews (B3) behind its
-crew icon, and Me shows their rank, stats, plates and badges,
-with settings (P3) behind its gear. `/status` is wired to the API end to end. Each issue builds its
-screen from the design in `docs/design.md`.
+crew icon, and any row opens that player's card (B2). Me shows their rank, stats, plates and badges,
+with every badge's sticker (P2) behind See all and settings (P3) behind its gear. `/status` is wired
+to the API end to end. Each issue builds its screen from the design in `docs/design.md`.
 
 ## Words we use
 

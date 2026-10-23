@@ -1,0 +1,30 @@
+# The player card (B2), against the demo seed (#31). Any board row opens the card of the player on
+# it, here the podium's first place: their rank and the way to the next title, the stats row, their
+# newest plates and every badge, then Close goes back to the board. Needs the api with the seed
+# loaded, the app installed (moon run mobile:ios) and Metro (moon run mobile:dev).
+#
+# A row is one button whose label reads "Rank 1, <handle>, <value>", so the flow matches it with
+# a regular expression.
+appId: com.cadenlund.friesinthebag
+---
+- launchApp:
+    clearState: true
+- runFlow: subflows/sign-up.yaml
+- tapOn: "Board"
+- extendedWaitUntil:
+    visible: "Rank 1, .*"
+    timeout: 10000
+- tapOn: "Rank 1, .*"
+- assertVisible: "Player card"
+- extendedWaitUntil:
+    visible: "Meals cooked: .*"
+    timeout: 10000
+- assertVisible: "Fry runs: .*"
+- assertVisible: "Recent plates"
+- scrollUntilVisible:
+    element: "\\d+ of 11"
+    direction: DOWN
+- assertVisible: "Badges"
+- tapOn: "Close"
+- assertNotVisible: "Player card"
+- assertVisible: "Leaderboard"

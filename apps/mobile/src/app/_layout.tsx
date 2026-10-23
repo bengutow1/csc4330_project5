@@ -92,6 +92,7 @@ function RootStack() {
           <Stack.Screen name="settings" />
           <Stack.Screen name="crews" />
           <Stack.Screen name="combo/[id]/reveal" />
+          <Stack.Screen name="badges" />
         </Stack.Protected>
       </Stack>
       {covered ? (
