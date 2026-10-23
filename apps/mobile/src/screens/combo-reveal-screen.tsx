@@ -140,10 +140,8 @@ export function ComboRevealScreen(props: { id: string | undefined }) {
 
   const ways = buttonsFor(verdict.tier);
   const go = (way: Way) => {
-    const scanId = me?.scan?.scanId;
-    if (way === "cook" && scanId !== undefined) {
-      // Combo recipes are #39's; until then, cooking opens the caller's own fridge's recipes.
-      router.push({ pathname: "/cook/[scanId]", params: { scanId: String(scanId) } });
+    if (way === "cook") {
+      router.push({ pathname: "/combo/[id]/recipes", params: { id: String(comboId) } });
       return;
     }
     router.push("/fries");

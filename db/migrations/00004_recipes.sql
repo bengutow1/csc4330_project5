@@ -15,14 +15,23 @@ create table app.recipe_set (
     recipe_set_id bigint      generated always as identity primary key,
     scan_id       bigint      not null references app.scan (scan_id) on delete cascade,
     items_version int         not null check (items_version >= 1),
+    -- Snapshot identity, not a live relationship: old dishes survive edits or removal.
+    -- Both zero for solo sets. A combo set is cached against both list versions.
+    partner_scan_id bigint not null default 0,
+    partner_items_version int not null default 0,
+    combo_score int check (combo_score between 0 and 100),
+    check ((partner_scan_id = 0 and partner_items_version = 0) or
+           (partner_scan_id > 0 and partner_items_version > 0)),
     created_at    timestamptz not null default now(),
     -- One set per version: a second ListRecipes that raced the first is this constraint firing,
     -- never a check before the insert.
-    constraint recipe_set_scan_id_items_version_key unique (scan_id, items_version)
+    constraint recipe_set_scan_id_items_version_key unique
+        (scan_id, items_version, partner_scan_id, partner_items_version)
 );
 
 create table app.recipe (
     recipe_id     bigint      generated always as identity primary key,
+    recipe_set_id bigint not null references app.recipe_set (recipe_set_id) on delete cascade,
     scan_id       bigint      not null references app.scan (scan_id) on delete cascade,
     -- The version of the scan's list the recipe was made from.
     items_version int         not null check (items_version >= 1),
@@ -56,12 +65,15 @@ create table app.recipe (
                                       cardinality(step_timers) = cardinality(steps)) and
                                      array_position(step_timers, null) is null and
                                      0 <= all(step_timers) and 14400 >= all(step_timers)),
+    -- Provenance is kept with the dish, so later list edits cannot change the bring list.
+    ingredient_owners jsonb not null default '[]' check (jsonb_typeof(ingredient_owners) = 'array'),
+    only_together boolean not null default false,
     created_at    timestamptz not null default now(),
     -- Every recipe belongs to a set that was made.
-    constraint recipe_scan_id_items_version_fkey foreign key (scan_id, items_version)
-        references app.recipe_set (scan_id, items_version) on delete cascade,
-    constraint recipe_scan_id_items_version_position_key unique (scan_id, items_version, position)
+    constraint recipe_scan_id_items_version_position_key unique (recipe_set_id, position)
 );
+
+create index recipe_scan_id_items_version_idx on app.recipe (scan_id, items_version);
 
 -- +goose Down
 drop table app.recipe;

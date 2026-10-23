@@ -22,30 +22,46 @@ const (
 
 // NewRecipe is one checked dish to store in a set.
 type NewRecipe struct {
-	Title      string
-	Minutes    int      // the whole time to the plate
-	Difficulty string   // a Difficulty const
-	Equipment  []string // Equipment consts; empty needs none
-	Uses       []string // the food it takes that the player has
-	Missing    []string // the food it takes that the player lacks: none, or one
-	Allergens  []string // the Allergy consts it contains
-	Diets      []string // the Diet consts besides none that it fits
-	Steps      []string
-	StepTimers []int // aligned seconds; 0 is untimed, empty means all untimed
+	Title            string
+	Minutes          int      // the whole time to the plate
+	Difficulty       string   // a Difficulty const
+	Equipment        []string // Equipment consts; empty needs none
+	Uses             []string // the food it takes that the player has
+	Missing          []string // the food it takes that the player lacks: none, or one
+	Allergens        []string // the Allergy consts it contains
+	Diets            []string // the Diet consts besides none that it fits
+	Steps            []string
+	StepTimers       []int // aligned seconds; 0 is untimed, empty means all untimed
+	IngredientOwners []IngredientOwner
+	OnlyTogether     bool
+}
+
+// IngredientOwner is the stored provenance of a scanned food used in a combo dish.
+type IngredientOwner struct {
+	AccountID  int64  `json:"account_id"`
+	Ingredient string `json:"ingredient"`
 }
 
 // Recipe is one stored dish, as the shelves and the recipe page read it.
 type Recipe struct {
-	RecipeID   int64
-	Title      string
-	Minutes    int
-	Difficulty string // a Difficulty const
-	Equipment  []string
-	Uses       []string
-	Missing    []string // none, or one
-	Steps      []string
-	StepTimers []int // aligned seconds; 0 is untimed, empty means all untimed
-	ScanScore  int   // the score of the recipe's scan, which sets what plating it pays
+	RecipeID            int64
+	Title               string
+	Minutes             int
+	Difficulty          string // a Difficulty const
+	Equipment           []string
+	Uses                []string
+	Missing             []string // none, or one
+	Steps               []string
+	StepTimers          []int // aligned seconds; 0 is untimed, empty means all untimed
+	ScanScore           int   // the score of the recipe's scan, which sets what plating it pays
+	ScanID              int64
+	ItemsVersion        int
+	PartnerScanID       int64 // 0 for a solo set; otherwise the other list's snapshot identity.
+	PartnerItemsVersion int
+	Position            int
+	ComboID             int64
+	IngredientOwners    []IngredientOwner
+	OnlyTogether        bool
 }
 
 // RecipeFilter narrows a set. Each zero value filters nothing.
@@ -68,7 +84,8 @@ func (r *Repository) HasRecipes(
 		         join app.scan s on s.scan_id = rs.scan_id
 		        where s.account_id = $1
 		          and rs.scan_id = $2
-		          and rs.items_version = $3)`, accountID, scanID, itemsVersion).Scan(&has)
+		          and rs.items_version = $3
+		          and rs.partner_scan_id = 0)`, accountID, scanID, itemsVersion).Scan(&has)
 	if err != nil {
 		return false, known(fmt.Sprintf("has recipes account=%d scan=%d version=%d",
 			accountID, scanID, itemsVersion), err)
@@ -80,17 +97,19 @@ func (r *Repository) HasRecipes(
 // from one recipe to the next, which a two-dimensional array cannot hold, so the set travels as
 // JSON.
 type recipeRow struct {
-	Position   int      `json:"position"`
-	Title      string   `json:"title"`
-	Minutes    int      `json:"minutes"`
-	Difficulty string   `json:"difficulty"`
-	Equipment  []string `json:"equipment"`
-	Uses       []string `json:"uses"`
-	Missing    []string `json:"missing"`
-	Allergens  []string `json:"allergens"`
-	Diets      []string `json:"diets"`
-	Steps      []string `json:"steps"`
-	StepTimers []int    `json:"step_timers"`
+	Position         int               `json:"position"`
+	Title            string            `json:"title"`
+	Minutes          int               `json:"minutes"`
+	Difficulty       string            `json:"difficulty"`
+	Equipment        []string          `json:"equipment"`
+	Uses             []string          `json:"uses"`
+	Missing          []string          `json:"missing"`
+	Allergens        []string          `json:"allergens"`
+	Diets            []string          `json:"diets"`
+	Steps            []string          `json:"steps"`
+	StepTimers       []int             `json:"step_timers"`
+	IngredientOwners []IngredientOwner `json:"ingredient_owners"`
+	OnlyTogether     bool              `json:"only_together"`
 }
 
 // errSetTaken unwinds CreateRecipes' transaction when the version already has its set.
@@ -104,6 +123,12 @@ var errSetTaken = errors.New("repository: the version already has its set")
 func (r *Repository) CreateRecipes(
 	ctx context.Context, accountID, scanID int64, itemsVersion int, set []NewRecipe,
 ) (stored bool, err error) {
+	return r.createRecipes(ctx, accountID, scanID, itemsVersion, 0, 0, -1, set)
+}
+
+func (r *Repository) createRecipes(
+	ctx context.Context, accountID, scanID int64, itemsVersion int, partnerScanID int64, partnerVersion, comboScore int, set []NewRecipe,
+) (stored bool, err error) {
 	op := fmt.Sprintf("create recipes account=%d scan=%d version=%d", accountID, scanID, itemsVersion)
 	rows := make([]recipeRow, len(set))
 	for i, n := range set {
@@ -111,6 +136,7 @@ func (r *Repository) CreateRecipes(
 			Position: i + 1, Title: n.Title, Minutes: n.Minutes, Difficulty: n.Difficulty,
 			Equipment: n.Equipment, Uses: n.Uses, Missing: n.Missing, Allergens: n.Allergens,
 			Diets: n.Diets, Steps: n.Steps, StepTimers: n.StepTimers,
+			IngredientOwners: n.IngredientOwners, OnlyTogether: n.OnlyTogether,
 		}
 	}
 	payload, err := json.Marshal(rows)
@@ -121,12 +147,16 @@ func (r *Repository) CreateRecipes(
 	err = r.InTx(ctx, func(tx *Repository) error {
 		// 1. The set itself. The join to app.scan is the fence: it cannot make a set on another
 		// player's scan
-		tag, err := tx.db.Exec(ctx, `
-			insert into app.recipe_set (scan_id, items_version)
-			select s.scan_id, $3
+		var setID int64
+		err := tx.db.QueryRow(ctx, `
+			insert into app.recipe_set (scan_id, items_version,partner_scan_id,partner_items_version,combo_score)
+			select s.scan_id, $3,$4,$5,nullif($6,-1)
 			  from app.scan s
 			 where s.account_id = $1
-			   and s.scan_id = $2`, accountID, scanID, itemsVersion)
+			   and s.scan_id = $2 returning recipe_set_id`, accountID, scanID, itemsVersion, partnerScanID, partnerVersion, comboScore).Scan(&setID)
+		if isNoRows(err) {
+			return nil
+		}
 		if err != nil {
 			err = known(op, err)
 			if errors.Is(err, ErrDuplicate) {
@@ -134,22 +164,19 @@ func (r *Repository) CreateRecipes(
 			}
 			return err
 		}
-		if tag.RowsAffected() == 0 {
-			return nil
-		}
 
 		// 2. Its recipes, in one statement. An empty list arrives as JSON null, so the optional
 		// ones fall back to empty; uses and steps stay null, which the table refuses
 		_, err = tx.db.Exec(ctx, `
-			insert into app.recipe (scan_id, items_version, position, title, minutes, difficulty,
-			                        equipment, uses, missing, allergens, diets, steps, step_timers)
-			select $1, $2, x.position, x.title, x.minutes, x.difficulty,
+			insert into app.recipe (scan_id, items_version, recipe_set_id,position, title, minutes, difficulty,
+			                        equipment, uses, missing, allergens, diets, steps, step_timers,ingredient_owners,only_together)
+			select $1, $2,$4, x.position, x.title, x.minutes, x.difficulty,
 			       coalesce(x.equipment, '{}'), x.uses, coalesce(x.missing, '{}'),
-			       coalesce(x.allergens, '{}'), coalesce(x.diets, '{}'), x.steps, coalesce(x.step_timers, '{}')
+			       coalesce(x.allergens, '{}'), coalesce(x.diets, '{}'), x.steps, coalesce(x.step_timers, '{}'),coalesce(x.ingredient_owners,'[]'::jsonb),x.only_together
 			  from jsonb_to_recordset($3::jsonb)
 			       as x (position int, title text, minutes int, difficulty text, equipment text[],
-			             uses text[], missing text[], allergens text[], diets text[], steps text[], step_timers int[])`,
-			scanID, itemsVersion, payload)
+			             uses text[], missing text[], allergens text[], diets text[], steps text[], step_timers int[],ingredient_owners jsonb,only_together boolean)`,
+			scanID, itemsVersion, payload, setID)
 		if err != nil {
 			return known(op, err)
 		}
@@ -181,6 +208,7 @@ func (r *Repository) ListRecipes(
 		  from app.recipe r
 		  join app.scan s on s.scan_id = r.scan_id
 		  join app.account a on a.account_id = s.account_id
+		  join app.recipe_set rs on rs.recipe_set_id=r.recipe_set_id and rs.partner_scan_id=0
 		 where s.account_id = $1
 		   and r.scan_id = $2
 		   and r.items_version = $3
@@ -219,15 +247,26 @@ func (r *Repository) RecipeByID(ctx context.Context, accountID, recipeID int64) 
 	var rec Recipe
 	err := r.db.QueryRow(ctx, `
 		select r.recipe_id, r.title, r.minutes, r.difficulty, r.equipment, r.uses, r.missing,
-		       r.steps, r.step_timers, s.score
+		       r.steps, r.step_timers, coalesce(rs.combo_score,s.score),s.scan_id,r.items_version,
+		       rs.partner_scan_id,rs.partner_items_version,r.position,
+		       case when rs.partner_scan_id=0 then 0 else s.combo_id end,r.ingredient_owners,r.only_together
 		  from app.recipe r
 		  join app.scan s on s.scan_id = r.scan_id
 		  join app.account a on a.account_id = s.account_id
+		  join app.recipe_set rs on rs.recipe_set_id=r.recipe_set_id
 		 where s.account_id = $1
 		   and r.recipe_id = $2
-		   and not r.allergens && a.allergies`, accountID, recipeID).Scan(
+		   and not r.allergens && a.allergies
+		   and (rs.partner_scan_id=0 or exists (
+		       select 1 from app.scan partner
+		       join app.combo_member mine on mine.combo_id=s.combo_id and mine.account_id=$1
+		       join app.combo_member other on other.combo_id=mine.combo_id and other.account_id=partner.account_id
+		       join app.account buddy on buddy.account_id=other.account_id
+		       where partner.scan_id=rs.partner_scan_id and partner.combo_id=s.combo_id
+		       and not r.allergens && buddy.allergies))`, accountID, recipeID).Scan(
 		&rec.RecipeID, &rec.Title, &rec.Minutes, &rec.Difficulty, &rec.Equipment, &rec.Uses,
-		&rec.Missing, &rec.Steps, &rec.StepTimers, &rec.ScanScore)
+		&rec.Missing, &rec.Steps, &rec.StepTimers, &rec.ScanScore, &rec.ScanID, &rec.ItemsVersion,
+		&rec.PartnerScanID, &rec.PartnerItemsVersion, &rec.Position, &rec.ComboID, &rec.IngredientOwners, &rec.OnlyTogether)
 	if err != nil {
 		return Recipe{}, known(fmt.Sprintf("recipe by id account=%d recipe=%d", accountID, recipeID), err)
 	}

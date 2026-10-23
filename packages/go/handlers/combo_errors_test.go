@@ -22,6 +22,7 @@ func TestComboSentinelsKeepTheirMappingsAndHideWrappedDetails(t *testing.T) {
 		{"wrong code", repository.ErrComboCodeMissing, connect.CodeNotFound},
 		{"expired", repository.ErrComboExpired, connect.CodeFailedPrecondition},
 		{"ended", repository.ErrComboEnded, connect.CodeFailedPrecondition},
+		{"not scanned", repository.ErrComboNotReady, connect.CodeFailedPrecondition},
 		{"full", repository.ErrComboFull, connect.CodeResourceExhausted},
 	}
 	for _, c := range cases {

@@ -66,6 +66,8 @@ func ConnectErr(log *slog.Logger, op string, err error) error {
 		return connect.NewError(connect.CodeFailedPrecondition, repository.ErrComboEnded)
 	case errors.Is(err, repository.ErrComboFull):
 		return connect.NewError(connect.CodeResourceExhausted, repository.ErrComboFull)
+	case errors.Is(err, repository.ErrComboNotReady):
+		return connect.NewError(connect.CodeFailedPrecondition, repository.ErrComboNotReady)
 	// NotFound, in words of its own: the join screen tells a mistyped code apart from a lost one.
 	case errors.Is(err, repository.ErrNoCrewForCode):
 		return connect.NewError(connect.CodeNotFound, repository.ErrNoCrewForCode)

@@ -56,6 +56,17 @@ func toProtoRecipe(r repository.Recipe) (*cookv1.Recipe, error) {
 			steps[i].TimerSeconds = &seconds
 		}
 	}
+	owners := make([]*cookv1.IngredientOwner, 0, len(r.IngredientOwners))
+	for _, o := range r.IngredientOwners {
+		owners = append(owners, &cookv1.IngredientOwner{AccountId: o.AccountID, Ingredient: o.Ingredient})
+	}
+	preview := pointsPreview(r.ScanScore)
+	if r.ComboID > 0 {
+		preview = 0
+		for _, line := range points.PlateAward(points.Plate{Score: r.ScanScore, Combo: true}) {
+			preview += int32(line.Points)
+		}
+	}
 	return &cookv1.Recipe{
 		RecipeId:      r.RecipeID,
 		Title:         r.Title,
@@ -66,7 +77,8 @@ func toProtoRecipe(r repository.Recipe) (*cookv1.Recipe, error) {
 		Missing:       r.Missing,
 		Steps:         r.Steps,
 		CookingSteps:  steps,
-		PointsPreview: pointsPreview(r.ScanScore),
+		PointsPreview: preview,
+		ComboId:       r.ComboID, OnlyTogether: r.OnlyTogether, IngredientOwners: owners,
 	}, nil
 }
 

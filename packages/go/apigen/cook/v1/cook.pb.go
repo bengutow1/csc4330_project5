@@ -355,9 +355,15 @@ type Recipe struct {
 	// The points plating it would earn from this scan's score, before any streak.
 	PointsPreview int32 `protobuf:"varint,9,opt,name=points_preview,json=pointsPreview,proto3" json:"points_preview,omitempty"`
 	// Structured instructions for step-by-step cooking. steps stays for older clients.
-	CookingSteps  []*CookingStep `protobuf:"bytes,10,rep,name=cooking_steps,json=cookingSteps,proto3" json:"cooking_steps,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	CookingSteps []*CookingStep `protobuf:"bytes,10,rep,name=cooking_steps,json=cookingSteps,proto3" json:"cooking_steps,omitempty"`
+	// 0 for a solo recipe; otherwise the combo whose merged food this uses.
+	ComboId int64 `protobuf:"varint,11,opt,name=combo_id,json=comboId,proto3" json:"combo_id,omitempty"`
+	// True only when the dish needs food unique to each fridge.
+	OnlyTogether bool `protobuf:"varint,12,opt,name=only_together,json=onlyTogether,proto3" json:"only_together,omitempty"`
+	// Every scanned food the dish uses, tagged with each fridge that has it. Staples have no tag.
+	IngredientOwners []*IngredientOwner `protobuf:"bytes,13,rep,name=ingredient_owners,json=ingredientOwners,proto3" json:"ingredient_owners,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *Recipe) Reset() {
@@ -460,6 +466,80 @@ func (x *Recipe) GetCookingSteps() []*CookingStep {
 	return nil
 }
 
+func (x *Recipe) GetComboId() int64 {
+	if x != nil {
+		return x.ComboId
+	}
+	return 0
+}
+
+func (x *Recipe) GetOnlyTogether() bool {
+	if x != nil {
+		return x.OnlyTogether
+	}
+	return false
+}
+
+func (x *Recipe) GetIngredientOwners() []*IngredientOwner {
+	if x != nil {
+		return x.IngredientOwners
+	}
+	return nil
+}
+
+// IngredientOwner tags one recipe ingredient with its fridge's public account id.
+type IngredientOwner struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AccountId     int64                  `protobuf:"varint,1,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
+	Ingredient    string                 `protobuf:"bytes,2,opt,name=ingredient,proto3" json:"ingredient,omitempty"` // The recipe's ingredient name, at most 40 characters.
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *IngredientOwner) Reset() {
+	*x = IngredientOwner{}
+	mi := &file_cook_v1_cook_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *IngredientOwner) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*IngredientOwner) ProtoMessage() {}
+
+func (x *IngredientOwner) ProtoReflect() protoreflect.Message {
+	mi := &file_cook_v1_cook_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use IngredientOwner.ProtoReflect.Descriptor instead.
+func (*IngredientOwner) Descriptor() ([]byte, []int) {
+	return file_cook_v1_cook_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *IngredientOwner) GetAccountId() int64 {
+	if x != nil {
+		return x.AccountId
+	}
+	return 0
+}
+
+func (x *IngredientOwner) GetIngredient() string {
+	if x != nil {
+		return x.Ingredient
+	}
+	return ""
+}
+
 type ListRecipesRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The caller's scan whose list the recipes are for.
@@ -469,14 +549,16 @@ type ListRecipesRequest struct {
 	// Keep only recipes that need nothing beyond this equipment; empty = no filter.
 	Equipment []v1.Equipment `protobuf:"varint,3,rep,packed,name=equipment,proto3,enum=account.v1.Equipment" json:"equipment,omitempty"`
 	// Keep only recipes that fit this diet; unspecified or none = no filter.
-	Diet          v1.Diet `protobuf:"varint,4,opt,name=diet,proto3,enum=account.v1.Diet" json:"diet,omitempty"`
+	Diet v1.Diet `protobuf:"varint,4,opt,name=diet,proto3,enum=account.v1.Diet" json:"diet,omitempty"`
+	// When set, use the combo's two fridges instead of scan_id. Positive; mutually exclusive.
+	ComboId       *int64 `protobuf:"varint,5,opt,name=combo_id,json=comboId,proto3,oneof" json:"combo_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListRecipesRequest) Reset() {
 	*x = ListRecipesRequest{}
-	mi := &file_cook_v1_cook_proto_msgTypes[4]
+	mi := &file_cook_v1_cook_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -488,7 +570,7 @@ func (x *ListRecipesRequest) String() string {
 func (*ListRecipesRequest) ProtoMessage() {}
 
 func (x *ListRecipesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_cook_v1_cook_proto_msgTypes[4]
+	mi := &file_cook_v1_cook_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -501,7 +583,7 @@ func (x *ListRecipesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRecipesRequest.ProtoReflect.Descriptor instead.
 func (*ListRecipesRequest) Descriptor() ([]byte, []int) {
-	return file_cook_v1_cook_proto_rawDescGZIP(), []int{4}
+	return file_cook_v1_cook_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ListRecipesRequest) GetScanId() int64 {
@@ -532,6 +614,13 @@ func (x *ListRecipesRequest) GetDiet() v1.Diet {
 	return v1.Diet(0)
 }
 
+func (x *ListRecipesRequest) GetComboId() int64 {
+	if x != nil && x.ComboId != nil {
+		return *x.ComboId
+	}
+	return 0
+}
+
 // The shelves come whole, without a cursor: they hold one scan's recipes, a handful from the
 // model, and never grow.
 type ListRecipesResponse struct {
@@ -546,7 +635,7 @@ type ListRecipesResponse struct {
 
 func (x *ListRecipesResponse) Reset() {
 	*x = ListRecipesResponse{}
-	mi := &file_cook_v1_cook_proto_msgTypes[5]
+	mi := &file_cook_v1_cook_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -558,7 +647,7 @@ func (x *ListRecipesResponse) String() string {
 func (*ListRecipesResponse) ProtoMessage() {}
 
 func (x *ListRecipesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_cook_v1_cook_proto_msgTypes[5]
+	mi := &file_cook_v1_cook_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -571,7 +660,7 @@ func (x *ListRecipesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRecipesResponse.ProtoReflect.Descriptor instead.
 func (*ListRecipesResponse) Descriptor() ([]byte, []int) {
-	return file_cook_v1_cook_proto_rawDescGZIP(), []int{5}
+	return file_cook_v1_cook_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ListRecipesResponse) GetMakeItNow() []*Recipe {
@@ -597,7 +686,7 @@ type GetRecipeRequest struct {
 
 func (x *GetRecipeRequest) Reset() {
 	*x = GetRecipeRequest{}
-	mi := &file_cook_v1_cook_proto_msgTypes[6]
+	mi := &file_cook_v1_cook_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -609,7 +698,7 @@ func (x *GetRecipeRequest) String() string {
 func (*GetRecipeRequest) ProtoMessage() {}
 
 func (x *GetRecipeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_cook_v1_cook_proto_msgTypes[6]
+	mi := &file_cook_v1_cook_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -622,7 +711,7 @@ func (x *GetRecipeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRecipeRequest.ProtoReflect.Descriptor instead.
 func (*GetRecipeRequest) Descriptor() ([]byte, []int) {
-	return file_cook_v1_cook_proto_rawDescGZIP(), []int{6}
+	return file_cook_v1_cook_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GetRecipeRequest) GetRecipeId() int64 {
@@ -641,7 +730,7 @@ type GetRecipeResponse struct {
 
 func (x *GetRecipeResponse) Reset() {
 	*x = GetRecipeResponse{}
-	mi := &file_cook_v1_cook_proto_msgTypes[7]
+	mi := &file_cook_v1_cook_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -653,7 +742,7 @@ func (x *GetRecipeResponse) String() string {
 func (*GetRecipeResponse) ProtoMessage() {}
 
 func (x *GetRecipeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_cook_v1_cook_proto_msgTypes[7]
+	mi := &file_cook_v1_cook_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -666,7 +755,7 @@ func (x *GetRecipeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRecipeResponse.ProtoReflect.Descriptor instead.
 func (*GetRecipeResponse) Descriptor() ([]byte, []int) {
-	return file_cook_v1_cook_proto_rawDescGZIP(), []int{7}
+	return file_cook_v1_cook_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *GetRecipeResponse) GetRecipe() *Recipe {
@@ -688,7 +777,7 @@ type PlateMealRequest struct {
 
 func (x *PlateMealRequest) Reset() {
 	*x = PlateMealRequest{}
-	mi := &file_cook_v1_cook_proto_msgTypes[8]
+	mi := &file_cook_v1_cook_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -700,7 +789,7 @@ func (x *PlateMealRequest) String() string {
 func (*PlateMealRequest) ProtoMessage() {}
 
 func (x *PlateMealRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_cook_v1_cook_proto_msgTypes[8]
+	mi := &file_cook_v1_cook_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -713,7 +802,7 @@ func (x *PlateMealRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlateMealRequest.ProtoReflect.Descriptor instead.
 func (*PlateMealRequest) Descriptor() ([]byte, []int) {
-	return file_cook_v1_cook_proto_rawDescGZIP(), []int{8}
+	return file_cook_v1_cook_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *PlateMealRequest) GetRecipeId() int64 {
@@ -739,7 +828,7 @@ type PlateMealResponse struct {
 
 func (x *PlateMealResponse) Reset() {
 	*x = PlateMealResponse{}
-	mi := &file_cook_v1_cook_proto_msgTypes[9]
+	mi := &file_cook_v1_cook_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -751,7 +840,7 @@ func (x *PlateMealResponse) String() string {
 func (*PlateMealResponse) ProtoMessage() {}
 
 func (x *PlateMealResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_cook_v1_cook_proto_msgTypes[9]
+	mi := &file_cook_v1_cook_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -764,7 +853,7 @@ func (x *PlateMealResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlateMealResponse.ProtoReflect.Descriptor instead.
 func (*PlateMealResponse) Descriptor() ([]byte, []int) {
-	return file_cook_v1_cook_proto_rawDescGZIP(), []int{9}
+	return file_cook_v1_cook_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *PlateMealResponse) GetReceipt() *Receipt {
@@ -800,7 +889,7 @@ type Receipt struct {
 
 func (x *Receipt) Reset() {
 	*x = Receipt{}
-	mi := &file_cook_v1_cook_proto_msgTypes[10]
+	mi := &file_cook_v1_cook_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -812,7 +901,7 @@ func (x *Receipt) String() string {
 func (*Receipt) ProtoMessage() {}
 
 func (x *Receipt) ProtoReflect() protoreflect.Message {
-	mi := &file_cook_v1_cook_proto_msgTypes[10]
+	mi := &file_cook_v1_cook_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -825,7 +914,7 @@ func (x *Receipt) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Receipt.ProtoReflect.Descriptor instead.
 func (*Receipt) Descriptor() ([]byte, []int) {
-	return file_cook_v1_cook_proto_rawDescGZIP(), []int{10}
+	return file_cook_v1_cook_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *Receipt) GetPassed() bool {
@@ -895,7 +984,7 @@ type AwardLine struct {
 
 func (x *AwardLine) Reset() {
 	*x = AwardLine{}
-	mi := &file_cook_v1_cook_proto_msgTypes[11]
+	mi := &file_cook_v1_cook_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -907,7 +996,7 @@ func (x *AwardLine) String() string {
 func (*AwardLine) ProtoMessage() {}
 
 func (x *AwardLine) ProtoReflect() protoreflect.Message {
-	mi := &file_cook_v1_cook_proto_msgTypes[11]
+	mi := &file_cook_v1_cook_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -920,7 +1009,7 @@ func (x *AwardLine) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AwardLine.ProtoReflect.Descriptor instead.
 func (*AwardLine) Descriptor() ([]byte, []int) {
-	return file_cook_v1_cook_proto_rawDescGZIP(), []int{11}
+	return file_cook_v1_cook_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *AwardLine) GetReason() PointReason {
@@ -954,7 +1043,7 @@ const file_cook_v1_cook_proto_rawDesc = "" +
 	"\vCookingStep\x12 \n" +
 	"\vinstruction\x18\x01 \x01(\tR\vinstruction\x12(\n" +
 	"\rtimer_seconds\x18\x02 \x01(\x05H\x00R\ftimerSeconds\x88\x01\x01B\x10\n" +
-	"\x0e_timer_seconds\"\xe5\x02\n" +
+	"\x0e_timer_seconds\"\xec\x03\n" +
 	"\x06Recipe\x12\x1b\n" +
 	"\trecipe_id\x18\x01 \x01(\x03R\brecipeId\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x18\n" +
@@ -968,13 +1057,24 @@ const file_cook_v1_cook_proto_rawDesc = "" +
 	"\x05steps\x18\b \x03(\tR\x05steps\x12%\n" +
 	"\x0epoints_preview\x18\t \x01(\x05R\rpointsPreview\x129\n" +
 	"\rcooking_steps\x18\n" +
-	" \x03(\v2\x14.cook.v1.CookingStepR\fcookingSteps\"\xa9\x01\n" +
+	" \x03(\v2\x14.cook.v1.CookingStepR\fcookingSteps\x12\x19\n" +
+	"\bcombo_id\x18\v \x01(\x03R\acomboId\x12#\n" +
+	"\ronly_together\x18\f \x01(\bR\fonlyTogether\x12E\n" +
+	"\x11ingredient_owners\x18\r \x03(\v2\x18.cook.v1.IngredientOwnerR\x10ingredientOwners\"P\n" +
+	"\x0fIngredientOwner\x12\x1d\n" +
+	"\n" +
+	"account_id\x18\x01 \x01(\x03R\taccountId\x12\x1e\n" +
+	"\n" +
+	"ingredient\x18\x02 \x01(\tR\n" +
+	"ingredient\"\xd6\x01\n" +
 	"\x12ListRecipesRequest\x12\x17\n" +
 	"\ascan_id\x18\x01 \x01(\x03R\x06scanId\x12\x1f\n" +
 	"\vmax_minutes\x18\x02 \x01(\x05R\n" +
 	"maxMinutes\x123\n" +
 	"\tequipment\x18\x03 \x03(\x0e2\x15.account.v1.EquipmentR\tequipment\x12$\n" +
-	"\x04diet\x18\x04 \x01(\x0e2\x10.account.v1.DietR\x04diet\"{\n" +
+	"\x04diet\x18\x04 \x01(\x0e2\x10.account.v1.DietR\x04diet\x12\x1e\n" +
+	"\bcombo_id\x18\x05 \x01(\x03H\x00R\acomboId\x88\x01\x01B\v\n" +
+	"\t_combo_id\"{\n" +
 	"\x13ListRecipesResponse\x12/\n" +
 	"\vmake_it_now\x18\x01 \x03(\v2\x0f.cook.v1.RecipeR\tmakeItNow\x123\n" +
 	"\rone_item_away\x18\x02 \x03(\v2\x0f.cook.v1.RecipeR\voneItemAway\"/\n" +
@@ -1035,7 +1135,7 @@ func file_cook_v1_cook_proto_rawDescGZIP() []byte {
 }
 
 var file_cook_v1_cook_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_cook_v1_cook_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_cook_v1_cook_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_cook_v1_cook_proto_goTypes = []any{
 	(Difficulty)(0),             // 0: cook.v1.Difficulty
 	(PointReason)(0),            // 1: cook.v1.PointReason
@@ -1043,43 +1143,45 @@ var file_cook_v1_cook_proto_goTypes = []any{
 	(*Badge)(nil),               // 3: cook.v1.Badge
 	(*CookingStep)(nil),         // 4: cook.v1.CookingStep
 	(*Recipe)(nil),              // 5: cook.v1.Recipe
-	(*ListRecipesRequest)(nil),  // 6: cook.v1.ListRecipesRequest
-	(*ListRecipesResponse)(nil), // 7: cook.v1.ListRecipesResponse
-	(*GetRecipeRequest)(nil),    // 8: cook.v1.GetRecipeRequest
-	(*GetRecipeResponse)(nil),   // 9: cook.v1.GetRecipeResponse
-	(*PlateMealRequest)(nil),    // 10: cook.v1.PlateMealRequest
-	(*PlateMealResponse)(nil),   // 11: cook.v1.PlateMealResponse
-	(*Receipt)(nil),             // 12: cook.v1.Receipt
-	(*AwardLine)(nil),           // 13: cook.v1.AwardLine
-	(v1.Equipment)(0),           // 14: account.v1.Equipment
-	(v1.Diet)(0),                // 15: account.v1.Diet
+	(*IngredientOwner)(nil),     // 6: cook.v1.IngredientOwner
+	(*ListRecipesRequest)(nil),  // 7: cook.v1.ListRecipesRequest
+	(*ListRecipesResponse)(nil), // 8: cook.v1.ListRecipesResponse
+	(*GetRecipeRequest)(nil),    // 9: cook.v1.GetRecipeRequest
+	(*GetRecipeResponse)(nil),   // 10: cook.v1.GetRecipeResponse
+	(*PlateMealRequest)(nil),    // 11: cook.v1.PlateMealRequest
+	(*PlateMealResponse)(nil),   // 12: cook.v1.PlateMealResponse
+	(*Receipt)(nil),             // 13: cook.v1.Receipt
+	(*AwardLine)(nil),           // 14: cook.v1.AwardLine
+	(v1.Equipment)(0),           // 15: account.v1.Equipment
+	(v1.Diet)(0),                // 16: account.v1.Diet
 }
 var file_cook_v1_cook_proto_depIdxs = []int32{
 	0,  // 0: cook.v1.Recipe.difficulty:type_name -> cook.v1.Difficulty
-	14, // 1: cook.v1.Recipe.equipment:type_name -> account.v1.Equipment
+	15, // 1: cook.v1.Recipe.equipment:type_name -> account.v1.Equipment
 	4,  // 2: cook.v1.Recipe.cooking_steps:type_name -> cook.v1.CookingStep
-	14, // 3: cook.v1.ListRecipesRequest.equipment:type_name -> account.v1.Equipment
-	15, // 4: cook.v1.ListRecipesRequest.diet:type_name -> account.v1.Diet
-	5,  // 5: cook.v1.ListRecipesResponse.make_it_now:type_name -> cook.v1.Recipe
-	5,  // 6: cook.v1.ListRecipesResponse.one_item_away:type_name -> cook.v1.Recipe
-	5,  // 7: cook.v1.GetRecipeResponse.recipe:type_name -> cook.v1.Recipe
-	12, // 8: cook.v1.PlateMealResponse.receipt:type_name -> cook.v1.Receipt
-	13, // 9: cook.v1.Receipt.lines:type_name -> cook.v1.AwardLine
-	3,  // 10: cook.v1.Receipt.new_badges:type_name -> cook.v1.Badge
-	2,  // 11: cook.v1.Receipt.rank_before:type_name -> cook.v1.Rank
-	2,  // 12: cook.v1.Receipt.rank_after:type_name -> cook.v1.Rank
-	1,  // 13: cook.v1.AwardLine.reason:type_name -> cook.v1.PointReason
-	6,  // 14: cook.v1.CookService.ListRecipes:input_type -> cook.v1.ListRecipesRequest
-	8,  // 15: cook.v1.CookService.GetRecipe:input_type -> cook.v1.GetRecipeRequest
-	10, // 16: cook.v1.CookService.PlateMeal:input_type -> cook.v1.PlateMealRequest
-	7,  // 17: cook.v1.CookService.ListRecipes:output_type -> cook.v1.ListRecipesResponse
-	9,  // 18: cook.v1.CookService.GetRecipe:output_type -> cook.v1.GetRecipeResponse
-	11, // 19: cook.v1.CookService.PlateMeal:output_type -> cook.v1.PlateMealResponse
-	17, // [17:20] is the sub-list for method output_type
-	14, // [14:17] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	6,  // 3: cook.v1.Recipe.ingredient_owners:type_name -> cook.v1.IngredientOwner
+	15, // 4: cook.v1.ListRecipesRequest.equipment:type_name -> account.v1.Equipment
+	16, // 5: cook.v1.ListRecipesRequest.diet:type_name -> account.v1.Diet
+	5,  // 6: cook.v1.ListRecipesResponse.make_it_now:type_name -> cook.v1.Recipe
+	5,  // 7: cook.v1.ListRecipesResponse.one_item_away:type_name -> cook.v1.Recipe
+	5,  // 8: cook.v1.GetRecipeResponse.recipe:type_name -> cook.v1.Recipe
+	13, // 9: cook.v1.PlateMealResponse.receipt:type_name -> cook.v1.Receipt
+	14, // 10: cook.v1.Receipt.lines:type_name -> cook.v1.AwardLine
+	3,  // 11: cook.v1.Receipt.new_badges:type_name -> cook.v1.Badge
+	2,  // 12: cook.v1.Receipt.rank_before:type_name -> cook.v1.Rank
+	2,  // 13: cook.v1.Receipt.rank_after:type_name -> cook.v1.Rank
+	1,  // 14: cook.v1.AwardLine.reason:type_name -> cook.v1.PointReason
+	7,  // 15: cook.v1.CookService.ListRecipes:input_type -> cook.v1.ListRecipesRequest
+	9,  // 16: cook.v1.CookService.GetRecipe:input_type -> cook.v1.GetRecipeRequest
+	11, // 17: cook.v1.CookService.PlateMeal:input_type -> cook.v1.PlateMealRequest
+	8,  // 18: cook.v1.CookService.ListRecipes:output_type -> cook.v1.ListRecipesResponse
+	10, // 19: cook.v1.CookService.GetRecipe:output_type -> cook.v1.GetRecipeResponse
+	12, // 20: cook.v1.CookService.PlateMeal:output_type -> cook.v1.PlateMealResponse
+	18, // [18:21] is the sub-list for method output_type
+	15, // [15:18] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_cook_v1_cook_proto_init() }
@@ -1088,13 +1190,14 @@ func file_cook_v1_cook_proto_init() {
 		return
 	}
 	file_cook_v1_cook_proto_msgTypes[2].OneofWrappers = []any{}
+	file_cook_v1_cook_proto_msgTypes[5].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_cook_v1_cook_proto_rawDesc), len(file_cook_v1_cook_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   12,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

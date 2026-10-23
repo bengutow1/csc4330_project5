@@ -82,8 +82,10 @@ const setDeadline = 60 * time.Second
 
 // setKey names one version of one scan's list, which gets one set.
 type setKey struct {
-	scanID  int64
-	version int
+	scanID         int64
+	version        int
+	partnerScanID  int64
+	partnerVersion int
 }
 
 // claim makes this request the one making key's set, or returns what closes when the request
@@ -151,7 +153,7 @@ func NewCook(cfg Config) *Cook {
 	}
 	return &Cook{
 		repo:        cfg.Repo,
-		gate:        handlers.Gate{Auth: cfg.Auth},
+		gate:        handlers.Gate{Auth: cfg.Auth, Repo: cfg.Repo},
 		vision:      cfg.Vision,
 		limit:       cfg.Limit,
 		plateLimit:  cfg.PlateLimit,
@@ -183,6 +185,9 @@ func (h *Cook) ListRecipes(
 	in, invalid := buildListRecipes(req.Msg)
 	if invalid != nil {
 		return nil, h.fail(op, invalid)
+	}
+	if req.Msg.ComboId != nil {
+		return h.listComboRecipes(ctx, me, req.Msg.GetComboId(), in.filter)
 	}
 
 	// 3. Load the scan: another player's answers as a missing one does
@@ -217,16 +222,23 @@ func (h *Cook) ListRecipes(
 // one failed. One deadline covers all of it, so a request that waited never starts a fresh one.
 func (h *Cook) ensureSet(ctx context.Context, me repository.Account, scan repository.Scan) error {
 	key := setKey{scanID: scan.ScanID, version: scan.ItemsVersion}
+	return h.ensureRecipes(ctx, key, func(ctx context.Context) (bool, error) {
+		return h.repo.HasRecipes(ctx, me.AccountID, scan.ScanID, scan.ItemsVersion)
+	}, func(ctx context.Context) error { return h.makeSet(ctx, me, scan) })
+}
+
+// ensureRecipes shares one deadline and one in-flight claim across solo and combo shelves.
+func (h *Cook) ensureRecipes(ctx context.Context, key setKey, has func(context.Context) (bool, error), makeSet func(context.Context) error) error {
 	ctx, cancel := context.WithTimeout(ctx, h.setDeadline)
 	defer cancel()
 	for {
-		has, err := h.repo.HasRecipes(ctx, me.AccountID, scan.ScanID, scan.ItemsVersion)
-		if err != nil || has {
+		found, err := has(ctx)
+		if err != nil || found {
 			return err
 		}
 		done, mine := h.making.claim(key)
 		if mine {
-			return h.makeClaimed(ctx, me, scan, key)
+			return h.makeClaimed(ctx, key, has, makeSet)
 		}
 		select {
 		case <-done:
@@ -239,27 +251,37 @@ func (h *Cook) ensureSet(ctx context.Context, me repository.Account, scan reposi
 // makeClaimed makes the set this request claimed, unless another request stored it between the
 // look and the claim. It finishes even if this request's caller hangs up, which a chip tapped
 // while the shelves load makes the app do, because the requests waiting on the claim still need
-// the set. It keeps the request's deadline, which ensureSet set.
-func (h *Cook) makeClaimed(ctx context.Context, me repository.Account, scan repository.Scan, key setKey) error {
+// the set. It keeps the request's deadline, which ensureRecipes set.
+func (h *Cook) makeClaimed(ctx context.Context, key setKey, has func(context.Context) (bool, error), makeSet func(context.Context) error) error {
 	defer h.making.release(key)
 	deadline, _ := ctx.Deadline()
 	ctx, cancel := context.WithDeadline(context.WithoutCancel(ctx), deadline)
 	defer cancel()
-	has, err := h.repo.HasRecipes(ctx, me.AccountID, scan.ScanID, scan.ItemsVersion)
-	if err != nil || has {
+	found, err := has(ctx)
+	if err != nil || found {
 		return err
 	}
-	return h.makeSet(ctx, me, scan)
+	return makeSet(ctx)
 }
 
 // makeSet asks the model for recipes for the scan's list and stores the ones the player can cook.
 // It spends one of the player's sets, and the call takes seconds, so no transaction is open while
 // it runs.
 func (h *Cook) makeSet(ctx context.Context, me repository.Account, scan repository.Scan) error {
+	set, err := h.checkedRecipes(ctx, me, scan)
+	if err != nil {
+		return err
+	}
+	_, err = h.repo.CreateRecipes(ctx, me.AccountID, scan.ScanID, scan.ItemsVersion, set)
+	return err
+}
+
+// checkedRecipes keeps the same validation and food checks for either kind of fridge list.
+func (h *Cook) checkedRecipes(ctx context.Context, me repository.Account, scan repository.Scan) ([]repository.NewRecipe, error) {
 	// 1. The model's time costs money, so each player gets setsPerHour
 	err := h.limit.Allow(strconv.FormatInt(me.AccountID, 10))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// 2. The model hears the list and the kitchen, and nothing else about the player
@@ -269,7 +291,7 @@ func (h *Cook) makeSet(ctx context.Context, me repository.Account, scan reposito
 		Allergies: me.Allergies,
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// 3. What the model wrote is as untrusted as a request: keep what passes, count the rest
@@ -300,10 +322,7 @@ func (h *Cook) makeSet(ctx context.Context, me repository.Account, scan reposito
 		set = append(set, r)
 	}
 
-	// 5. Store the set. A request that raced this one may have stored its own first, which then
-	// stands, so either way the shelves read one set
-	_, err = h.repo.CreateRecipes(ctx, me.AccountID, scan.ScanID, scan.ItemsVersion, set)
-	return err
+	return set, nil
 }
 
 // GetRecipe reads one of the caller's recipes.
@@ -369,6 +388,16 @@ func (h *Cook) PlateMeal(
 	}
 
 	// 5. The model looks at the photo. It takes seconds, so no transaction is open while it does
+	if recipe.ComboID > 0 {
+		_, c, err := h.gate.ComboMember(ctx, recipe.ComboID)
+		if err != nil {
+			return nil, h.fail(op, err)
+		}
+		err = comboReady(c, h.now())
+		if err != nil {
+			return nil, h.fail(op, err)
+		}
+	}
 	check, err := h.vision.CheckPlate(ctx, req.Msg.GetPhoto(), recipe.Title)
 	if err != nil {
 		return nil, h.fail(op, err)
@@ -399,6 +428,9 @@ func (h *Cook) PlateMeal(
 func (h *Cook) plate(
 	ctx context.Context, accountID int64, recipe repository.Recipe, photo []byte, now time.Time,
 ) (*cookv1.Receipt, error) {
+	if recipe.ComboID > 0 {
+		return h.plateCombo(ctx, accountID, recipe, photo, now)
+	}
 	window, day := points.MealWindow(now)
 	today := day.Format(time.DateOnly)
 	hash := sha256.Sum256(photo)

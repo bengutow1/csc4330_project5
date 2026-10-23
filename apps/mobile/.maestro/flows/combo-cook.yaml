@@ -1,0 +1,29 @@
+# Continues #36's prepared, signed-in two-player fixture. Like combo-reveal.yaml, this preserves
+# the device session because #35's start/join screens are not available yet. Run as the guest
+# with both fridges scanned and both meal windows unused. Use the mock API, no vendor key.
+# Pass COMBO_ID, HOST_HANDLE, RECIPE_TITLE and BRING_ITEM. The recipe must use exclusive food
+# from each fridge, with BRING_ITEM in the guest's fridge only. The host supplies the kitchen.
+# Do not clearState here: it would discard the prepared member's session.
+appId: com.cadenlund.friesinthebag
+---
+- runFlow: combo-reveal.yaml
+- tapOn: "(Show me what I can cook.*|Cook anyway.*)"
+- extendedWaitUntil:
+    visible: "Two fridges, one meal"
+    timeout: 15000
+- tapOn: "${RECIPE_TITLE}.*"
+- assertVisible: "Pick a kitchen"
+- tapOn: "Cook at @${HOST_HANDLE}'s kitchen"
+- assertVisible: "Bring with you"
+- assertVisible: "Pack ${BRING_ITEM}"
+- tapOn: "Pack ${BRING_ITEM}"
+- tapOn: "Cook this recipe"
+- assertVisible: "I made it"
+- tapOn: "I made it"
+- assertVisible: "Plate it"
+- tapOn: "Use a sample photo"
+- extendedWaitUntil:
+    visible: "Combo cook, \\+50"
+    timeout: 15000
+- assertVisible: "Home-cooked meal, \\+100"
+- assertVisible: "Combo cook, \\+50"
