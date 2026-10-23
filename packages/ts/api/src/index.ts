@@ -4,6 +4,33 @@
 //
 // Universal by contract: no react-native, no react-dom, no DOM globals.
 
+// The kitchen's closed sets, which the app lists as choices, sends back in UpdateKitchen and builds
+// the recipe filters from.
+export {
+  Allergy,
+  Diet,
+  Equipment,
+  type Kitchen,
+  RoastLevel,
+  Staple,
+} from "@fries-in-the-bag/apigen/account/v1/account_pb";
+// The wire's types and enums that screens use, re-exported by name.
+export {
+  Board,
+  type FridgeOfTheWeek,
+  Range,
+  type Row,
+} from "@fries-in-the-bag/apigen/board/v1/board_pb";
+export {
+  type Badge,
+  Difficulty,
+  PointReason,
+  type Rank,
+  type Recipe,
+} from "@fries-in-the-bag/apigen/cook/v1/cook_pb";
+export { type Spot, SpotFilter } from "@fries-in-the-bag/apigen/fries/v1/fries_pb";
+export type { Plate, Profile } from "@fries-in-the-bag/apigen/profile/v1/profile_pb";
+export { Category, PhotoKind, Tier } from "@fries-in-the-bag/apigen/scan/v1/scan_pb";
 export {
   errorMessage,
   fieldErrors,
@@ -11,10 +38,37 @@ export {
   isNotFound,
   isUnauthenticated,
   isUnavailable,
+  isUnreachable,
 } from "./errors.ts";
 export type { AppStateEvents } from "./focus.ts";
-export { useCheckHandle, useCreateAccount, useWhoAmI } from "./hooks/use-account.ts";
+export {
+  useCheckHandle,
+  useCreateAccount,
+  useCreatingAccount,
+  useDeleteAccount,
+  useUpdateKitchen,
+  useWhoAmI,
+} from "./hooks/use-account.ts";
+export {
+  useBoard,
+  useFridgeOfTheWeek,
+  useInvalidateBoard,
+} from "./hooks/use-board.ts";
+export {
+  type RecipeFilters,
+  useInvalidateRecipes,
+  usePlateMeal,
+  useRecipe,
+  useRecipes,
+} from "./hooks/use-cook.ts";
+export {
+  type SpotsSearch,
+  useInvalidateFryRuns,
+  useLogFryRun,
+  useSpots,
+} from "./hooks/use-fries.ts";
 export { useReady } from "./hooks/use-health.ts";
+export { useInvalidateProfile, usePlates, useProfile } from "./hooks/use-profile.ts";
 export {
   useCreateScan,
   useEditIngredients,
@@ -25,3 +79,4 @@ export {
 export { ApiProvider } from "./provider.tsx";
 export { makeQueryClient, type ToastHandlers } from "./query-client.ts";
 export { type ApiTransportOptions, createApiTransport } from "./transport.ts";
+export { useSettled } from "./use-settled.ts";

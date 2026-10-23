@@ -15,7 +15,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file fries/v1/fries.proto.
  */
 export const file_fries_v1_fries: GenFile = /*@__PURE__*/
-  fileDesc("ChRmcmllcy92MS9mcmllcy5wcm90bxIIZnJpZXMudjEi3AEKBFNwb3QSDwoHc3BvdF9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEhcKD2Rpc3RhbmNlX21ldGVycxgDIAEoBRIQCghvcGVuX25vdxgEIAEoCBIRCgljbG9zZXNfYXQYBSABKAkSEgoKbGF0ZV9uaWdodBgGIAEoCBITCgtwcmljZV9sZXZlbBgHIAEoBRIRCglmYXN0X2Zvb2QYCCABKAgSEAoId2Fsa2FibGUYCSABKAgSCwoDbGF0GAogASgBEgsKA2xuZxgLIAEoARIPCgdhZGRyZXNzGAwgASgJIpsBChBMaXN0U3BvdHNSZXF1ZXN0EhAKA2xhdBgBIAEoAUgAiAEBEhAKA2xuZxgCIAEoAUgBiAEBEiUKB2ZpbHRlcnMYAyADKA4yFC5mcmllcy52MS5TcG90RmlsdGVyEg0KBXF1ZXJ5GAQgASgJEg4KBmN1cnNvchgFIAEoCRINCgVsaW1pdBgGIAEoBUIGCgRfbGF0QgYKBF9sbmcibgoRTGlzdFNwb3RzUmVzcG9uc2USHQoFc3BvdHMYASADKAsyDi5mcmllcy52MS5TcG90EhMKC25leHRfY3Vyc29yGAIgASgJEiUKDW5lYXJlc3RfZnJpZXMYAyABKAsyDi5mcmllcy52MS5TcG90IjYKEExvZ0ZyeVJ1blJlcXVlc3QSDwoHc3BvdF9pZBgBIAEoCRIRCglzcG90X25hbWUYAiABKAkiJwoRTG9nRnJ5UnVuUmVzcG9uc2USEgoKZnJ5X3J1bl9pZBgBIAEoAyqrAQoKU3BvdEZpbHRlchIbChdTUE9UX0ZJTFRFUl9VTlNQRUNJRklFRBAAEhgKFFNQT1RfRklMVEVSX09QRU5fTk9XEAESGgoWU1BPVF9GSUxURVJfTEFURV9OSUdIVBACEhUKEVNQT1RfRklMVEVSX0NIRUFQEAMSGQoVU1BPVF9GSUxURVJfRkFTVF9GT09EEAQSGAoUU1BPVF9GSUxURVJfV0FMS0FCTEUQBTKaAQoMRnJpZXNTZXJ2aWNlEkQKCUxpc3RTcG90cxIaLmZyaWVzLnYxLkxpc3RTcG90c1JlcXVlc3QaGy5mcmllcy52MS5MaXN0U3BvdHNSZXNwb25zZRJECglMb2dGcnlSdW4SGi5mcmllcy52MS5Mb2dGcnlSdW5SZXF1ZXN0GhsuZnJpZXMudjEuTG9nRnJ5UnVuUmVzcG9uc2VCpgEKDGNvbS5mcmllcy52MUIKRnJpZXNQcm90b1ABWklnaXRodWIuY29tL2Jlbmd1dG93MS9jc2M0MzMwX3Byb2plY3Q1L3BhY2thZ2VzL2dvL2FwaWdlbi9mcmllcy92MTtmcmllc3YxogIDRlhYqgIIRnJpZXMuVjHKAghGcmllc1xWMeICFEZyaWVzXFYxXEdQQk1ldGFkYXRh6gIJRnJpZXM6OlYxYgZwcm90bzM");
+  fileDesc("ChRmcmllcy92MS9mcmllcy5wcm90bxIIZnJpZXMudjEi7gEKBFNwb3QSDwoHc3BvdF9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEhcKD2Rpc3RhbmNlX21ldGVycxgDIAEoBRIQCghvcGVuX25vdxgEIAEoCBIRCgljbG9zZXNfYXQYBSABKAkSEgoKbGF0ZV9uaWdodBgGIAEoCBITCgtwcmljZV9sZXZlbBgHIAEoBRIRCglmYXN0X2Zvb2QYCCABKAgSEAoId2Fsa2FibGUYCSABKAgSCwoDbGF0GAogASgBEgsKA2xuZxgLIAEoARIPCgdhZGRyZXNzGAwgASgJEhAKCGNhdGVnb3J5GA0gASgJIpsBChBMaXN0U3BvdHNSZXF1ZXN0EhAKA2xhdBgBIAEoAUgAiAEBEhAKA2xuZxgCIAEoAUgBiAEBEiUKB2ZpbHRlcnMYAyADKA4yFC5mcmllcy52MS5TcG90RmlsdGVyEg0KBXF1ZXJ5GAQgASgJEg4KBmN1cnNvchgFIAEoCRINCgVsaW1pdBgGIAEoBUIGCgRfbGF0QgYKBF9sbmcibgoRTGlzdFNwb3RzUmVzcG9uc2USHQoFc3BvdHMYASADKAsyDi5mcmllcy52MS5TcG90EhMKC25leHRfY3Vyc29yGAIgASgJEiUKDW5lYXJlc3RfZnJpZXMYAyABKAsyDi5mcmllcy52MS5TcG90IjYKEExvZ0ZyeVJ1blJlcXVlc3QSDwoHc3BvdF9pZBgBIAEoCRIRCglzcG90X25hbWUYAiABKAkiJwoRTG9nRnJ5UnVuUmVzcG9uc2USEgoKZnJ5X3J1bl9pZBgBIAEoAyqrAQoKU3BvdEZpbHRlchIbChdTUE9UX0ZJTFRFUl9VTlNQRUNJRklFRBAAEhgKFFNQT1RfRklMVEVSX09QRU5fTk9XEAESGgoWU1BPVF9GSUxURVJfTEFURV9OSUdIVBACEhUKEVNQT1RfRklMVEVSX0NIRUFQEAMSGQoVU1BPVF9GSUxURVJfRkFTVF9GT09EEAQSGAoUU1BPVF9GSUxURVJfV0FMS0FCTEUQBTKaAQoMRnJpZXNTZXJ2aWNlEkQKCUxpc3RTcG90cxIaLmZyaWVzLnYxLkxpc3RTcG90c1JlcXVlc3QaGy5mcmllcy52MS5MaXN0U3BvdHNSZXNwb25zZRJECglMb2dGcnlSdW4SGi5mcmllcy52MS5Mb2dGcnlSdW5SZXF1ZXN0GhsuZnJpZXMudjEuTG9nRnJ5UnVuUmVzcG9uc2VCpgEKDGNvbS5mcmllcy52MUIKRnJpZXNQcm90b1ABWklnaXRodWIuY29tL2Jlbmd1dG93MS9jc2M0MzMwX3Byb2plY3Q1L3BhY2thZ2VzL2dvL2FwaWdlbi9mcmllcy92MTtmcmllc3YxogIDRlhYqgIIRnJpZXMuVjHKAghGcmllc1xWMeICFEZyaWVzXFYxXEdQQk1ldGFkYXRh6gIJRnJpZXM6OlYxYgZwcm90bzM");
 
 /**
  * Spot is one place to eat near the player.
@@ -106,6 +106,14 @@ export type Spot = Message<"fries.v1.Spot"> & {
    * @generated from field: string address = 12;
    */
   address: string;
+
+  /**
+   * The kind of food in a word or two, as the provider names it ("Mexican", "Pizza", "Fast
+   * food"); "" when unknown. The list shows it before the price and distance.
+   *
+   * @generated from field: string category = 13;
+   */
+  category: string;
 };
 
 /**
@@ -193,7 +201,8 @@ export type ListSpotsResponse = Message<"fries.v1.ListSpotsResponse"> & {
 
   /**
    * The closest open fast-food spot the search found, whatever the filters, on every page. Unset
-   * when there is none.
+   * when there is none, and when the request sent no lat and lng: without a point, nothing is
+   * nearest.
    *
    * @generated from field: fries.v1.Spot nearest_fries = 3;
    */
@@ -238,7 +247,7 @@ export const LogFryRunRequestSchema: GenMessage<LogFryRunRequest> = /*@__PURE__*
  */
 export type LogFryRunResponse = Message<"fries.v1.LogFryRunResponse"> & {
   /**
-   * The id of the fry run just logged.
+   * The id of the fry run just logged, or of the one already logged in this meal window.
    *
    * @generated from field: int64 fry_run_id = 1;
    */
@@ -292,7 +301,7 @@ export enum SpotFilter {
   FAST_FOOD = 4,
 
   /**
-   * Within 1,200 m of the player (walkable).
+   * Within 1,200 m of the player (walkable). Needs lat and lng: refused without them.
    *
    * @generated from enum value: SPOT_FILTER_WALKABLE = 5;
    */
@@ -323,7 +332,8 @@ export const FriesService: GenService<{
     output: typeof ListSpotsResponseSchema;
   },
   /**
-   * LogFryRun records that the caller went to a spot. It earns no points.
+   * LogFryRun records that the caller went to a spot. It earns no points, and one run counts per
+   * meal window: a second in the same window answers with the first run's id.
    *
    * @generated from rpc fries.v1.FriesService.LogFryRun
    */

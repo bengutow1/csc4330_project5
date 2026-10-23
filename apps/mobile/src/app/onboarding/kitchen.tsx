@@ -1,5 +1,5 @@
-import { PlaceholderScreen } from "@/screens/placeholder-screen";
+import { KitchenScreen } from "@/screens/onboarding/kitchen-screen";
 
 export default function KitchenRoute() {
-  return <PlaceholderScreen title="Your kitchen" issue={14} />;
+  return <KitchenScreen />;
 }

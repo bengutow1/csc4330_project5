@@ -10,7 +10,7 @@ type Stats struct {
 	CooksUnder35          int // checked plates of recipes from a scan that scored under 35
 	CooksWithThreeOrFewer int // checked plates of recipes that use three ingredients or fewer
 	ComboCooks            int // checked plates cooked in a combo
-	LongestStreak         int // the most campus days in a row with a checked plate
+	LongestStreak         int // the most days in a row with a checked plate, by MealWindow's day
 	LateNightPlates       int // checked plates between midnight and 4 am, campus time
 	MicrowaveOnlyCooks    int // checked plates of recipes that need nothing but a microwave
 	BiggestWeeklyRise     int // the biggest score rise from one scan to a later one, within 7 days

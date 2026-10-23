@@ -106,6 +106,53 @@ func (r *Repository) AccountByID(ctx context.Context, accountID int64) (Account,
 	return a, nil
 }
 
+// DeleteAccount deletes the caller's account and says whether there was one to delete.
+func (r *Repository) DeleteAccount(ctx context.Context, accountID int64) (bool, error) {
+	tag, err := r.db.Exec(ctx, `
+		delete from app.account a
+		 where a.account_id = $1`, accountID)
+	if err != nil {
+		return false, known(fmt.Sprintf("delete account account=%d", accountID), err)
+	}
+	return tag.RowsAffected() > 0, nil
+}
+
+// KitchenEdit is a whole kitchen to store: each word is a const from its closed set above, and a
+// nil list stores as empty.
+type KitchenEdit struct {
+	RoastLevel string
+	Equipment  []string
+	Diet       string
+	Allergies  []string
+	Staples    []string
+}
+
+// UpdateKitchen replaces the caller's kitchen and says whether the account was there to update.
+func (r *Repository) UpdateKitchen(ctx context.Context, accountID int64, k KitchenEdit) (bool, error) {
+	tag, err := r.db.Exec(ctx, `
+		update app.account a
+		   set roast_level = $2,
+		       equipment   = $3,
+		       diet        = $4,
+		       allergies   = $5,
+		       staples     = $6
+		 where a.account_id = $1`,
+		accountID, k.RoastLevel, orEmpty(k.Equipment), k.Diet, orEmpty(k.Allergies),
+		orEmpty(k.Staples))
+	if err != nil {
+		return false, known(fmt.Sprintf("update kitchen account=%d", accountID), err)
+	}
+	return tag.RowsAffected() > 0, nil
+}
+
+// orEmpty stands an empty list in for nil, which pgx would send as null into a not-null column.
+func orEmpty(words []string) []string {
+	if words == nil {
+		return []string{}
+	}
+	return words
+}
+
 // HandleTaken says whether an account already holds handle, so onboarding can say so while the
 // player types. CreateAccount never relies on it: between this answer and the insert, someone
 // else can take the handle.

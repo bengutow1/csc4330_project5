@@ -34,13 +34,42 @@ func New(sessions *scs.SessionManager, repo *repository.Repository) *Auth {
 }
 
 // SignIn makes the request's session belong to accountID. It renews the token first, so a token
-// handed out before the sign-in never ends up holding the account (session fixation).
+// handed out before the sign-in never ends up holding the account (session fixation). It saves
+// the session before it returns, so a caller that wrote something for this sign-in can still undo
+// it when the save fails.
 func (a *Auth) SignIn(ctx context.Context, accountID int64) error {
 	err := a.sessions.RenewToken(ctx)
 	if err != nil {
 		return fmt.Errorf("auth: renew token account=%d: %w", accountID, err)
 	}
 	a.sessions.Put(ctx, keyAccountID, accountID)
+	// LoadAndSave saves it again as the response goes out, which rewrites the same row.
+	_, _, err = a.sessions.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("auth: save session account=%d: %w", accountID, err)
+	}
+	return nil
+}
+
+// EndSessions ends every session that holds accountID: this request's, so the response clears its
+// cookie, then any other, found through sessions.Iterate. Iterate reads every session in the
+// store, which deleting an account is rare enough to afford.
+func (a *Auth) EndSessions(ctx context.Context, accountID int64) error {
+	if a.sessions.GetInt64(ctx, keyAccountID) == accountID {
+		err := a.sessions.Destroy(ctx)
+		if err != nil {
+			return fmt.Errorf("auth: end this session account=%d: %w", accountID, err)
+		}
+	}
+	err := a.sessions.Iterate(ctx, func(ctx context.Context) error {
+		if a.sessions.GetInt64(ctx, keyAccountID) != accountID {
+			return nil
+		}
+		return a.sessions.Destroy(ctx)
+	})
+	if err != nil {
+		return fmt.Errorf("auth: end sessions account=%d: %w", accountID, err)
+	}
 	return nil
 }
 

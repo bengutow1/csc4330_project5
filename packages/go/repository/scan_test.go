@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -342,6 +343,37 @@ func TestDeletingAnAccountTakesItsScansWithIt(t *testing.T) {
 	items := rows(t, pool, `select count(*) from app.scan_item`)
 	if scans != 0 || items != 0 {
 		t.Errorf("%d scans and %d items left, want none", scans, items)
+	}
+}
+
+// TestBackdateScanMovesOnlyTheOwnersScan: the demo seed lays last week's scans down by moving
+// them back, and the move is fenced like every write: another player's scan id changes nothing.
+func TestBackdateScanMovesOnlyTheOwnersScan(t *testing.T) {
+	t.Parallel()
+	pool := newPool(t)
+	repo := repository.New(pool)
+	maya := createAccount(t, repo, "test_maya")
+	ben := createAccount(t, repo, "test_ben")
+	mine := createScan(t, repo, maya.AccountID, fridge)
+	bens := createScan(t, repo, ben.AccountID, fridge)
+	lastWeek := mine.CreatedAt.AddDate(0, 0, -7).Truncate(time.Second)
+
+	moved, err := repo.BackdateScan(t.Context(), maya.AccountID, mine.ScanID, lastWeek)
+	if err != nil {
+		t.Fatalf("backdate maya's scan: %v", err)
+	}
+	stolen, err := repo.BackdateScan(t.Context(), maya.AccountID, bens.ScanID, lastWeek)
+	if err != nil {
+		t.Fatalf("backdate ben's scan as maya: %v", err)
+	}
+
+	mayas := readScan(t, repo, maya.AccountID, mine.ScanID).CreatedAt
+	bensAfter := readScan(t, repo, ben.AccountID, bens.ScanID).CreatedAt
+	if !moved || !mayas.Equal(lastWeek) {
+		t.Errorf("maya's scan: moved %v, made at %v, want moved to %v", moved, mayas, lastWeek)
+	}
+	if stolen || !bensAfter.Equal(bens.CreatedAt) {
+		t.Errorf("ben's scan through maya: moved %v, made at %v, want untouched at %v", stolen, bensAfter, bens.CreatedAt)
 	}
 }
 

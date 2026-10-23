@@ -1,0 +1,49 @@
+# The Me tab (P1). A new player's profile is empty: the first title with all its points to go,
+# nothing cooked, no plates yet and every badge locked. One fry run then makes the fry ratio 100%.
+# A full profile, with plates and earned badges, needs a checked plate (#24), so its screenshot is
+# the checkpoint's. Needs the app installed (moon run mobile:ios), Metro (moon run mobile:dev) and
+# the api (moon run api:dev) with no PLACES_API_KEY.
+#
+# A stat tile is one element whose label reads "Fry runs: 1".
+appId: com.cadenlund.friesinthebag
+---
+- setLocation:
+    latitude: 30.4133
+    longitude: -91.18
+- launchApp:
+    clearState: true
+- runFlow: subflows/sign-up.yaml
+- tapOn: "Me"
+- extendedWaitUntil:
+    visible: "Fry Cook"
+    timeout: 10000
+- assertVisible: "0 of 500 points to Line Cook"
+- assertVisible: "Meals cooked: 0"
+- assertVisible: "No plates yet."
+- assertVisible: "0 of 11"
+# One fry run, from the spots list.
+- openLink: friesinthebag://fries/spots
+# iOS asks before opening a link with our scheme; Android does not.
+- tapOn:
+    text: "Open"
+    optional: true
+- tapOn:
+    text: "Allow While Using App"
+    optional: true
+- tapOn:
+    text: "While using the app"
+    optional: true
+- extendedWaitUntil:
+    visible: "Night Owl Fries.*"
+    timeout: 10000
+- tapOn: "Night Owl Fries.*"
+- tapOn: "Log fry run"
+- assertVisible: "Fry run logged."
+- openLink: friesinthebag://me
+- tapOn:
+    text: "Open"
+    optional: true
+- extendedWaitUntil:
+    visible: "Fry runs: 1"
+    timeout: 10000
+- assertVisible: "Fry ratio: 100%"

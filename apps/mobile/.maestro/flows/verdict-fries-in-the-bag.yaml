@@ -1,0 +1,15 @@
+# A fries-in-the-bag verdict: the fries button is the big one, and cooking anyway earns a bonus.
+# Start the api with VISION_MOCK=fries_in_the_bag (VISION_MOCK=fries_in_the_bag moon run
+# api:dev). Needs the app installed (moon run mobile:ios) and Metro (moon run mobile:dev).
+appId: com.cadenlund.friesinthebag
+---
+- launchApp:
+    clearState: true
+- runFlow: subflows/sign-up.yaml
+- runFlow: subflows/judge-sample.yaml
+- assertVisible: "29"
+- assertVisible: "Fries in the Bag tier"
+- assertVisible: "“Ketchup, one egg and a lemon from last semester. Put the fries in the bag.”"
+- assertVisible: "Ketchup"
+- assertVisible: "Put the fries in the bag"
+- assertVisible: "Cook anyway \\(\\+100\\)"

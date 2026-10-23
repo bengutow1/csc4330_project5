@@ -8,6 +8,10 @@ require (
 	github.com/alexedwards/scs/v2 v2.9.0
 	github.com/bengutow1/csc4330_project5/packages/go/apigen v0.0.0
 	github.com/bengutow1/csc4330_project5/packages/go/auth v0.0.0
+	github.com/bengutow1/csc4330_project5/packages/go/logging v0.0.0
+	github.com/bengutow1/csc4330_project5/packages/go/places v0.0.0
+	github.com/bengutow1/csc4330_project5/packages/go/points v0.0.0
+	github.com/bengutow1/csc4330_project5/packages/go/recipes v0.0.0
 	github.com/bengutow1/csc4330_project5/packages/go/repository v0.0.0
 	github.com/bengutow1/csc4330_project5/packages/go/scoring v0.0.0
 	github.com/bengutow1/csc4330_project5/packages/go/vision v0.0.0
@@ -89,6 +93,10 @@ require (
 replace (
 	github.com/bengutow1/csc4330_project5/packages/go/apigen => ../apigen
 	github.com/bengutow1/csc4330_project5/packages/go/auth => ../auth
+	github.com/bengutow1/csc4330_project5/packages/go/logging => ../logging
+	github.com/bengutow1/csc4330_project5/packages/go/places => ../places
+	github.com/bengutow1/csc4330_project5/packages/go/points => ../points
+	github.com/bengutow1/csc4330_project5/packages/go/recipes => ../recipes
 	github.com/bengutow1/csc4330_project5/packages/go/repository => ../repository
 	github.com/bengutow1/csc4330_project5/packages/go/scoring => ../scoring
 	github.com/bengutow1/csc4330_project5/packages/go/vision => ../vision

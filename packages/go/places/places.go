@@ -24,6 +24,9 @@ type Place struct {
 	Lat, Lng   float64 // degrees
 	// Address is one line, as the provider writes it; "" when unknown.
 	Address string
+	// Category is the kind of food in a word or two ("Mexican", "Pizza"), as the provider names
+	// it; "" when unknown.
+	Category string
 	// Hours are the day's openings, earliest first; none when unknown.
 	Hours []Opening
 }

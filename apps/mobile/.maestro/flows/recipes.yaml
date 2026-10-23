@@ -1,0 +1,31 @@
+# From a verdict to the recipe you'll make: Show me what I can cook, a time chip the server
+# applies, a recipe, and I made it, which opens plate it. Start the api with
+# VISION_MOCK=certified_chef (VISION_MOCK=certified_chef moon run api:dev). Needs the app installed
+# (moon run mobile:ios) and Metro (moon run mobile:dev).
+appId: com.cadenlund.friesinthebag
+---
+- launchApp:
+    clearState: true
+- runFlow: subflows/sign-up.yaml
+- runFlow: subflows/judge-sample.yaml
+- assertVisible: "Certified Chef tier"
+- tapOn: "Show me what I can cook"
+- assertVisible: "Recipe ideas for you"
+# The first visit asks the model for this list's recipes.
+- extendedWaitUntil:
+    visible: "Make it now"
+    timeout: 15000
+# Each card reads out whole ("Chicken Fajita Bowl, 25 minutes, …"), so its name starts the match.
+- assertVisible: "Chicken Fajita Bowl.*"
+- tapOn: "10 min"
+# The server keeps recipes of ten minutes or less, so the 25 minute bowl leaves the shelf.
+- extendedWaitUntil:
+    notVisible: "Chicken Fajita Bowl.*"
+    timeout: 15000
+- assertVisible: "Spinach Cheddar Omelette.*"
+- tapOn: "Spinach Cheddar Omelette.*"
+- assertVisible: "+100 pts when you plate it"
+- assertVisible: "You have"
+- assertVisible: "Spinach"
+- tapOn: "I made it"
+- assertVisible: "Plate it"

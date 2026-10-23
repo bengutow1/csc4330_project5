@@ -1,6 +1,28 @@
-import { skipToken } from "@connectrpc/connect-query";
+import { create } from "@bufbuild/protobuf";
+import { createConnectQueryKey, skipToken } from "@connectrpc/connect-query";
+import {
+  AccountService,
+  CheckHandleResponseSchema,
+  Diet,
+  Equipment,
+  WhoAmIResponseSchema,
+} from "@fries-in-the-bag/apigen/account/v1/account_pb";
+import {
+  CookService,
+  GetRecipeResponseSchema,
+  ListRecipesResponseSchema,
+} from "@fries-in-the-bag/apigen/cook/v1/cook_pb";
+import { GetScanResponseSchema, ScanService } from "@fries-in-the-bag/apigen/scan/v1/scan_pb";
+import { MutationObserver, QueryClient } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
-import { checkHandleInput } from "./use-account.ts";
+import { createApiTransport } from "../transport.ts";
+import {
+  CREATING_ACCOUNT,
+  checkHandleInput,
+  createAccountOptions,
+  invalidateAccount,
+  WHO_AM_I_FAMILY,
+} from "./use-account.ts";
 
 describe("checkHandleInput", () => {
   it("waits until the handle is long enough for the server to take", () => {
@@ -12,5 +34,107 @@ describe("checkHandleInput", () => {
   it("asks from three characters on, sending what was typed for the server to normalize", () => {
     expect(checkHandleInput("abc")).toEqual({ handle: "abc" });
     expect(checkHandleInput(" Chef_Maya ")).toEqual({ handle: " Chef_Maya " });
+  });
+});
+
+describe("CREATING_ACCOUNT", () => {
+  // A screen the player backs out of keeps its CreateAccount running. If the next screen can't
+  // see that call, its Next makes a second account and strands the first.
+  it("still sees a CreateAccount once the screen that sent it is gone, and no other write", async () => {
+    const client = new QueryClient();
+    // Made up front: TanStack calls mutationFn a few ticks after mutate.
+    let land = () => {};
+    const held = new Promise<void>((resolve) => {
+      land = resolve;
+    });
+    const create = new MutationObserver(client, {
+      ...createAccountOptions(client),
+      mutationFn: () => held,
+    });
+    const other = new MutationObserver(client, { mutationFn: () => new Promise<void>(() => {}) });
+    const leave = create.subscribe(() => {});
+
+    const sent = create.mutate();
+    leave();
+    void other.mutate();
+
+    expect(client.isMutating(CREATING_ACCOUNT)).toBe(1);
+    land();
+    await sent;
+    expect(client.isMutating(CREATING_ACCOUNT)).toBe(0);
+    client.clear();
+  });
+});
+
+describe("WHO_AM_I_FAMILY", () => {
+  // A key that matched nothing would leave a saved kitchen stale on every screen showing it.
+  it("reaches the WhoAmI a screen caches, and not the account's other queries", async () => {
+    const client = new QueryClient();
+    const transport = createApiTransport({ baseUrl: "http://api.test.invalid" });
+    const whoAmI = createConnectQueryKey({
+      schema: AccountService.method.whoAmI,
+      input: {},
+      transport,
+      cardinality: "finite",
+    });
+    const checkHandle = createConnectQueryKey({
+      schema: AccountService.method.checkHandle,
+      input: { handle: "test_maya" },
+      transport,
+      cardinality: "finite",
+    });
+    client.setQueryData(whoAmI, create(WhoAmIResponseSchema, { account: { handle: "test_maya" } }));
+    client.setQueryData(checkHandle, create(CheckHandleResponseSchema, { available: true }));
+
+    await client.invalidateQueries({ queryKey: WHO_AM_I_FAMILY });
+
+    expect(client.getQueryState(whoAmI)?.isInvalidated).toBe(true);
+    expect(client.getQueryState(checkHandle)?.isInvalidated).toBe(false);
+    client.clear();
+  });
+});
+
+describe("invalidateAccount", () => {
+  // The recipes leave out what the player is allergic to. Shelves cached before an allergy was
+  // saved would keep offering a recipe that contains it.
+  it("stales the account and every recipe read, and leaves the scans alone", async () => {
+    const client = new QueryClient();
+    const transport = createApiTransport({ baseUrl: "http://api.test.invalid" });
+    const whoAmI = createConnectQueryKey({
+      schema: AccountService.method.whoAmI,
+      input: {},
+      transport,
+      cardinality: "finite",
+    });
+    const shelves = createConnectQueryKey({
+      schema: CookService.method.listRecipes,
+      input: { scanId: 7n, maxMinutes: 20, equipment: [Equipment.STOVETOP], diet: Diet.NONE },
+      transport,
+      cardinality: "finite",
+    });
+    const recipe = createConnectQueryKey({
+      schema: CookService.method.getRecipe,
+      input: { recipeId: 3n },
+      transport,
+      cardinality: "finite",
+    });
+    const scan = createConnectQueryKey({
+      schema: ScanService.method.getScan,
+      input: { scanId: 7n },
+      transport,
+      cardinality: "finite",
+    });
+    client.setQueryData(whoAmI, create(WhoAmIResponseSchema, { account: { handle: "test_maya" } }));
+    client.setQueryData(shelves, create(ListRecipesResponseSchema, {}));
+    client.setQueryData(recipe, create(GetRecipeResponseSchema, {}));
+    client.setQueryData(scan, create(GetScanResponseSchema, {}));
+
+    await invalidateAccount(client);
+
+    expect(client.getQueryState(whoAmI)?.isInvalidated).toBe(true);
+    expect(client.getQueryState(shelves)?.isInvalidated).toBe(true);
+    expect(client.getQueryState(recipe)?.isInvalidated).toBe(true);
+    expect(client.getQueryState(scan)?.isInvalidated).toBe(false);
+    client.clear();
   });
 });

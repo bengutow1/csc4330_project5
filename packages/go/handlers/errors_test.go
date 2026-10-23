@@ -14,6 +14,7 @@ import (
 
 	"github.com/bengutow1/csc4330_project5/packages/go/auth"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers"
+	"github.com/bengutow1/csc4330_project5/packages/go/places"
 	"github.com/bengutow1/csc4330_project5/packages/go/repository"
 	"github.com/bengutow1/csc4330_project5/packages/go/vision"
 )
@@ -29,11 +30,14 @@ func TestConnectErrMapsEverySentinelToItsCode(t *testing.T) {
 	}{
 		{name: "not found", sentinel: repository.ErrNotFound, code: connect.CodeNotFound},
 		{name: "duplicate", sentinel: repository.ErrDuplicate, code: connect.CodeAlreadyExists},
+		{name: "plate seen", sentinel: repository.ErrPlateSeen, code: connect.CodeAlreadyExists},
+		{name: "meal window cooked", sentinel: repository.ErrMealWindowCooked, code: connect.CodeFailedPrecondition},
 		{name: "not ready", sentinel: handlers.ErrNotReady, code: connect.CodeUnavailable},
 		{name: "too many requests", sentinel: handlers.ErrTooManyRequests, code: connect.CodeResourceExhausted},
 		{name: "not authenticated", sentinel: auth.ErrNotAuthenticated, code: connect.CodeUnauthenticated},
 		{name: "forbidden", sentinel: auth.ErrForbidden, code: connect.CodePermissionDenied},
 		{name: "vision unavailable", sentinel: vision.ErrUnavailable, code: connect.CodeUnavailable},
+		{name: "places unavailable", sentinel: places.ErrUnavailable, code: connect.CodeUnavailable},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

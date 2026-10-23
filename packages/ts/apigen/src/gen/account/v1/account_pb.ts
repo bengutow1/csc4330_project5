@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file account/v1/account.proto.
  */
 export const file_account_v1_account: GenFile = /*@__PURE__*/
-  fileDesc("ChhhY2NvdW50L3YxL2FjY291bnQucHJvdG8SCmFjY291bnQudjEiTwoHQWNjb3VudBIOCgZoYW5kbGUYASABKAkSDgoGYXZhdGFyGAIgASgJEiQKB2tpdGNoZW4YAyABKAsyEy5hY2NvdW50LnYxLktpdGNoZW4izQEKB0tpdGNoZW4SKwoLcm9hc3RfbGV2ZWwYASABKA4yFi5hY2NvdW50LnYxLlJvYXN0TGV2ZWwSKAoJZXF1aXBtZW50GAIgAygOMhUuYWNjb3VudC52MS5FcXVpcG1lbnQSHgoEZGlldBgDIAEoDjIQLmFjY291bnQudjEuRGlldBImCglhbGxlcmdpZXMYBCADKA4yEy5hY2NvdW50LnYxLkFsbGVyZ3kSIwoHc3RhcGxlcxgFIAMoDjISLmFjY291bnQudjEuU3RhcGxlIjYKFENyZWF0ZUFjY291bnRSZXF1ZXN0Eg4KBmhhbmRsZRgBIAEoCRIOCgZhdmF0YXIYAiABKAkiPQoVQ3JlYXRlQWNjb3VudFJlc3BvbnNlEiQKB2FjY291bnQYASABKAsyEy5hY2NvdW50LnYxLkFjY291bnQiJAoSQ2hlY2tIYW5kbGVSZXF1ZXN0Eg4KBmhhbmRsZRgBIAEoCSIoChNDaGVja0hhbmRsZVJlc3BvbnNlEhEKCWF2YWlsYWJsZRgBIAEoCCIPCg1XaG9BbUlSZXF1ZXN0IjYKDldob0FtSVJlc3BvbnNlEiQKB2FjY291bnQYASABKAsyEy5hY2NvdW50LnYxLkFjY291bnQqdQoKUm9hc3RMZXZlbBIbChdST0FTVF9MRVZFTF9VTlNQRUNJRklFRBAAEhQKEFJPQVNUX0xFVkVMX01JTEQQARIWChJST0FTVF9MRVZFTF9NRURJVU0QAhIcChhST0FTVF9MRVZFTF9FWFRSQV9DUklTUFkQAyqEAQoJRXF1aXBtZW50EhkKFUVRVUlQTUVOVF9VTlNQRUNJRklFRBAAEhcKE0VRVUlQTUVOVF9NSUNST1dBVkUQARIWChJFUVVJUE1FTlRfU1RPVkVUT1AQAhISCg5FUVVJUE1FTlRfT1ZFThADEhcKE0VRVUlQTUVOVF9BSVJfRlJZRVIQBCpmCgREaWV0EhQKEERJRVRfVU5TUEVDSUZJRUQQABINCglESUVUX05PTkUQARITCg9ESUVUX1ZFR0VUQVJJQU4QAhIOCgpESUVUX1ZFR0FOEAMSFAoQRElFVF9QRVNDQVRBUklBThAEKtMBCgdBbGxlcmd5EhcKE0FMTEVSR1lfVU5TUEVDSUZJRUQQABITCg9BTExFUkdZX1BFQU5VVFMQARIVChFBTExFUkdZX1RSRUVfTlVUUxACEhAKDEFMTEVSR1lfTUlMSxADEhAKDEFMTEVSR1lfRUdHUxAEEhEKDUFMTEVSR1lfV0hFQVQQBRIPCgtBTExFUkdZX1NPWRAGEhAKDEFMTEVSR1lfRklTSBAHEhUKEUFMTEVSR1lfU0hFTExGSVNIEAgSEgoOQUxMRVJHWV9TRVNBTUUQCSrBAQoGU3RhcGxlEhYKElNUQVBMRV9VTlNQRUNJRklFRBAAEg8KC1NUQVBMRV9TQUxUEAESEQoNU1RBUExFX1BFUFBFUhACEg4KClNUQVBMRV9PSUwQAxIRCg1TVEFQTEVfQlVUVEVSEAQSDwoLU1RBUExFX1JJQ0UQBRIQCgxTVEFQTEVfUEFTVEEQBhIQCgxTVEFQTEVfRkxPVVIQBxIQCgxTVEFQTEVfU1VHQVIQCBIRCg1TVEFQTEVfU1BJQ0VTEAky9wEKDkFjY291bnRTZXJ2aWNlElQKDUNyZWF0ZUFjY291bnQSIC5hY2NvdW50LnYxLkNyZWF0ZUFjY291bnRSZXF1ZXN0GiEuYWNjb3VudC52MS5DcmVhdGVBY2NvdW50UmVzcG9uc2USTgoLQ2hlY2tIYW5kbGUSHi5hY2NvdW50LnYxLkNoZWNrSGFuZGxlUmVxdWVzdBofLmFjY291bnQudjEuQ2hlY2tIYW5kbGVSZXNwb25zZRI/CgZXaG9BbUkSGS5hY2NvdW50LnYxLldob0FtSVJlcXVlc3QaGi5hY2NvdW50LnYxLldob0FtSVJlc3BvbnNlQrYBCg5jb20uYWNjb3VudC52MUIMQWNjb3VudFByb3RvUAFaTWdpdGh1Yi5jb20vYmVuZ3V0b3cxL2NzYzQzMzBfcHJvamVjdDUvcGFja2FnZXMvZ28vYXBpZ2VuL2FjY291bnQvdjE7YWNjb3VudHYxogIDQVhYqgIKQWNjb3VudC5WMcoCCkFjY291bnRcVjHiAhZBY2NvdW50XFYxXEdQQk1ldGFkYXRh6gILQWNjb3VudDo6VjFiBnByb3RvMw");
+  fileDesc("ChhhY2NvdW50L3YxL2FjY291bnQucHJvdG8SCmFjY291bnQudjEiTwoHQWNjb3VudBIOCgZoYW5kbGUYASABKAkSDgoGYXZhdGFyGAIgASgJEiQKB2tpdGNoZW4YAyABKAsyEy5hY2NvdW50LnYxLktpdGNoZW4izQEKB0tpdGNoZW4SKwoLcm9hc3RfbGV2ZWwYASABKA4yFi5hY2NvdW50LnYxLlJvYXN0TGV2ZWwSKAoJZXF1aXBtZW50GAIgAygOMhUuYWNjb3VudC52MS5FcXVpcG1lbnQSHgoEZGlldBgDIAEoDjIQLmFjY291bnQudjEuRGlldBImCglhbGxlcmdpZXMYBCADKA4yEy5hY2NvdW50LnYxLkFsbGVyZ3kSIwoHc3RhcGxlcxgFIAMoDjISLmFjY291bnQudjEuU3RhcGxlIjYKFENyZWF0ZUFjY291bnRSZXF1ZXN0Eg4KBmhhbmRsZRgBIAEoCRIOCgZhdmF0YXIYAiABKAkiPQoVQ3JlYXRlQWNjb3VudFJlc3BvbnNlEiQKB2FjY291bnQYASABKAsyEy5hY2NvdW50LnYxLkFjY291bnQiJAoSQ2hlY2tIYW5kbGVSZXF1ZXN0Eg4KBmhhbmRsZRgBIAEoCSIoChNDaGVja0hhbmRsZVJlc3BvbnNlEhEKCWF2YWlsYWJsZRgBIAEoCCIPCg1XaG9BbUlSZXF1ZXN0IjYKDldob0FtSVJlc3BvbnNlEiQKB2FjY291bnQYASABKAsyEy5hY2NvdW50LnYxLkFjY291bnQiPAoUVXBkYXRlS2l0Y2hlblJlcXVlc3QSJAoHa2l0Y2hlbhgBIAEoCzITLmFjY291bnQudjEuS2l0Y2hlbiI9ChVVcGRhdGVLaXRjaGVuUmVzcG9uc2USJAoHYWNjb3VudBgBIAEoCzITLmFjY291bnQudjEuQWNjb3VudCIWChREZWxldGVBY2NvdW50UmVxdWVzdCIXChVEZWxldGVBY2NvdW50UmVzcG9uc2UqdQoKUm9hc3RMZXZlbBIbChdST0FTVF9MRVZFTF9VTlNQRUNJRklFRBAAEhQKEFJPQVNUX0xFVkVMX01JTEQQARIWChJST0FTVF9MRVZFTF9NRURJVU0QAhIcChhST0FTVF9MRVZFTF9FWFRSQV9DUklTUFkQAyqEAQoJRXF1aXBtZW50EhkKFUVRVUlQTUVOVF9VTlNQRUNJRklFRBAAEhcKE0VRVUlQTUVOVF9NSUNST1dBVkUQARIWChJFUVVJUE1FTlRfU1RPVkVUT1AQAhISCg5FUVVJUE1FTlRfT1ZFThADEhcKE0VRVUlQTUVOVF9BSVJfRlJZRVIQBCpmCgREaWV0EhQKEERJRVRfVU5TUEVDSUZJRUQQABINCglESUVUX05PTkUQARITCg9ESUVUX1ZFR0VUQVJJQU4QAhIOCgpESUVUX1ZFR0FOEAMSFAoQRElFVF9QRVNDQVRBUklBThAEKtMBCgdBbGxlcmd5EhcKE0FMTEVSR1lfVU5TUEVDSUZJRUQQABITCg9BTExFUkdZX1BFQU5VVFMQARIVChFBTExFUkdZX1RSRUVfTlVUUxACEhAKDEFMTEVSR1lfTUlMSxADEhAKDEFMTEVSR1lfRUdHUxAEEhEKDUFMTEVSR1lfV0hFQVQQBRIPCgtBTExFUkdZX1NPWRAGEhAKDEFMTEVSR1lfRklTSBAHEhUKEUFMTEVSR1lfU0hFTExGSVNIEAgSEgoOQUxMRVJHWV9TRVNBTUUQCSrBAQoGU3RhcGxlEhYKElNUQVBMRV9VTlNQRUNJRklFRBAAEg8KC1NUQVBMRV9TQUxUEAESEQoNU1RBUExFX1BFUFBFUhACEg4KClNUQVBMRV9PSUwQAxIRCg1TVEFQTEVfQlVUVEVSEAQSDwoLU1RBUExFX1JJQ0UQBRIQCgxTVEFQTEVfUEFTVEEQBhIQCgxTVEFQTEVfRkxPVVIQBxIQCgxTVEFQTEVfU1VHQVIQCBIRCg1TVEFQTEVfU1BJQ0VTEAkyowMKDkFjY291bnRTZXJ2aWNlElQKDUNyZWF0ZUFjY291bnQSIC5hY2NvdW50LnYxLkNyZWF0ZUFjY291bnRSZXF1ZXN0GiEuYWNjb3VudC52MS5DcmVhdGVBY2NvdW50UmVzcG9uc2USTgoLQ2hlY2tIYW5kbGUSHi5hY2NvdW50LnYxLkNoZWNrSGFuZGxlUmVxdWVzdBofLmFjY291bnQudjEuQ2hlY2tIYW5kbGVSZXNwb25zZRI/CgZXaG9BbUkSGS5hY2NvdW50LnYxLldob0FtSVJlcXVlc3QaGi5hY2NvdW50LnYxLldob0FtSVJlc3BvbnNlElQKDVVwZGF0ZUtpdGNoZW4SIC5hY2NvdW50LnYxLlVwZGF0ZUtpdGNoZW5SZXF1ZXN0GiEuYWNjb3VudC52MS5VcGRhdGVLaXRjaGVuUmVzcG9uc2USVAoNRGVsZXRlQWNjb3VudBIgLmFjY291bnQudjEuRGVsZXRlQWNjb3VudFJlcXVlc3QaIS5hY2NvdW50LnYxLkRlbGV0ZUFjY291bnRSZXNwb25zZUK2AQoOY29tLmFjY291bnQudjFCDEFjY291bnRQcm90b1ABWk1naXRodWIuY29tL2Jlbmd1dG93MS9jc2M0MzMwX3Byb2plY3Q1L3BhY2thZ2VzL2dvL2FwaWdlbi9hY2NvdW50L3YxO2FjY291bnR2MaICA0FYWKoCCkFjY291bnQuVjHKAgpBY2NvdW50XFYx4gIWQWNjb3VudFxWMVxHUEJNZXRhZGF0YeoCC0FjY291bnQ6OlYxYgZwcm90bzM");
 
 /**
  * Account is the caller as they see themselves: their public name and their kitchen.
@@ -210,6 +210,72 @@ export type WhoAmIResponse = Message<"account.v1.WhoAmIResponse"> & {
  */
 export const WhoAmIResponseSchema: GenMessage<WhoAmIResponse> = /*@__PURE__*/
   messageDesc(file_account_v1_account, 7);
+
+/**
+ * @generated from message account.v1.UpdateKitchenRequest
+ */
+export type UpdateKitchenRequest = Message<"account.v1.UpdateKitchenRequest"> & {
+  /**
+   * The whole kitchen: what is left out of a list is off. A value repeated in a list counts once.
+   *
+   * @generated from field: account.v1.Kitchen kitchen = 1;
+   */
+  kitchen?: Kitchen | undefined;
+};
+
+/**
+ * Describes the message account.v1.UpdateKitchenRequest.
+ * Use `create(UpdateKitchenRequestSchema)` to create a new message.
+ */
+export const UpdateKitchenRequestSchema: GenMessage<UpdateKitchenRequest> = /*@__PURE__*/
+  messageDesc(file_account_v1_account, 8);
+
+/**
+ * @generated from message account.v1.UpdateKitchenResponse
+ */
+export type UpdateKitchenResponse = Message<"account.v1.UpdateKitchenResponse"> & {
+  /**
+   * The account as stored, with its new kitchen.
+   *
+   * @generated from field: account.v1.Account account = 1;
+   */
+  account?: Account | undefined;
+};
+
+/**
+ * Describes the message account.v1.UpdateKitchenResponse.
+ * Use `create(UpdateKitchenResponseSchema)` to create a new message.
+ */
+export const UpdateKitchenResponseSchema: GenMessage<UpdateKitchenResponse> = /*@__PURE__*/
+  messageDesc(file_account_v1_account, 9);
+
+/**
+ * @generated from message account.v1.DeleteAccountRequest
+ */
+export type DeleteAccountRequest = Message<"account.v1.DeleteAccountRequest"> & {
+};
+
+/**
+ * Describes the message account.v1.DeleteAccountRequest.
+ * Use `create(DeleteAccountRequestSchema)` to create a new message.
+ */
+export const DeleteAccountRequestSchema: GenMessage<DeleteAccountRequest> = /*@__PURE__*/
+  messageDesc(file_account_v1_account, 10);
+
+/**
+ * Nothing is left to return: the account is gone, and the response clears the session cookie.
+ *
+ * @generated from message account.v1.DeleteAccountResponse
+ */
+export type DeleteAccountResponse = Message<"account.v1.DeleteAccountResponse"> & {
+};
+
+/**
+ * Describes the message account.v1.DeleteAccountResponse.
+ * Use `create(DeleteAccountResponseSchema)` to create a new message.
+ */
+export const DeleteAccountResponseSchema: GenMessage<DeleteAccountResponse> = /*@__PURE__*/
+  messageDesc(file_account_v1_account, 11);
 
 /**
  * RoastLevel is how hard the roast hits. Medium is the default.
@@ -485,6 +551,28 @@ export const AccountService: GenService<{
     methodKind: "unary";
     input: typeof WhoAmIRequestSchema;
     output: typeof WhoAmIResponseSchema;
+  },
+  /**
+   * UpdateKitchen replaces the caller's kitchen with the one sent. A value outside its closed set,
+   * unspecified included, is invalid_argument on its field, naming the valid values.
+   *
+   * @generated from rpc account.v1.AccountService.UpdateKitchen
+   */
+  updateKitchen: {
+    methodKind: "unary";
+    input: typeof UpdateKitchenRequestSchema;
+    output: typeof UpdateKitchenResponseSchema;
+  },
+  /**
+   * DeleteAccount deletes the caller's account and everything of theirs, and ends every session
+   * that held it, this one included. Unauthenticated without a session.
+   *
+   * @generated from rpc account.v1.AccountService.DeleteAccount
+   */
+  deleteAccount: {
+    methodKind: "unary";
+    input: typeof DeleteAccountRequestSchema;
+    output: typeof DeleteAccountResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_account_v1_account, 0);

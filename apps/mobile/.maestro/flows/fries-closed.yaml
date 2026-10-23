@@ -1,0 +1,27 @@
+# Nothing open. With every spot closed, the list says "Even the fries are closed." and, before a
+# first scan, points back at the fridge. Needs the api started on the closed mock (PLACES_MOCK=closed moon run api:dev),
+# with the app installed (moon run mobile:ios) and Metro (moon run mobile:dev).
+appId: com.cadenlund.friesinthebag
+---
+- setLocation:
+    latitude: 30.4133
+    longitude: -91.18
+- launchApp:
+    clearState: true
+- runFlow: subflows/sign-up.yaml
+- openLink: friesinthebag://fries
+# iOS asks before opening a link with our scheme; Android does not.
+- tapOn:
+    text: "Open"
+    optional: true
+- tapOn: "Find food"
+- tapOn:
+    text: "Allow While Using App"
+    optional: true
+- tapOn:
+    text: "While using the app"
+    optional: true
+- extendedWaitUntil:
+    visible: "Even the fries are closed."
+    timeout: 10000
+- assertVisible: "Snap your fridge"

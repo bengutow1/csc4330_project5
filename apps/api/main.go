@@ -24,11 +24,19 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/account/v1/accountv1connect"
+	"github.com/bengutow1/csc4330_project5/packages/go/apigen/board/v1/boardv1connect"
+	"github.com/bengutow1/csc4330_project5/packages/go/apigen/cook/v1/cookv1connect"
+	"github.com/bengutow1/csc4330_project5/packages/go/apigen/fries/v1/friesv1connect"
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/health/v1/healthv1connect"
+	"github.com/bengutow1/csc4330_project5/packages/go/apigen/profile/v1/profilev1connect"
 	"github.com/bengutow1/csc4330_project5/packages/go/apigen/scan/v1/scanv1connect"
 	"github.com/bengutow1/csc4330_project5/packages/go/auth"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/account"
+	"github.com/bengutow1/csc4330_project5/packages/go/handlers/board"
+	"github.com/bengutow1/csc4330_project5/packages/go/handlers/cook"
+	"github.com/bengutow1/csc4330_project5/packages/go/handlers/fries"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/healthz"
+	"github.com/bengutow1/csc4330_project5/packages/go/handlers/profile"
 	"github.com/bengutow1/csc4330_project5/packages/go/handlers/scan"
 	"github.com/bengutow1/csc4330_project5/packages/go/logging"
 	"github.com/bengutow1/csc4330_project5/packages/go/places"
@@ -54,9 +62,11 @@ func main() {
 		port = "8080"
 	}
 	addr := ":" + port
-	// Read once for every vendor below and the session cookie: "production" makes a missing key
-	// stop the boot and the cookie Secure. Anything else is local dev.
+	// Read once. "production" makes a missing vendor key stop the boot below, and the dev-only
+	// relaxations need an explicit "development" or "local", so an unset or misspelled APP_ENV
+	// runs hardened.
 	appEnv := os.Getenv("APP_ENV")
+	localDev := isLocalDev(appEnv)
 
 	// The vision model. Without a key the API serves the mock's canned fridges, except in
 	// production, where a missing key stops the boot: a real deployment never hands out a fake
@@ -87,32 +97,22 @@ func main() {
 	// production, where a missing key stops the boot: a real deployment never lists fake spots.
 	placesKey := os.Getenv("PLACES_API_KEY")
 	placesMock := os.Getenv("PLACES_MOCK")
-	var spots interface {
-		Nearby(ctx context.Context, lat, lng float64, query string) ([]places.Place, error)
-	}
 	switch {
-	case placesKey != "" && placesMock != "":
-		// Serving real spots would ignore the mock mode without a word, and the closed screen
-		// someone is building would never show.
-		log.Error("PLACES_API_KEY and PLACES_MOCK are both set; unset one")
-		os.Exit(1)
 	case placesKey != "":
-		spots = places.New(placesKey, os.Getenv("PLACES_BASE_URL"))
-		log.Info("places client is live", "provider", "google")
+		// The real client is still to come (#32), and serving the mock anyway would ignore the key
+		// without a word.
+		log.Error("PLACES_API_KEY is set, but there is no places client yet; unset it to serve the mock")
+		os.Exit(1)
 	case appEnv == "production":
 		log.Error("PLACES_API_KEY is required in production")
 		os.Exit(1)
-	default:
-		var mock *places.Mock
-		mock, err = places.NewMock(placesMock)
-		if err != nil {
-			log.Error("PLACES_MOCK names no mock mode", "err", err)
-			os.Exit(1)
-		}
-		spots = mock
-		log.Info("places mock is live", "mode", cmp.Or(placesMock, "default"))
 	}
-	_ = spots // nothing lists spots until the fries service (#26) mounts
+	spots, err := places.NewMock(placesMock)
+	if err != nil {
+		log.Error("PLACES_MOCK names no mock mode", "err", err)
+		os.Exit(1)
+	}
+	log.Info("places mock is live", "mode", cmp.Or(placesMock, "default"))
 
 	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
@@ -125,14 +125,14 @@ func main() {
 	repo := repository.New(pool)
 
 	// Sessions live in Postgres, and the cookie is the device account's only credential, so it
-	// lasts a year. It is Secure only in production: local dev serves plain http to the simulator
-	// and to phones on the LAN, which would never send a Secure cookie back.
+	// lasts a year. It is Secure everywhere but local dev, which serves plain http to the simulator
+	// and to phones on the LAN, and they would never send a Secure cookie back.
 	sessionStore := pgxstore.New(pool)
 	defer sessionStore.StopCleanup()
 	sessions := scs.New()
 	sessions.Store = sessionStore
 	sessions.Lifetime = auth.Lifetime
-	sessions.Cookie.Secure = appEnv == "production"
+	sessions.Cookie.Secure = !localDev
 	sessions.Cookie.SameSite = http.SameSiteLaxMode
 	authn := auth.New(sessions, repo)
 
@@ -149,6 +149,23 @@ func main() {
 		Limit:  scan.DefaultLimit(),
 		Log:    log,
 	})
+	cookSvc := cook.NewCook(cook.Config{
+		Repo:       repo,
+		Auth:       authn,
+		Vision:     visionMock,
+		Limit:      cook.DefaultLimit(),
+		PlateLimit: cook.DefaultPlateLimit(),
+		Log:        log,
+	})
+	friesSvc := fries.NewFries(fries.Config{
+		Repo:   repo,
+		Auth:   authn,
+		Spots:  spots,
+		Limits: fries.DefaultLimits(),
+		Log:    log,
+	})
+	boardSvc := board.NewBoard(board.Config{Repo: repo, Auth: authn, Log: log})
+	profileSvc := profile.NewProfile(profile.Config{Repo: repo, Auth: authn, Log: log})
 
 	// Every service reads request bodies under the same cap.
 	readCap := connect.WithReadMaxBytes(4 << 20)
@@ -161,6 +178,10 @@ func main() {
 	r.Mount(healthv1connect.NewHealthServiceHandler(healthz.NewHealth(log, repo.Ping), readCap))
 	r.Mount(accountv1connect.NewAccountServiceHandler(accountSvc, readCap))
 	r.Mount(scanv1connect.NewScanServiceHandler(scanSvc, readCap))
+	r.Mount(cookv1connect.NewCookServiceHandler(cookSvc, readCap))
+	r.Mount(friesv1connect.NewFriesServiceHandler(friesSvc, readCap))
+	r.Mount(boardv1connect.NewBoardServiceHandler(boardSvc, readCap))
+	r.Mount(profilev1connect.NewProfileServiceHandler(profileSvc, readCap))
 
 	srv := &http.Server{
 		Addr:              addr,
@@ -190,4 +211,10 @@ func main() {
 	if err != nil {
 		_ = srv.Close() // the drain timed out; drop what is left
 	}
+}
+
+// isLocalDev says whether APP_ENV opts into the dev-only relaxations. Only the two exact words do,
+// so a deployment that forgot APP_ENV, or misspelled it, still runs hardened.
+func isLocalDev(appEnv string) bool {
+	return appEnv == "development" || appEnv == "local"
 }

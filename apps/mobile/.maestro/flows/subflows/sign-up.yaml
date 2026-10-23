@@ -1,13 +1,15 @@
-# Makes a new device account through the plain handle screen, for any flow that needs a player
-# signed in. Run it right after a clean launch. It lives in a subfolder so a folder run of flows/
-# does not run it on its own.
+# Makes a new device account through onboarding, for any flow that needs a player signed in: the
+# welcome, a fresh handle, then the kitchen saved as it opens. Run it right after a clean launch.
+# It lives in a subfolder so a folder run of flows/ does not run it on its own.
 appId: com.cadenlund.friesinthebag
 ---
-- assertVisible: "Pick a handle"
+- tapOn: "Get started"
 - tapOn: "Handle"
 # A fresh handle each run: the database keeps every account an earlier run made.
 - inputText: "test_"
 - inputRandomNumber:
     length: 8
-- tapOn: "Start cooking"
-- assertVisible: "Coming in #18."
+- tapOn: "Next"
+- assertVisible: "Your kitchen"
+- tapOn: "Save my kitchen"
+- assertVisible: "See what you have. Cook something great."

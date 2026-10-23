@@ -1,0 +1,28 @@
+# Snap to a verdict. The simulator has no camera, so the development build's sample photo stands in
+# for each shot. Needs the app installed (moon run mobile:ios), Metro (moon run mobile:dev) and
+# the api (moon run api:dev) with any VISION_MOCK but error, or none, which takes turns.
+#
+# Judging lasts only as long as the scan (the mock takes 2 s), and Maestro's wait for the screen
+# to settle after a tap can outlast it. So the flow checks the verdict that judging leads to,
+# never the judging lines themselves.
+appId: com.cadenlund.friesinthebag
+---
+- launchApp:
+    clearState: true
+- runFlow: subflows/sign-up.yaml
+
+# Two shots, each tagged with the part of the kitchen it shows, then the first one taken back.
+- tapOn: "Use a sample photo"
+- assertVisible: "Photo 1, Fridge"
+- tapOn: "Pantry"
+- tapOn: "Use a sample photo"
+- assertVisible: "Photo 2, Pantry"
+- tapOn: "Remove photo 1"
+- assertVisible: "Photo 1, Pantry"
+- assertNotVisible: "Photo 2, .*"
+
+# Judging ends on the verdict.
+- tapOn: "Judge my fridge"
+- extendedWaitUntil:
+    visible: "Here's what we found"
+    timeout: 15000

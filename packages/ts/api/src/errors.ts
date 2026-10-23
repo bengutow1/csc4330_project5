@@ -69,3 +69,14 @@ export function isFailedPrecondition(err: unknown): boolean {
 export function isUnavailable(err: unknown): boolean {
   return err instanceof ConnectError && err.code === Code.Unavailable;
 }
+
+/**
+ * isUnreachable: the request never got an answer, because the phone is offline or the api is
+ * down. A screen can say so in its own words ("Scans need a connection."), where errorMessage
+ * only has the generic line. connect calls that Unknown, caused by the TypeError fetch rejects
+ * with. An answer connect can't read is Unknown too (the api's panic recoverer, a proxy's error
+ * page), but it is an answer, so it has no such cause and is not this.
+ */
+export function isUnreachable(err: unknown): boolean {
+  return err instanceof ConnectError && err.code === Code.Unknown && err.cause instanceof TypeError;
+}

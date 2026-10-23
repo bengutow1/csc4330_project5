@@ -129,3 +129,38 @@ appId: com.cadenlund.friesinthebag
 - scrollUntilVisible:
     element: "Fries in the Bag"
 - assertVisible: "Fries in the Bag"
+
+# Photo card and check pill
+- scrollUntilVisible:
+    element: "Tonight, 7:58 PM"
+- assertVisible: "The logo's fries, standing in for a plate"
+- scrollUntilVisible:
+    element: "Looks like Creamy Tomato Pasta"
+- assertVisible: "Looks like Creamy Tomato Pasta"
+
+# Stickers, leaning opposite ways
+- scrollUntilVisible:
+    element: "Underdog badge\\. Cook from a fridge that scored under 35"
+- assertVisible: "On the Board badge\\. Earn your first points"
+
+# Tier pills, one for each tier. Each says it is a tier, so the last is not the logo.
+- scrollUntilVisible:
+    element: "Fries in the Bag tier"
+- assertVisible: "Certified Chef tier"
+- assertVisible: "Home Cook tier"
+- assertVisible: "Scrappy tier"
+
+# Count up and the breakdown, each on its value. A screen reader hears only the value a count
+# lands on, so these hold from the start; Play again then runs the motion once more.
+- scrollUntilVisible:
+    element: "Plays: 1"
+- assertVisible: "79"
+- assertVisible: "\\+140"
+- assertVisible: "Home-cooked meal, \\+100"
+- assertVisible: "4-day streak, \\+40"
+- assertVisible: "Total, \\+140"
+- tapOn: "Play again"
+- extendedWaitUntil:
+    visible: "Total, \\+140"
+    timeout: 5000
+- assertVisible: "Plays: 2"

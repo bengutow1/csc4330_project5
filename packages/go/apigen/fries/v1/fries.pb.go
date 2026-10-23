@@ -39,7 +39,7 @@ const (
 	SpotFilter_SPOT_FILTER_CHEAP SpotFilter = 3
 	// Fast food (fast_food).
 	SpotFilter_SPOT_FILTER_FAST_FOOD SpotFilter = 4
-	// Within 1,200 m of the player (walkable).
+	// Within 1,200 m of the player (walkable). Needs lat and lng: refused without them.
 	SpotFilter_SPOT_FILTER_WALKABLE SpotFilter = 5
 )
 
@@ -117,7 +117,10 @@ type Spot struct {
 	// The spot's longitude in degrees, for directions.
 	Lng float64 `protobuf:"fixed64,11,opt,name=lng,proto3" json:"lng,omitempty"`
 	// One line, as the provider writes it; "" when unknown.
-	Address       string `protobuf:"bytes,12,opt,name=address,proto3" json:"address,omitempty"`
+	Address string `protobuf:"bytes,12,opt,name=address,proto3" json:"address,omitempty"`
+	// The kind of food in a word or two, as the provider names it ("Mexican", "Pizza", "Fast
+	// food"); "" when unknown. The list shows it before the price and distance.
+	Category      string `protobuf:"bytes,13,opt,name=category,proto3" json:"category,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -236,6 +239,13 @@ func (x *Spot) GetAddress() string {
 	return ""
 }
 
+func (x *Spot) GetCategory() string {
+	if x != nil {
+		return x.Category
+	}
+	return ""
+}
+
 type ListSpotsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The player's latitude in degrees, -90 to 90. Send lat and lng together, or neither when the
@@ -337,7 +347,8 @@ type ListSpotsResponse struct {
 	// Send as cursor for the next page; "" when this page is the last.
 	NextCursor string `protobuf:"bytes,2,opt,name=next_cursor,json=nextCursor,proto3" json:"next_cursor,omitempty"`
 	// The closest open fast-food spot the search found, whatever the filters, on every page. Unset
-	// when there is none.
+	// when there is none, and when the request sent no lat and lng: without a point, nothing is
+	// nearest.
 	NearestFries  *Spot `protobuf:"bytes,3,opt,name=nearest_fries,json=nearestFries,proto3" json:"nearest_fries,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -450,7 +461,7 @@ func (x *LogFryRunRequest) GetSpotName() string {
 
 type LogFryRunResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The id of the fry run just logged.
+	// The id of the fry run just logged, or of the one already logged in this meal window.
 	FryRunId      int64 `protobuf:"varint,1,opt,name=fry_run_id,json=fryRunId,proto3" json:"fry_run_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -497,7 +508,7 @@ var File_fries_v1_fries_proto protoreflect.FileDescriptor
 
 const file_fries_v1_fries_proto_rawDesc = "" +
 	"\n" +
-	"\x14fries/v1/fries.proto\x12\bfries.v1\"\xcb\x02\n" +
+	"\x14fries/v1/fries.proto\x12\bfries.v1\"\xe7\x02\n" +
 	"\x04Spot\x12\x17\n" +
 	"\aspot_id\x18\x01 \x01(\tR\x06spotId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12'\n" +
@@ -513,7 +524,8 @@ const file_fries_v1_fries_proto_rawDesc = "" +
 	"\x03lat\x18\n" +
 	" \x01(\x01R\x03lat\x12\x10\n" +
 	"\x03lng\x18\v \x01(\x01R\x03lng\x12\x18\n" +
-	"\aaddress\x18\f \x01(\tR\aaddress\"\xc4\x01\n" +
+	"\aaddress\x18\f \x01(\tR\aaddress\x12\x1a\n" +
+	"\bcategory\x18\r \x01(\tR\bcategory\"\xc4\x01\n" +
 	"\x10ListSpotsRequest\x12\x15\n" +
 	"\x03lat\x18\x01 \x01(\x01H\x00R\x03lat\x88\x01\x01\x12\x15\n" +
 	"\x03lng\x18\x02 \x01(\x01H\x01R\x03lng\x88\x01\x01\x12.\n" +

@@ -5,14 +5,17 @@ The Expo app. Everything in the root `AGENTS.md` applies here. The app's own con
 calls); read both before editing anything in this folder.
 
 Status: the shell, behind a device account. The root layout asks `WhoAmI` and guards the routes
-with `Stack.Protected`: no account opens the plain handle screen at `onboarding/index` (#14
-designs onboarding), and every other Core route needs one. A new route that needs an account goes
-into that guard's list in `src/app/_layout.tsx`, or anyone can open it. The tabs are Snap (the
-camera), Board and Me, with the verdict, cooking, Fries mode and Combo as flows over them, and
-every Core route in `docs/contracts.md` mounts `PlaceholderScreen`, which names the issue that
-builds it. Each issue replaces its route's mount with a screen from the design
-(`docs/design.md`). `src/app/status.tsx` (open it with `friesinthebag://status`) asks the API
-whether it can serve, with or without an account.
+with `Stack.Protected` in three stages: no account opens onboarding's welcome and handle screens
+(O1, O2), the kitchen screen (O3) opens between making the account and saving the kitchen (the
+`Setup` context in `src/lib/setup.ts`), and every other Core route needs an account. A new route
+that needs an account goes into the last guard's list in `src/app/_layout.tsx`, or anyone can open
+it. A route meant for anyone also goes in `OPEN_ROUTES` (`src/lib/launch.ts`), or the launch cover
+hides it until the server answers. The tabs are Snap (the camera), Board and Me, with the verdict,
+cooking, Fries mode and Combo as flows over them. Every Core route in `docs/contracts.md` is built
+from the design (`docs/design.md`), and Next issues add their own routes. Settings (P3,
+`src/app/settings.tsx`) opens from the gear on the Me tab and reuses O3's `KitchenForm`.
+`src/app/status.tsx` (open it with `friesinthebag://status`) asks the API whether it can serve, with
+or without an account.
 
 ## Running it
 

@@ -2,7 +2,6 @@
 package scan
 
 import (
-	"bytes"
 	"fmt"
 	"strings"
 
@@ -12,15 +11,9 @@ import (
 	"github.com/bengutow1/csc4330_project5/packages/go/vision"
 )
 
-// The photo rules, as scan.v1's Photo and docs/contracts.md state them.
-const (
-	maxPhotos = 3
-	// The app sends 1024 px at quality 0.7, which lands far under this.
-	maxPhotoBytes = 2 << 20
-)
-
-// jpegStart opens every JPEG: the start-of-image marker, then the next marker's first byte.
-var jpegStart = []byte{0xFF, 0xD8, 0xFF}
+// maxPhotos is the most photos a scan takes, as scan.v1's Photo and docs/contracts.md state it.
+// Each photo's own rules are in the handlers root, which plates share.
+const maxPhotos = 3
 
 // maxItems is the longest list a verdict keeps, from the model or from an edit. The tag on
 // buildEdit's list restates it.
@@ -50,9 +43,9 @@ func buildPhotos(in []*scanv1.Photo) ([][]byte, handlers.FieldErrors) {
 		n := i + 1
 		jpeg := photo.GetJpeg()
 		switch {
-		case !bytes.HasPrefix(jpeg, jpegStart):
+		case !handlers.IsJPEG(jpeg):
 			refuse(fmt.Sprintf("photo %d isn't a JPEG", n))
-		case len(jpeg) > maxPhotoBytes:
+		case len(jpeg) > handlers.MaxPhotoBytes:
 			refuse(fmt.Sprintf("photo %d is over 2 MB", n))
 		}
 		switch photo.GetKind() {

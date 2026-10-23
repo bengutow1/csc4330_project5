@@ -207,3 +207,17 @@ func (r *Repository) insertItems(
 	}
 	return nil
 }
+
+// BackdateScan moves one of the account's scans back to at, so the demo seed (scripts/seed) can lay
+// last week down in one run. The api never calls it. False when the account has no such scan.
+func (r *Repository) BackdateScan(ctx context.Context, accountID, scanID int64, at time.Time) (bool, error) {
+	tag, err := r.db.Exec(ctx, `
+		update app.scan
+		   set created_at = $3
+		 where account_id = $1
+		   and scan_id = $2`, accountID, scanID, at)
+	if err != nil {
+		return false, known(fmt.Sprintf("backdate scan account=%d scan=%d", accountID, scanID), err)
+	}
+	return tag.RowsAffected() == 1, nil
+}
