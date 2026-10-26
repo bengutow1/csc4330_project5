@@ -3,7 +3,7 @@ module github.com/bengutow1/csc4330_project5/packages/go/handlers
 go 1.26.4
 
 require (
-	connectrpc.com/connect v1.21.0
+	connectrpc.com/connect v1.21.1
 	github.com/alexedwards/scs/pgxstore v0.0.0-20251002162104-209de6e426de
 	github.com/alexedwards/scs/v2 v2.9.0
 	github.com/bengutow1/csc4330_project5/packages/go/apigen v0.0.0
